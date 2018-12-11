@@ -1,0 +1,2 @@
+# naf
+Nucleotide Archival Format
