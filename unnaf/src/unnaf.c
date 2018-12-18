@@ -129,7 +129,7 @@ unsigned long long cur_line_n_bp_remaining = 0;
 
 static void done()
 {
-    if (IN != stdin) { fclose(IN); IN = 0; }
+    if (IN && IN != stdin) { fclose(IN); IN = 0; }
 
     if (ids) { free(ids); ids = 0; }
     if (ids_buffer) { free(ids_buffer); ids_buffer = 0; }
