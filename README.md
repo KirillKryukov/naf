@@ -8,31 +8,29 @@ and has no limit on sequence length or number of sequences. See [NAF homepage](h
 
 NAF specification is in public domain: [NAFv1.pdf](NAFv1.pdf)
 
-## NAF encoder "ennaf"
+## Encoder and decoder
 
-Prerequisites: perl and zstd.
-(E.g., to install on Ubuntu: `sudo apt install perl zstd`).
+NAF encoder and decoder are called "ennaf" and "unnaf".
+(After compressing your data with _ennaf_, you suddenly have _enough_ space.
+However, if you decompress it back with _unnaf_, your space is again _un-enough_.)
 
-Installing: Simply copy [ennaf.pl](ennaf/ennaf.pl) to a convenient directory and set executable permissions. E.g.:
-```
-git clone https://github.com/KirillKryukov/naf.git
+## Installing
 
-```
-
-Using:
-`ennaf.pl --in-format fasta <file.fasta >file.naf`
-
-## NAF decoder "unnaf"
-
-Prerequisites: git, C compiler, make, zstd library. (E.g., to install on Ubuntu: `sudo apt install git gcc make libzstd-dev`).
+Prerequisites: git (for downloading), perl (for encoder), zstd, C compiler, make.
+(E.g., to install on Ubuntu: `sudo apt install git perl gcc make zstd libzstd-dev`).
 
 Installing:
 ```
 git clone https://github.com/KirillKryukov/naf.git
-cd naf/unnaf && make && sudo make install
+cd naf && make && sudo make install
 ```
 
-Using:
+## Compressing
+
+`ennaf --in-format fasta <file.fasta >file.naf`
+
+## Decompressing
+
 `unnaf -masked-fasta <file.naf >file.fasta`
 
 See `unnaf -help` for more options.

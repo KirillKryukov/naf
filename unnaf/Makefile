@@ -4,23 +4,26 @@
 TARGET = unnaf
 
 CC = cc
-CFLAGS = -std=c99 -Wall -Wextra -O3 -ffast-math -s
+CFLAGS = -std=c99 -Wall -Wextra -flto -O3 -march=native -ffast-math -s
 LDFLAGS = -lzstd
-PREFIX = /usr/local
 
-.PHONY: default all clean install
+.PHONY: default all clean install uninstall
 
-default: $(TARGET)
-all: default
-
-install: $(TARGET)
-	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	cp -f $(TARGET) $(DESTDIR)$(PREFIX)/bin
-
-SOURCES = $(wildcard src/*) 
+SOURCES = $(wildcard src/*)
 
 $(TARGET): $(SOURCES)
 	$(CC) $(CFLAGS) -o $@ src/unnaf.c $(LDFLAGS)
 
+default: $(TARGET)
+
+all: default
+
 clean:
 	-rm -f $(TARGET)
+
+install: $(TARGET)
+	mkdir -p $(DESTDIR)$(prefix)/bin
+	cp -f $(TARGET) $(DESTDIR)$(prefix)/bin
+
+uninstall:
+	-rm -f $(DESTDIR)$(prefix)/bin/$(TARGET)
