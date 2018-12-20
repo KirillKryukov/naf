@@ -12,7 +12,7 @@ clean:
 install: ennaf.pl
 	mkdir -p $(DESTDIR)$(prefix)/bin
 	cp -f ennaf.pl $(DESTDIR)$(prefix)/bin
-	ln -s $(DESTDIR)$(prefix)/bin/ennaf.pl $(DESTDIR)$(prefix)/bin/ennaf
+	ln -sf $(DESTDIR)$(prefix)/bin/ennaf.pl $(DESTDIR)$(prefix)/bin/ennaf
 
 uninstall:
 	-rm -f $(DESTDIR)$(prefix)/bin/ennaf
