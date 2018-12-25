@@ -99,7 +99,7 @@ if (!defined $temp_dir)
 {
     if (exists $ENV{'TMPDIR'}) { $temp_dir = $ENV{'TMPDIR'}; }
     elsif (exists $ENV{'TMP'}) { $temp_dir = $ENV{'TMP'}; }
-    else { die "Temp directory is not specified, and can't autodetect\nPlease either set TMP variable, or add '--temp-dir DIR' to command line.\n"; }
+    else { die "Temp directory is not specified, and can't autodetect\nPlease either set TMPDIR or TMP environment variable, or add '--temp-dir DIR' to command line.\n"; }
 }
 $temp_dir =~ s/[\\\/]+$//;
 if (!-e $temp_dir or !-d $temp_dir) { die "Can't find temporary directory\n"; }
