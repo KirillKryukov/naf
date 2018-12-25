@@ -29,6 +29,16 @@ cd naf && make && sudo make install
 
 `ennaf --in-format fasta <file.fasta >file.naf`
 
+Compression process stores temporary data on disk.
+Therefore please check the following before compressing large files:
+
+1. Temporary directory is specified in TMPDIR or TMP environment variable, or in --temp-dir command line option of your ennaf command.
+ Note that ennaf won't use /tmp by default, unless it's specified in the environment or command line.
+1. Temporary directory is on your fastest SSD drive.
+1. Temporary directory has sufficient space to hold the compressed data.
+ About 1/4 of the uncompressed data size should be normally fine, but safer to have 1/2 or more.
+ Note that storage devices and filesystems can slow down when nearly full, so having extra free temporary space is generally a good idea.
+
 ## Decompressing
 
 `unnaf -masked-fasta <file.naf >file.fasta`
