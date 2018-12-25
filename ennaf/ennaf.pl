@@ -40,7 +40,7 @@ my ($in_file, $dataset_name, $in_format,
     $temp_dir, $keep_temp_files,
     $title, $name_separator, $skip_separators,
     $no_mask, $compression_level,
-    $verbose, $help, $ver);
+    $skip_zstd_check, $verbose, $help, $ver);
 GetOptions(
     'in=s'              => \$in_file,
     'name=s'            => \$dataset_name,
@@ -60,6 +60,7 @@ GetOptions(
     'skip-separators=i' => \$skip_separators,
     'no-mask'           => \$no_mask,
     'level=i'           => \$compression_level,
+    'skip-zstd-check'   => \$skip_zstd_check,
     'verbose' => \$verbose,
     'help'    => \$help,
     'version' => \$ver)
@@ -104,7 +105,7 @@ if (!defined $temp_dir)
 $temp_dir =~ s/[\\\/]+$//;
 if (!-e $temp_dir or !-d $temp_dir) { die "Can't find temporary directory\n"; }
 
-test_zstd();
+if (!$skip_zstd_check) { test_zstd(); }
 
 if (!defined $compression_level) { $compression_level = 22; }
 $compression_level = int($compression_level);
