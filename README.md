@@ -1,6 +1,6 @@
 # Nucleotide Archival Format (NAF)
 NAF is a binary file format for DNA sequence data.
-It's based on zstd, and features strong compression and fast decompression.
+It's based on [zstd](http://www.zstd.net/), and features strong compression and fast decompression.
 It supports FASTA and FASTQ-formatted sequences, ambiguous IUPAC codes, masked sequence,
 and has no limit on sequence length or number of sequences. See [NAF homepage](http://kirill-kryukov.com/study/naf/) for details and benchmarks.
 
@@ -46,6 +46,10 @@ Therefore please check the following before compressing large files:
  About 1/4 of the uncompressed data size should be normally fine, but safer to have 1/2 or more.
  Note that storage devices and filesystems can slow down when nearly full, so having extra free temporary space is generally a good idea.
 
+Compression strength can be controlled with "--level N", where N is from 1 to 22.
+This corresponds to zstd compression levels. 1 is the fastest with moderate compression. 22 is slow but gives the best compression.
+22 is the default setting.
+
 ## Decompressing
 
 `unnaf -masked-fasta <file.naf >file.fasta`
@@ -54,7 +58,7 @@ See `unnaf -help` for more options.
 
 ## Reference
 
-If you use NAF, feel free to cite our preprint (until peer-reviewed publication is out):
+If you use NAF, feel free to cite our preprint:
 
  * Kirill Kryukov, Mahoko Takahashi Ueda, So Nakagawa, Tadashi Imanishi (2018)
 **"Nucleotide Archival Format (NAF) enables efficient lossless reference-free compression of DNA sequences"**
