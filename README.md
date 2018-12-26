@@ -25,6 +25,13 @@ git clone https://github.com/KirillKryukov/naf.git
 cd naf && make && sudo make install
 ```
 
+To install in alternative location, add "prefix=DIR" to the "make install" command. E.g., `sudo make prefix=/usr/local/bio install`
+
+For a staged install, add "DESTDIR=DIR". E.g., `make DESTDIR=/tmp/stage install`
+
+On Windows it can be installed using [cygwin](https://www.cygwin.com/),
+and should be also possible with [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
+
 ## Compressing
 
 `ennaf --in-format fasta <file.fasta >file.naf`
@@ -33,7 +40,7 @@ Compression process stores temporary data on disk.
 Therefore please check the following before compressing large files:
 
 1. Temporary directory is specified in TMPDIR or TMP environment variable, or in --temp-dir command line option of your ennaf command.
- Note that ennaf won't use /tmp by default, unless it's specified in the environment or command line.
+ Note that ennaf doesn't have a default setting for temporary directory, such as "/tmp", it will only use directory specified in the environment or command line.
 1. Temporary directory is on your fastest SSD drive.
 1. Temporary directory has sufficient space to hold the compressed data.
  About 1/4 of the uncompressed data size should be normally fine, but safer to have 1/2 or more.
