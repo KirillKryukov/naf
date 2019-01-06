@@ -16,8 +16,8 @@ However, if you decompress it back with _unnaf_, your space is again _un-enough_
 
 ## Installing
 
-Prerequisites: git (for downloading), perl (for encoder), zstd, C compiler, make.
-(E.g., to install on Ubuntu: `sudo apt install git perl gcc make zstd libzstd-dev`).
+Prerequisites: git (for downloading), zstd, gcc, make.
+(E.g., to install on Ubuntu: `sudo apt install git gcc make zstd libzstd-dev`).
 
 Installing:
 ```
