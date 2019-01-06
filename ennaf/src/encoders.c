@@ -1,6 +1,6 @@
 /*
  * NAF compressor
- * Copyright (c) 2018 Kirill Kryukov
+ * Copyright (c) 2018-2019 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  */
 
@@ -25,7 +25,7 @@ static void init_encoders(void)
 }
 
 
-static void encode_dna(const char *str, size_t size)
+static void encode_dna(const unsigned char *str, size_t size)
 {
     assert(str != NULL);
     assert(out_4bit_buffer != NULL);
@@ -33,12 +33,12 @@ static void encode_dna(const char *str, size_t size)
     assert(seq_cstream != NULL);
     assert(SEQ != NULL);
 
-    const char *end = str + size;
-    const char *p = str;
+    const unsigned char *end = str + size;
+    const unsigned char *p = str;
 
     if (p < end && parity)
     {
-        *out_4bit_pos++ |= (unsigned char)(nuc_code[ * (const unsigned char *) p ] * 16);
+        *out_4bit_pos++ |= (unsigned char)(nuc_code[*p] * 16);
         if (out_4bit_pos >= out_4bit_buffer + out_buffer_size)
         {
             write_to_cstream(seq_cstream, SEQ, out_4bit_buffer, out_buffer_size);
@@ -48,11 +48,11 @@ static void encode_dna(const char *str, size_t size)
         p++;
     }
 
-    const char *end1 = p + ( (unsigned long long)(end - p) & ~1ull );
+    const unsigned char *end1 = p + ( (unsigned long long)(end - p) & ~1ull );
     for (; p < end1; p += 2)
     {
-        *out_4bit_pos++ = nuc_code[ * (const unsigned char *) p ] | 
-                          (unsigned char)(nuc_code[ * (const unsigned char *) (p+1) ] * 16);
+        *out_4bit_pos++ = nuc_code[*p] | 
+                          (unsigned char)(nuc_code[*(p+1)] * 16);
         if (out_4bit_pos >= out_4bit_buffer + out_buffer_size)
         {
             write_to_cstream(seq_cstream, SEQ, out_4bit_buffer, out_buffer_size);
@@ -62,7 +62,7 @@ static void encode_dna(const char *str, size_t size)
 
     if (p < end)
     {
-        *out_4bit_pos = nuc_code[ * (const unsigned char *) p ];
+        *out_4bit_pos = nuc_code[*p];
         parity = true;
     }
 }
@@ -128,13 +128,13 @@ static void add_mask(unsigned long long len)
 }
 
 
-static void extract_mask(const char *seq, size_t len)
+static void extract_mask(const unsigned char *seq, size_t len)
 {
     assert(seq != NULL);
     assert(mask_units != NULL);
 
-    const char *end = seq + len;
-    for (const char *c = seq; c < end; )
+    const unsigned char *end = seq + len;
+    for (const unsigned char *c = seq; c < end; )
     {
         if (mask_on != (*c >= 96))
         {
@@ -143,7 +143,7 @@ static void extract_mask(const char *seq, size_t len)
             mask_on = !mask_on;
         }
 
-        const char *start = c;
+        const unsigned char *start = c;
         if (mask_on) { while (c < end && *c >= 96) { c++; } }
         else { while (c < end && *c < 96) { c++; } }
         mask_len += (unsigned long long)(c - start);

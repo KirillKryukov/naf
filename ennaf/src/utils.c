@@ -1,8 +1,22 @@
 /*
  * NAF compressor
- * Copyright (c) 2018 Kirill Kryukov
+ * Copyright (c) 2018-2019 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  */
+
+static_assert(sizeof(int) == 4, "Unsupported platform: int is not 4 bytes");
+static_assert(sizeof(long) == 8, "Unsupported platform: long is not 8 bytes");
+static_assert(sizeof(void*) == 8, "Unsupported platform: void* is not 8 bytes");
+static_assert(sizeof(size_t) == 8, "Unsupported platform: size_t is not 8 bytes");
+static_assert(sizeof(ptrdiff_t) == 8, "Unsupported platform: ptrdiff_t is not 8 bytes");
+static_assert(sizeof(off_t) == 8, "Unsupported platform: off_t is not 8 bytes");
+static_assert(sizeof(long long) == 8, "Unsupported platform: long long is not 8 bytes");
+
+
+static bool is_eol_arr[256];
+static bool is_space_arr[256];
+static bool is_space_or_gt_arr[256];
+static bool is_space_or_plus_arr[256];
 
 static unsigned char nuc_code[256];
 
@@ -12,14 +26,39 @@ static void *out_buffer = NULL;
 
 static void init_utils(void)
 {
-    static_assert(sizeof(unsigned int) == 4, "Unsupported platform: unsigned int is not 4 bytes");
-    static_assert(sizeof(void *) == 8, "Unsupported platform: void* is not 8 bytes");
-    static_assert(sizeof(size_t) == 8, "Unsupported platform: size_t is not 8 bytes");
-    static_assert(sizeof(ptrdiff_t) == 8, "Unsupported platform: ptrdiff_t is not 8 bytes");
-    static_assert(sizeof(off_t) == 8, "Unsupported platform: off_t is not 8 bytes");
-    static_assert(sizeof(long long) == 8, "Unsupported platform: long long is not 8 bytes");
-
     assert(out_buffer == NULL);
+
+    memset(is_eol_arr, 0, sizeof(is_eol_arr));
+    memset(is_space_arr, 0, sizeof(is_space_arr));
+    memset(is_space_or_gt_arr, 0, sizeof(is_space_or_gt_arr));
+    memset(is_space_or_plus_arr, 0, sizeof(is_space_or_plus_arr));
+
+    is_eol_arr['\n'] = true;
+    is_eol_arr['\f'] = true;
+    is_eol_arr['\r'] = true;
+
+    is_space_arr['\t'] = true;
+    is_space_arr['\n'] = true;
+    is_space_arr['\v'] = true;
+    is_space_arr['\f'] = true;
+    is_space_arr['\r'] = true;
+    is_space_arr[' '] = true;
+
+    is_space_or_gt_arr['\t'] = true;
+    is_space_or_gt_arr['\n'] = true;
+    is_space_or_gt_arr['\v'] = true;
+    is_space_or_gt_arr['\f'] = true;
+    is_space_or_gt_arr['\r'] = true;
+    is_space_or_gt_arr[' '] = true;
+    is_space_or_gt_arr['>'] = true;
+
+    is_space_or_plus_arr['\t'] = true;
+    is_space_or_plus_arr['\n'] = true;
+    is_space_or_plus_arr['\v'] = true;
+    is_space_or_plus_arr['\f'] = true;
+    is_space_or_plus_arr['\r'] = true;
+    is_space_or_plus_arr[' '] = true;
+    is_space_or_plus_arr['+'] = true;
 
     memset(nuc_code, 15, 256);
 

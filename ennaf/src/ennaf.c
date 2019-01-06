@@ -1,30 +1,26 @@
 /*
  * NAF compressor
- * Copyright (c) 2018 Kirill Kryukov
+ * Copyright (c) 2018-2019 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  *
  * Limitations:
- *   - Does not detect longest line length, instead it's specified using "--line-length" parameter.
  *   - Does not allow specifying name separator, always uses space.
  */
 
 /*
   To do:
   Features:
-    * Add detection of longest line length (as part of custom parser).
-    * Add support for name separators other than space (as part of custom parser).
+    * Add support for name separators other than space.
+    * Improve parser robustness.
   Efficiency:
     * Accumulate ids, names, etc., before compressing.
-    * Convert (to 4 bit format) 2 nucleotides at once.
-    * Replace kseq with custom parser.
-    * Get rid of zlib, instead just read uncompressed stream.
   Quality:
     * Add error-checking wrappers for malloc/calloc/realloc.
 */
 
 #define VERSION "1.0.0"
-#define DATE "2018-12-30"
-#define COPYRIGHT_YEARS "2018"
+#define DATE "2019-01-06"
+#define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
 
@@ -32,18 +28,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <time.h>
 #include <unistd.h>
-#include <zlib.h>
+#include <poll.h>
 #include <zstd.h>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#include "kseq.h"
-KSEQ_INIT(gzFile, gzread)
-#pragma GCC diagnostic pop
 
 #include "utils.c"
 
@@ -85,7 +76,8 @@ static FILE* MASK = NULL;
 static FILE* SEQ  = NULL;
 static FILE* QUAL = NULL;
 
-static int in_format = 0;  // 0 = unknown, 1 = fasta, 2 = fastq
+enum { in_format_unknown, in_format_fasta, in_format_fastq };
+static int in_format = in_format_unknown;
 
 static bool extended_format = false;
 static bool store_title = false;
@@ -111,7 +103,7 @@ static unsigned long long ids_size_original  = 0ull;
 static unsigned long long comm_size_original = 0ull;
 static unsigned long long seq_size_original  = 0ull;
 static unsigned long long qual_size_original = 0ull;
-static unsigned long long longest_line_length = 100ull;
+static unsigned long long longest_line_length = 0ull;
 
 static bool line_length_is_specified = false;
 static unsigned long long requested_line_length = 0ull;
@@ -132,18 +124,37 @@ static unsigned long long mask_len = 0;
 static bool mask_on = false;
 static unsigned long long n_mask_units_stored = 0;
 
+#define in_buffer_size 16384
+static unsigned char *in_buffer = NULL;
+static size_t in_begin = 0;
+static size_t in_end = 0;
+
+static unsigned long long n_sequences = 0ull;
+
+static unsigned char sequence_header_start_char = '>';
+
 
 #include "files.c"
 #include "encoders.c"
+#include "process.c"
+
+
+#define FREE(p)  do { if (p != NULL) { free(p); p = NULL; } } while (0)
 
 
 static void done(void)
 {
-    if (out_buffer != NULL) { free(out_buffer); out_buffer = NULL; }
-    if (out_4bit_buffer != NULL) { free(out_4bit_buffer); out_4bit_buffer = NULL; }
-    if (file_copy_buffer != NULL) { free(file_copy_buffer); file_copy_buffer = NULL; }
-    if (length_units != NULL) { free(length_units); length_units = NULL; }
-    if (mask_units != NULL) { free(mask_units); mask_units = NULL; }
+    FREE(name.data);
+    FREE(comment.data);
+    FREE(seq.data);
+    FREE(qual.data);
+
+    FREE(in_buffer);
+    FREE(out_buffer);
+    FREE(out_4bit_buffer);
+    FREE(file_copy_buffer);
+    FREE(length_units);
+    FREE(mask_units);
 
     if (OUT != NULL && OUT != stdout) { fclose(OUT); OUT = NULL; }
     close_input_file();
@@ -159,13 +170,13 @@ static void done(void)
         if (store_qual && qual_path != NULL) { remove_temp_file(qual_path); }
     }
 
-    if (temp_prefix != NULL) { free(temp_prefix); temp_prefix = NULL; }
-    if (ids_path  != NULL) { free(ids_path ); ids_path  = NULL; }
-    if (comm_path != NULL) { free(comm_path); comm_path = NULL; }
-    if (len_path  != NULL) { free(len_path ); len_path  = NULL; }
-    if (mask_path != NULL) { free(mask_path); mask_path = NULL; }
-    if (seq_path  != NULL) { free(seq_path ); seq_path  = NULL; }
-    if (qual_path != NULL) { free(qual_path); qual_path = NULL; }
+    FREE(temp_prefix);
+    FREE(ids_path);
+    FREE(comm_path);
+    FREE(len_path);
+    FREE(mask_path);
+    FREE(seq_path);
+    FREE(qual_path);
 }
 
 
@@ -174,7 +185,7 @@ static void set_input_file_path(char *new_path)
     assert(new_path != NULL);
 
     if (in_file_path != NULL) { fprintf(stderr, "Error: double --in parameter\n"); exit(1); }
-    if (*new_path == 0) { fprintf(stderr, "Error: empty --in parameter\n"); exit(1); }
+    if (*new_path == '\0') { fprintf(stderr, "Error: empty --in parameter\n"); exit(1); }
     in_file_path = new_path;
 }
 
@@ -184,7 +195,7 @@ static void set_output_file_path(char *new_path)
     assert(new_path != NULL);
 
     if (out_file_path != NULL) { fprintf(stderr, "Error: double --out parameter\n"); exit(1); }
-    if (*new_path == 0) { fprintf(stderr, "Error: empty --out parameter\n"); exit(1); }
+    if (*new_path == '\0') { fprintf(stderr, "Error: empty --out parameter\n"); exit(1); }
     out_file_path = new_path;
 }
 
@@ -194,7 +205,7 @@ static void set_temp_dir(char *new_temp_dir)
     assert(new_temp_dir != NULL);
 
     if (temp_dir != NULL) { fprintf(stderr, "Error: double --temp-dir parameter\n"); exit(1); }
-    if (*new_temp_dir == 0) { fprintf(stderr, "Error: empty --temp-dir parameter\n"); exit(1); }
+    if (*new_temp_dir == '\0') { fprintf(stderr, "Error: empty --temp-dir parameter\n"); exit(1); }
     temp_dir = new_temp_dir;
 }
 
@@ -204,7 +215,7 @@ static void set_dataset_name(char *new_name)
     assert(new_name != NULL);
 
     if (dataset_name != NULL) { fprintf(stderr, "Error: double --name parameter\n"); exit(1); }
-    if (*new_name == 0) { fprintf(stderr, "Error: empty --name parameter\n"); exit(1); }
+    if (*new_name == '\0') { fprintf(stderr, "Error: empty --name parameter\n"); exit(1); }
     if (string_has_characters_unsafe_in_file_names(new_name)) { fprintf(stderr, "Error: --name \"%s\" - contains characters unsafe in file names\n", new_name); exit(1); }
     dataset_name = new_name;
 }
@@ -215,7 +226,7 @@ static void set_dataset_title(char *new_title)
     assert(new_title != NULL);
 
     if (dataset_title != NULL) { fprintf(stderr, "Error: double --title parameter\n"); exit(1); }
-    if (*new_title == 0) { fprintf(stderr, "Error: empty --title parameter\n"); exit(1); }
+    if (*new_title == '\0') { fprintf(stderr, "Error: empty --title parameter\n"); exit(1); }
     dataset_title = new_title;
     store_title = 1;
 }
@@ -227,7 +238,7 @@ static void set_compression_level(char *str)
 
     char *end;
     long a = strtol(str, &end, 10);
-    if (a < 1l || a > 22l || *end != 0) { fprintf(stderr, "Invalid value of --level, should be from 1 to 22\n"); exit(1); }
+    if (a < 1l || a > 22l || *end != '\0') { fprintf(stderr, "Invalid value of --level, should be from 1 to 22\n"); exit(1); }
     compression_level = (int)a;
 }
 
@@ -239,7 +250,7 @@ static void set_line_length(char *str)
     char *end;
     long long a = strtoll(str, &end, 10);
     if (a < 0ll) { fprintf(stderr, "Error: Negative line length specified\n"); exit(1); }
-    requested_line_length = (unsigned long long)a;
+    requested_line_length = (unsigned long long) a;
     line_length_is_specified = true;
 }
 
@@ -248,9 +259,9 @@ static int read_input_format(char *str)
 {
     assert(str != NULL);
 
-    if (!strcasecmp(str, "fasta") || !strcasecmp(str, "fa") || !strcasecmp(str, "fna")) { return 1; }
-    if (!strcasecmp(str, "fastq") || !strcasecmp(str, "fq")) { return 2; }
-    return 0;
+    if (!strcasecmp(str, "fasta") || !strcasecmp(str, "fa") || !strcasecmp(str, "fna")) { return in_format_fasta; }
+    if (!strcasecmp(str, "fastq") || !strcasecmp(str, "fq")) { return in_format_fastq; }
+    return in_format_unknown;
 }
 
 
@@ -258,9 +269,22 @@ static void set_input_format(char *new_format)
 {
     assert(new_format != NULL);
 
-    if (in_format != 0) { fprintf(stderr, "Error: double --in-format parameter\n"); exit(1); }
+    if (in_format != in_format_unknown) { fprintf(stderr, "Error: double --in-format parameter\n"); exit(1); }
     in_format = read_input_format(new_format);
-    if (in_format == 0) { fprintf(stderr, "Unknown input format specified: \"%s\"\n", new_format); exit(1); }
+    if (in_format == in_format_unknown) { fprintf(stderr, "Unknown input format specified: \"%s\"\n", new_format); exit(1); }
+}
+
+
+static void detect_input_format(void)
+{
+    if (in_format == in_format_unknown && in_file_path != NULL)
+    {
+        char *ext = in_file_path + strlen(in_file_path);
+        while (ext > in_file_path && *(ext-1) != '/' && *(ext-1) != '\\' && *(ext-1) != '.') { ext--; }
+        in_format = read_input_format(ext);
+    }
+    if (in_format == in_format_unknown) { fprintf(stderr, "Input format is not specified, and unknown file extension\n"); exit(1); }
+    if (in_format == in_format_fastq) { store_qual = 1; sequence_header_start_char = '@'; }
 }
 
 
@@ -278,19 +302,6 @@ static void detect_temp_directory(void)
 }
 
 
-static void detect_input_format(void)
-{
-    if (in_format == 0 && in_file_path != NULL)
-    {
-        char *ext = in_file_path + strlen(in_file_path);
-        while (ext > in_file_path && *(ext-1) != '/' && *(ext-1) != '\\' && *(ext-1) != '.') { ext--; }
-        in_format = read_input_format(ext);
-    }
-    if (in_format == 0) { fprintf(stderr, "Input format is not specified, and unknown file extension\n"); exit(1); }
-    if (in_format == 2) { store_qual = 1; }
-}
-
-
 static void show_version(void)
 {
     fprintf(stderr, "ennaf - NAF compressor, version " VERSION ", " DATE "\nCopyright (c) " COPYRIGHT_YEARS " Kirill Kryukov\n");
@@ -300,17 +311,16 @@ static void show_version(void)
 static void show_help(void)
 {
     fprintf(stderr,
-        "Usage: ennaf [OPTIONS] <input >outfile\n"
-        "   or: ennaf [OPTIONS] -in infile -out outfile\n"
+        "Usage: ennaf [OPTIONS] [<infile] [>outfile]\n"
         "Options:\n"
-        "  --in FILE         - Compress FILE\n"
-        "  --out FILE        - Write compressed output into FILE\n"
+        "  --in FILE         - Compress FILE (stdin by default)\n"
+        "  --out FILE        - Write compressed output to FILE (stdout by default)\n"
         "  --temp-dir DIR    - Use DIR as temporary directory\n"
         "  --name NAME       - Use NAME as prefix for temporary files\n"
         "  --title TITLE     - Store TITLE as dataset title\n"
         "  --level N         - Use compression level N (from 1 to 22, default: 22)\n"
         "  --in-format F     - Input is in format F (either fasta or fastq)\n"
-        "  --line-length N   - Store line length N\n"
+        "  --line-length N   - Override line length to N\n"
         "  --verbose         - Verbose mode\n"
         "  --keep-temp-files - Keep temporary files\n"
         "  --no-mask         - Don't store mask\n"
@@ -374,23 +384,16 @@ int main(int argc, char **argv)
 
     make_temp_files();
 
-    naf_header_start[4] = (unsigned char)( ((extended_format ? 1 : 0) << 7) |
-                                           ((store_title     ? 1 : 0) << 6) |
-                                           ((store_ids       ? 1 : 0) << 5) |
-                                           ((store_comm      ? 1 : 0) << 4) |
-                                           ((store_len       ? 1 : 0) << 3) |
-                                           ((store_mask      ? 1 : 0) << 2) |
-                                           ((store_seq       ? 1 : 0) << 1) |
-                                            (store_qual      ? 1 : 0)         );
+    naf_header_start[4] = (unsigned char)( (extended_format << 7) |
+                                           (store_title     << 6) |
+                                           (store_ids       << 5) |
+                                           (store_comm      << 4) |
+                                           (store_len       << 3) |
+                                           (store_mask      << 2) |
+                                           (store_seq       << 1) |
+                                            store_qual              );
+
     fwrite_or_die(naf_header_start, 1, 6, OUT);
-
-
-
-    gzFile in_fp;
-    kseq_t *seq;
-    in_fp = gzdopen(fileno(IN), "r");
-    seq = kseq_init(in_fp);
-
 
 
     if (store_ids ) { ids_cstream  = create_zstd_cstream(compression_level); }
@@ -400,46 +403,11 @@ int main(int argc, char **argv)
     if (store_seq ) { seq_cstream  = create_zstd_cstream(compression_level); }
     if (store_qual) { qual_cstream = create_zstd_cstream(compression_level); }
 
-    unsigned long long n = 0;
-    while (kseq_read(seq) >= 0)
-    {
-        if (store_ids)
-        {
-            ids_size_original += seq->name.l + 1;
-            write_to_cstream(ids_cstream, IDS, seq->name.s, seq->name.l + 1);
-        }
 
-        if (store_comm)
-        {
-            comm_size_original += seq->comment.l + 1;
-            write_to_cstream(comm_cstream, COMM, seq->comment.s, seq->comment.l + 1);
-        }
 
-        if (store_len)
-        {
-            add_length(seq->seq.l);
-        }
+    process();
 
-        if (store_mask)
-        {
-            extract_mask(seq->seq.s, seq->seq.l);
-        }
 
-        if (store_seq)
-        {
-            seq_size_original += seq->seq.l;
-            encode_dna(seq->seq.s, seq->seq.l);
-        }
-
-        if (store_qual)
-        {
-            qual_size_original += seq->qual.l;
-            write_to_cstream(qual_cstream, QUAL, seq->qual.s, seq->qual.l);
-        }
-
-        n++;
-    }
-    kseq_destroy(seq);
 
     if (mask_len > 0)
     {
@@ -476,8 +444,10 @@ int main(int argc, char **argv)
     close_input_file();
     close_temp_files();
 
-    write_variable_length_encoded_number(OUT, line_length_is_specified ? requested_line_length : longest_line_length);
-    write_variable_length_encoded_number(OUT, n);
+    unsigned long long out_line_length = line_length_is_specified ? requested_line_length : longest_line_length;
+    if (verbose) { fprintf(stderr, "Output line length: %lld\n", out_line_length); }
+    write_variable_length_encoded_number(OUT, out_line_length);
+    write_variable_length_encoded_number(OUT, n_sequences);
 
     if (store_title)
     {
@@ -522,7 +492,7 @@ int main(int argc, char **argv)
         copy_file_to_out(qual_path);
     }
 
-    if (verbose) { fprintf(stderr, "Processed %llu sequences\n", n); }
+    if (verbose) { fprintf(stderr, "Processed %llu sequences\n", n_sequences); }
 
     return 0;
 }

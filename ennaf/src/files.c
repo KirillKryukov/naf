@@ -1,6 +1,6 @@
 /*
  * NAF compressor
- * Copyright (c) 2018 Kirill Kryukov
+ * Copyright (c) 2018-2019 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  */
 

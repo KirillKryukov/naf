@@ -1,19 +1,29 @@
 .POSIX:
 .SUFFIXES:
 
+TARGET = ennaf
+
+CC = cc
+CFLAGS = -std=gnu11 -Wall -Wextra -flto -O3 -march=native -ffast-math -s
+LDFLAGS = -lzstd
+
 .PHONY: default all clean install uninstall
 
-default: ennaf.pl
+SOURCES = $(wildcard src/*)
+
+$(TARGET): $(SOURCES)
+	$(CC) $(CFLAGS) -o $@ src/ennaf.c $(LDFLAGS)
+
+default: $(TARGET)
 
 all: default
 
 clean:
+	-rm -f $(TARGET)
 
-install: ennaf.pl
+install: $(TARGET)
 	mkdir -p $(DESTDIR)$(prefix)/bin
-	cp -f ennaf.pl $(DESTDIR)$(prefix)/bin
-	ln -sf $(DESTDIR)$(prefix)/bin/ennaf.pl $(DESTDIR)$(prefix)/bin/ennaf
+	cp -f $(TARGET) $(DESTDIR)$(prefix)/bin
 
 uninstall:
-	-rm -f $(DESTDIR)$(prefix)/bin/ennaf
-	-rm -f $(DESTDIR)$(prefix)/bin/ennaf.pl
+	-rm -f $(DESTDIR)$(prefix)/bin/$(TARGET)
