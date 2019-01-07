@@ -168,22 +168,22 @@ static void usage()
     fprintf(stderr,
         "Usage: unnaf [OUTPUT-TYPE] [file.naf]\n"
         "Output type choices:\n"
-        "  -format    - File format version\n"
-        "  -part-list - List of parts\n"
-        "  -sizes     - Part sizes\n"
-        "  -number    - Number of sequences\n"
-        "  -title     - Dataset title\n"
-        "  -ids       - Sequence ids (accession numbers)\n"
-        "  -names     - Full sequence names (including ids)\n"
-        "  -lengths   - Sequence lengths\n"
-        "  -total-length - Sum of sequence lengths\n"
-        "  -mask      - Masked region lengths\n"
-        "  -4bit      - 4bit-encoded DNA (binary data)\n"
-        "  -dna       - Continuous DNA sequence without mask\n"
-        "  -masked-dna - Continuous masked DNA sequence\n"
-        "  -fasta     - FASTA-formatted sequences\n"
-        "  -masked-fasta - Masked FASTA-formatted sequences\n"
-        "  -fastq     - FASTQ-formatted sequences\n"
+        "  --format    - File format version\n"
+        "  --part-list - List of parts\n"
+        "  --sizes     - Part sizes\n"
+        "  --number    - Number of sequences\n"
+        "  --title     - Dataset title\n"
+        "  --ids       - Sequence ids (accession numbers)\n"
+        "  --names     - Full sequence names (including ids)\n"
+        "  --lengths   - Sequence lengths\n"
+        "  --total-length - Sum of sequence lengths\n"
+        "  --mask      - Masked region lengths\n"
+        "  --4bit      - 4bit-encoded DNA (binary data)\n"
+        "  --dna       - Continuous DNA sequence without mask\n"
+        "  --masked-dna - Continuous masked DNA sequence\n"
+        "  --fasta     - FASTA-formatted sequences\n"
+        "  --masked-fasta - Masked FASTA-formatted sequences\n"
+        "  --fastq     - FASTQ-formatted sequences\n"
     );
 }
 
@@ -210,26 +210,26 @@ int main(int argc, char **argv)
 
     for (int i = 1; i < argc; i++)
     {
-        if (argv[i][0] == '-')
+        if (!strncmp(argv[i], "--", 2))
         {
-            if (!strcmp(argv[i], "-help")) { usage(); exit(0); }
-            else if (!strcmp(argv[i], "-format"           )) { set_out_type(FORMAT_NAME); }
-            else if (!strcmp(argv[i], "-part-list"        )) { set_out_type(PART_LIST); }
-            else if (!strcmp(argv[i], "-sizes"            )) { set_out_type(PART_SIZES); }
-            else if (!strcmp(argv[i], "-number"           )) { set_out_type(NUMBER_OF_SEQUENCES); }
-            else if (!strcmp(argv[i], "-title"            )) { set_out_type(TITLE); }
-            else if (!strcmp(argv[i], "-ids"              )) { set_out_type(IDS); }
-            else if (!strcmp(argv[i], "-names"            )) { set_out_type(NAMES); }
-            else if (!strcmp(argv[i], "-lengths"          )) { set_out_type(LENGTHS); }
-            else if (!strcmp(argv[i], "-total-length"     )) { set_out_type(TOTAL_LENGTH); }
-            else if (!strcmp(argv[i], "-mask"             )) { set_out_type(MASK); }
-            else if (!strcmp(argv[i], "-total-mask-length")) { set_out_type(TOTAL_MASK_LENGTH); }
-            else if (!strcmp(argv[i], "-4bit"             )) { set_out_type(FOUR_BIT); }
-            else if (!strcmp(argv[i], "-dna"              )) { set_out_type(DNA); }
-            else if (!strcmp(argv[i], "-masked-dna"       )) { set_out_type(MASKED_DNA); }
-            else if (!strcmp(argv[i], "-fasta"            )) { set_out_type(FASTA); }
-            else if (!strcmp(argv[i], "-masked-fasta"     )) { set_out_type(MASKED_FASTA); }
-            else if (!strcmp(argv[i], "-fastq"            )) { set_out_type(FASTQ); }
+            if (!strcmp(argv[i], "--help")) { usage(); exit(0); }
+            else if (!strcmp(argv[i], "--format"           )) { set_out_type(FORMAT_NAME); }
+            else if (!strcmp(argv[i], "--part-list"        )) { set_out_type(PART_LIST); }
+            else if (!strcmp(argv[i], "--sizes"            )) { set_out_type(PART_SIZES); }
+            else if (!strcmp(argv[i], "--number"           )) { set_out_type(NUMBER_OF_SEQUENCES); }
+            else if (!strcmp(argv[i], "--title"            )) { set_out_type(TITLE); }
+            else if (!strcmp(argv[i], "--ids"              )) { set_out_type(IDS); }
+            else if (!strcmp(argv[i], "--names"            )) { set_out_type(NAMES); }
+            else if (!strcmp(argv[i], "--lengths"          )) { set_out_type(LENGTHS); }
+            else if (!strcmp(argv[i], "--total-length"     )) { set_out_type(TOTAL_LENGTH); }
+            else if (!strcmp(argv[i], "--mask"             )) { set_out_type(MASK); }
+            else if (!strcmp(argv[i], "--total-mask-length")) { set_out_type(TOTAL_MASK_LENGTH); }
+            else if (!strcmp(argv[i], "--4bit"             )) { set_out_type(FOUR_BIT); }
+            else if (!strcmp(argv[i], "--dna"              )) { set_out_type(DNA); }
+            else if (!strcmp(argv[i], "--masked-dna"       )) { set_out_type(MASKED_DNA); }
+            else if (!strcmp(argv[i], "--fasta"            )) { set_out_type(FASTA); }
+            else if (!strcmp(argv[i], "--masked-fasta"     )) { set_out_type(MASKED_FASTA); }
+            else if (!strcmp(argv[i], "--fastq"            )) { set_out_type(FASTQ); }
             else { fprintf(stderr, "Unknown option \"%s\"\n", argv[i]); exit(1); }
         }
         else { set_input_file_name(argv[i]); }
