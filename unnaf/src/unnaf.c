@@ -13,7 +13,7 @@
 #include <fcntl.h>
 #include <zstd.h>
 
-#include "unnaf-utils.c"
+#include "utils.c"
 
 typedef enum { UNDECIDED, FORMAT_NAME, PART_LIST, PART_SIZES, NUMBER_OF_SEQUENCES,
                TITLE, IDS, NAMES, LENGTHS, TOTAL_LENGTH, MASK, TOTAL_MASK_LENGTH,
@@ -117,9 +117,9 @@ int mask_on = 0;
 
 unsigned long long cur_line_n_bp_remaining = 0;
 
-#include "unnaf-input.c"
-#include "unnaf-output.c"
-#include "unnaf-output-fastq.c"
+#include "input.c"
+#include "output.c"
+#include "output-fastq.c"
 
 
 static void done()
