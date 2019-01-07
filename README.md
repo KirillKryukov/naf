@@ -48,7 +48,7 @@ Therefore please check the following before compressing large files:
 
 Compression strength can be controlled with "--level N", where N is from 1 to 22.
 This corresponds to zstd compression levels. 1 is the fastest with moderate compression. 22 is slow but gives the best compression.
-22 is the default setting.
+1 is the default setting.
 
 ## Decompressing
 

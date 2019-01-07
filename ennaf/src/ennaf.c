@@ -49,7 +49,7 @@ static char *out_file_path = NULL;
 static FILE *OUT = NULL;
 static int out_fd = -1;
 
-static int compression_level = 22;
+static int compression_level = 1;
 
 static char *temp_dir = NULL;
 static char *dataset_name = NULL;
