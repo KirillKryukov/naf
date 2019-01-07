@@ -34,7 +34,7 @@ and should be also possible with [WSL](https://docs.microsoft.com/en-us/windows/
 
 ## Compressing
 
-`ennaf --in-format fasta <file.fasta >file.naf`
+`ennaf --fasta <file.fasta >file.naf`
 
 Compression process stores temporary data on disk.
 Therefore please check the following before compressing large files:
@@ -52,9 +52,9 @@ This corresponds to zstd compression levels. 1 is the fastest with moderate comp
 
 ## Decompressing
 
-`unnaf -masked-fasta <file.naf >file.fasta`
+`unnaf --masked-fasta <file.naf >file.fasta`
 
-See `unnaf -help` for more options.
+See `unnaf --help` for more options.
 
 ## Reference
 
