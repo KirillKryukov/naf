@@ -1,14 +1,11 @@
 /*
- * unnaf - NAF format decoder
- *
- * Copyright (c) 2018 Kirill Kryukov. All rights reserved.
- *
- * This source code is licensed under the zlib/libpng license, found in the
- * LICENSE file in the root directory of this source tree.
+ * NAF decompressor
+ * Copyright (c) 2018-2019 Kirill Kryukov
+ * See README.md and LICENSE files of this repository
  */
 
 __attribute__ ((noreturn))
-static void print_list_of_parts_and_exit()
+static void print_list_of_parts_and_exit(void)
 {
     int printed = 0;
     if (has_title)   { printf("Title"); printed++; }
@@ -25,7 +22,7 @@ static void print_list_of_parts_and_exit()
 
 
 __attribute__ ((noreturn))
-static void print_part_sizes_and_exit()
+static void print_part_sizes_and_exit(void)
 {
     if (has_title)
     {
@@ -88,7 +85,7 @@ static void print_part_sizes_and_exit()
 
 
 __attribute__ ((noreturn))
-static void print_title_and_exit()
+static void print_title_and_exit(void)
 {
     if (has_title)
     {
@@ -110,7 +107,7 @@ static void print_title_and_exit()
 
 
 __attribute__ ((noreturn))
-static void print_ids_and_exit()
+static void print_ids_and_exit(void)
 {
     if (has_ids)
     {
@@ -165,7 +162,7 @@ static inline void print_fastq_name(unsigned long long index)
 
 
 __attribute__ ((noreturn))
-static void print_names_and_exit()
+static void print_names_and_exit(void)
 {
     if (has_ids || has_names)
     {
@@ -203,7 +200,7 @@ static void print_names_and_exit()
 
 
 __attribute__ ((noreturn))
-static void print_lengths_and_exit()
+static void print_lengths_and_exit(void)
 {
     if (has_lengths)
     {
@@ -231,7 +228,7 @@ static void print_lengths_and_exit()
 
 
 __attribute__ ((noreturn))
-static void print_total_length_and_exit()
+static void print_total_length_and_exit(void)
 {
     if (has_lengths)
     {
@@ -251,7 +248,7 @@ static void print_total_length_and_exit()
 
 
 __attribute__ ((noreturn))
-static void print_mask_and_exit()
+static void print_mask_and_exit(void)
 {
     if (has_mask)
     {
@@ -280,7 +277,7 @@ static void print_mask_and_exit()
 
 
 __attribute__ ((noreturn))
-static void print_total_mask_length_and_exit()
+static void print_total_mask_length_and_exit(void)
 {
     if (has_mask)
     {
@@ -308,7 +305,7 @@ static void print_total_mask_length_and_exit()
 
 
 __attribute__ ((noreturn))
-static void print_4bit_and_exit()
+static void print_4bit_and_exit(void)
 {
     if (has_data)
     {

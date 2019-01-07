@@ -1,10 +1,7 @@
 /*
- * unnaf - NAF format decoder
- *
- * Copyright (c) 2018 Kirill Kryukov. All rights reserved.
- *
- * This source code is licensed under the zlib/libpng license, found in the
- * LICENSE file in the root directory of this source tree.
+ * NAF decompressor
+ * Copyright (c) 2018-2019 Kirill Kryukov
+ * See README.md and LICENSE files of this repository
  */
 
 unsigned char code_to_nuc[16] = {'?','T','G','K','C','Y','S','B','A','W','R','D','M','H','V','N'};
@@ -14,7 +11,7 @@ unsigned short codes_to_nucs[256];
 
 
 __attribute__ ((noreturn))
-static inline void incomplete()
+static inline void incomplete(void)
 {
     fprintf(stderr, "Incomplete or truncated input\n");
     exit(1);
@@ -22,7 +19,7 @@ static inline void incomplete()
 
 
 
-static void check_platform()
+static void check_platform(void)
 {
     static char* unsupported = "Unsupported platform or compiler: ";
 
@@ -39,7 +36,7 @@ static void check_platform()
 
 
 
-static void init_tables()
+static void init_tables(void)
 {
     //memset(nuc_to_code, 0, 256);
     //for (unsigned i = 1; i < 16; i++) { nuc_to_code[code_to_nuc[i]] = i; }
@@ -48,7 +45,7 @@ static void init_tables()
     {
         for (unsigned j = 0; j < 16; j++)
         {
-            codes_to_nucs[(i << 4) | j] = ((unsigned short)code_to_nuc[i] << 8) | code_to_nuc[j];
+            codes_to_nucs[(i << 4) | j] = (unsigned short) ( ((unsigned short)code_to_nuc[i] << 8) | code_to_nuc[j] );
         }
     }
 }

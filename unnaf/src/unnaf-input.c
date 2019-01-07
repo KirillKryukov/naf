@@ -1,10 +1,7 @@
 /*
- * unnaf - NAF format decoder
- *
- * Copyright (c) 2018 Kirill Kryukov. All rights reserved.
- *
- * This source code is licensed under the zlib/libpng license, found in the
- * LICENSE file in the root directory of this source tree.
+ * NAF decompressor
+ * Copyright (c) 2018-2019 Kirill Kryukov
+ * See README.md and LICENSE files of this repository
  */
 
 enum { AHEAD_BUFFER_SIZE = 4096 };
@@ -33,7 +30,7 @@ static void skip_ahead(unsigned long long bytes)
 
 
 
-static void read_header()
+static void read_header(void)
 {
     if (fread(&header, 1, 6, IN) != 6) { incomplete(); }
     if (header[0] != 0x01 || header[1] != 0xF9 || header[2] != 0xEC) { fprintf(stderr, "Not a NAF format\n"); exit(1); }
@@ -50,7 +47,7 @@ static void read_header()
 
 
 
-static void skip_title()
+static void skip_title(void)
 {
     if (has_title)
     {
@@ -61,7 +58,7 @@ static void skip_title()
 
 
 
-static void skip_ids()
+static void skip_ids(void)
 {
     if (has_ids)
     {
@@ -73,7 +70,7 @@ static void skip_ids()
 
 
 
-static void skip_names()
+static void skip_names(void)
 {
     if (has_names)
     {
@@ -85,7 +82,7 @@ static void skip_names()
 
 
 
-static void skip_lengths()
+static void skip_lengths(void)
 {
     if (has_lengths)
     {
@@ -97,7 +94,7 @@ static void skip_lengths()
 
 
 
-static void skip_mask()
+static void skip_mask(void)
 {
     if (has_mask)
     {
@@ -109,7 +106,7 @@ static void skip_mask()
 
 
 
-/*static void skip_data()
+/*static void skip_data(void)
 {
     if (has_data)
     {
@@ -121,7 +118,7 @@ static void skip_mask()
 
 
 
-static void load_ids()
+static void load_ids(void)
 {
     unsigned long long ids_size = read_number(IN);
     unsigned long long compressed_ids_size = read_number(IN);
@@ -155,7 +152,7 @@ static void load_ids()
 
 
 
-static void load_names()
+static void load_names(void)
 {
     unsigned long long names_size = read_number(IN);
     unsigned long long compressed_names_size = read_number(IN);
@@ -189,7 +186,7 @@ static void load_names()
 
 
 
-static void load_lengths()
+static void load_lengths(void)
 {
     unsigned long long lengths_size = read_number(IN);
     unsigned long long compressed_lengths_size = read_number(IN);
@@ -212,7 +209,7 @@ static void load_lengths()
 
 
 
-static void load_mask()
+static void load_mask(void)
 {
     mask_size = read_number(IN);
     unsigned long long compressed_mask_size = read_number(IN);
@@ -245,7 +242,7 @@ static void load_mask()
 
 
 
-static void load_compressed_sequence()
+static void load_compressed_sequence(void)
 {
     total_seq_length = read_number(IN);
     compressed_seq_size = read_number(IN);
@@ -259,7 +256,7 @@ static void load_compressed_sequence()
 
 
 
-static size_t initialize_input_decompression()
+static size_t initialize_input_decompression(void)
 {
     in_buffer_size = ZSTD_DStreamInSize();
     in_buffer = (char *)malloc(in_buffer_size);
@@ -295,7 +292,7 @@ static size_t initialize_input_decompression()
 
 
 
-static void initialize_memory_decompression()
+static void initialize_memory_decompression(void)
 {
     mem_out_buffer_size = ZSTD_DStreamOutSize();
     mem_out_buffer = (unsigned char *)malloc(mem_out_buffer_size);
@@ -310,7 +307,7 @@ static void initialize_memory_decompression()
 
 
 
-static void initialize_quality_file_decompression()
+static void initialize_quality_file_decompression(void)
 {
     in_buffer_size = ZSTD_DStreamInSize();
     in_buffer = (char *)malloc(in_buffer_size);
@@ -355,7 +352,7 @@ static inline size_t read_next_chunk(void* buffer, size_t size)
 
 
 
-static void refill_dna_buffer_from_memory()
+static void refill_dna_buffer_from_memory(void)
 {
     dna_buffer_filling_pos = 0;
 
@@ -387,7 +384,7 @@ static void refill_dna_buffer_from_memory()
 
 
 
-static void refill_quality_buffer_from_file()
+static void refill_quality_buffer_from_file(void)
 {
     quality_buffer_filling_pos = 0;
 

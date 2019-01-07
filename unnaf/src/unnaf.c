@@ -1,12 +1,7 @@
 /*
- * unnaf - NAF format decoder
- *
- * Version 0.1.1 (October 8, 2018)
- *
- * Copyright (c) 2018 Kirill Kryukov. All rights reserved.
- *
- * This source code is licensed under the zlib/libpng license, found in the
- * LICENSE file in the root directory of this source tree.
+ * NAF decompressor
+ * Copyright (c) 2018-2019 Kirill Kryukov
+ * See README.md and LICENSE files of this repository
  */
 
 #include <assert.h>
