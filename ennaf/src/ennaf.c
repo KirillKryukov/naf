@@ -320,6 +320,10 @@ static void detect_temp_directory(void)
 static void show_version(void)
 {
     fprintf(stderr, "ennaf - NAF compressor, version " VERSION ", " DATE "\nCopyright (c) " COPYRIGHT_YEARS " Kirill Kryukov\n");
+    if (verbose)
+    {
+        fprintf(stderr, "Built with zstd " ZSTD_VERSION_STRING ", using runtime zstd %s\n", ZSTD_versionString());
+    }
 }
 
 
@@ -350,6 +354,8 @@ static void show_help(void)
 
 static void parse_command_line(int argc, char **argv)
 {
+    bool print_version = false;
+
     for (int i = 1; i < argc; i++)
     {
         if (i < argc - 1)
@@ -364,7 +370,7 @@ static void parse_command_line(int argc, char **argv)
             if (!strcmp(argv[i], "--line-length")) { i++; set_line_length(argv[i]); continue; }
         }
         if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
-        if (!strcmp(argv[i], "--version")) { show_version(); exit(0); }
+        if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
         if (!strcmp(argv[i], "--verbose")) { verbose = true; continue; }
         if (!strcmp(argv[i], "--keep-temp-files")) { keep_temp_files = true; continue; }
         if (!strcmp(argv[i], "--no-mask")) { store_mask = false; continue; }
@@ -372,6 +378,12 @@ static void parse_command_line(int argc, char **argv)
         if (!strcmp(argv[i], "--fastq")) { set_input_format("fastq"); continue; }
         fprintf(stderr, "Unknown or incomplete parameter \"%s\"\n", argv[i]);
         exit(1);
+    }
+
+    if (print_version)
+    {
+        show_version();
+        exit(0);
     }
 }
 
