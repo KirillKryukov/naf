@@ -160,15 +160,15 @@ static void copy_file_to_out(char* from_path)
     FILE *FROM = fopen(from_path, "rb");
     if (FROM == NULL) { fprintf(stderr, "Can't open \"%s\"\n", from_path); exit(1); }
 
-    if (fseeko(FROM, 0, SEEK_END) != 0) { fprintf(stderr, "Can't seek to the end of file \"%s\"\n", from_path); exit(1); }
-    off_t file_size = ftello(FROM);
+    if (fseek(FROM, 0, SEEK_END) != 0) { fprintf(stderr, "Can't seek to the end of file \"%s\"\n", from_path); exit(1); }
+    long file_size = ftell(FROM);
     if (file_size < 0) { fprintf(stderr, "Can't determine size of \"%s\"\n", from_path); exit(1); }
     if (file_size < 4) { fprintf(stderr, "\"%s\" is smaller than 4 bytes\n", from_path); exit(1); }
 
     size_t data_size = (size_t)(file_size - 4);
     write_variable_length_encoded_number(OUT, data_size);
 
-    if (fseeko(FROM, 4, SEEK_SET) != 0) { fprintf(stderr, "Can't seek to data start in \"%s\"\n", from_path); exit(1); }
+    if (fseek(FROM, 4, SEEK_SET) != 0) { fprintf(stderr, "Can't seek to data start in \"%s\"\n", from_path); exit(1); }
 
     size_t remaining = data_size;
     while (remaining > 0)
