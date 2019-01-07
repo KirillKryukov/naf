@@ -234,7 +234,8 @@ static void set_compression_level(char *str)
 
     char *end;
     long a = strtol(str, &end, 10);
-    if (a < 1l || a > 22l || *end != '\0') { fprintf(stderr, "Invalid value of --level, should be from 1 to 22\n"); exit(1); }
+    long max_level = ZSTD_maxCLevel();
+    if (a < 1l || a > max_level || *end != '\0') { fprintf(stderr, "Invalid value of --level, should be from 1 to %ld\n", max_level); exit(1); }
     compression_level = (int)a;
 }
 
@@ -324,6 +325,8 @@ static void show_version(void)
 
 static void show_help(void)
 {
+    int max_level = ZSTD_maxCLevel();
+
     fprintf(stderr,
         "Usage: ennaf [OPTIONS] [<infile] [>outfile]\n"
         "Options:\n"
@@ -332,7 +335,7 @@ static void show_help(void)
         "  --temp-dir DIR    - Use DIR as temporary directory\n"
         "  --name NAME       - Use NAME as prefix for temporary files\n"
         "  --title TITLE     - Store TITLE as dataset title\n"
-        "  --level N         - Use compression level N (from 1 to 22, default: 22)\n"
+        "  --level N         - Use compression level N (from 1 to %d, default: 1)\n"
         "  --fasta           - Input is in FASTA format\n"
         "  --fastq           - Input is in FASTQ format\n"
         "  --line-length N   - Override line length to N\n"
@@ -340,8 +343,8 @@ static void show_help(void)
         "  --keep-temp-files - Keep temporary files\n"
         "  --no-mask         - Don't store mask\n"
         "  --help            - Show help\n"
-        "  --version         - Show version\n"
-    );
+        "  --version         - Show version\n",
+        max_level);
 }
 
 
