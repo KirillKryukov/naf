@@ -35,7 +35,7 @@ static void print_part_sizes_and_exit(void)
     {
         unsigned long long ids_size = read_number(IN);
         unsigned long long compressed_ids_size = read_number(IN);
-        printf("IDs: %llu / %llu (%.3f%%)\n", compressed_ids_size, ids_size, (double)compressed_ids_size / ids_size * 100);
+        printf("IDs: %llu / %llu (%.3f%%)\n", compressed_ids_size, ids_size, (double)compressed_ids_size / (double)ids_size * 100);
         skip_ahead(compressed_ids_size);
     }
 
@@ -43,7 +43,7 @@ static void print_part_sizes_and_exit(void)
     {
         unsigned long long names_size = read_number(IN);
         unsigned long long compressed_names_size = read_number(IN);
-        printf("Names: %llu / %llu (%.3f%%)\n", compressed_names_size, names_size, (double)compressed_names_size / names_size * 100);
+        printf("Names: %llu / %llu (%.3f%%)\n", compressed_names_size, names_size, (double)compressed_names_size / (double)names_size * 100);
         skip_ahead(compressed_names_size);
     }
 
@@ -51,7 +51,7 @@ static void print_part_sizes_and_exit(void)
     {
         unsigned long long lengths_size = read_number(IN);
         unsigned long long compressed_lengths_size = read_number(IN);
-        printf("Lengths: %llu / %llu (%.3f%%)\n", compressed_lengths_size, lengths_size, (double)compressed_lengths_size / lengths_size * 100);
+        printf("Lengths: %llu / %llu (%.3f%%)\n", compressed_lengths_size, lengths_size, (double)compressed_lengths_size / (double)lengths_size * 100);
         skip_ahead(compressed_lengths_size);
     }
 
@@ -59,7 +59,7 @@ static void print_part_sizes_and_exit(void)
     {
         unsigned long long mask_size_1 = read_number(IN);
         unsigned long long compressed_mask_size = read_number(IN);
-        printf("Mask: %llu / %llu (%.3f%%)\n", compressed_mask_size, mask_size_1, (double)compressed_mask_size / mask_size_1 * 100);
+        printf("Mask: %llu / %llu (%.3f%%)\n", compressed_mask_size, mask_size_1, (double)compressed_mask_size / (double)mask_size_1 * 100);
         skip_ahead(compressed_mask_size);
     }
 
@@ -67,7 +67,7 @@ static void print_part_sizes_and_exit(void)
     {
         unsigned long long data_size = read_number(IN);
         compressed_seq_size = read_number(IN);
-        printf("Data: %llu / %llu (%.3f%%)\n", compressed_seq_size, data_size, (double)compressed_seq_size / data_size * 100);
+        printf("Data: %llu / %llu (%.3f%%)\n", compressed_seq_size, data_size, (double)compressed_seq_size / (double)data_size * 100);
         skip_ahead(compressed_seq_size);
     }
 
@@ -75,7 +75,7 @@ static void print_part_sizes_and_exit(void)
     {
         unsigned long long quality_size = read_number(IN);
         compressed_quality_size = read_number(IN);
-        printf("Quality: %llu / %llu (%.3f%%)\n", compressed_quality_size, quality_size, (double)compressed_quality_size / quality_size * 100);
+        printf("Quality: %llu / %llu (%.3f%%)\n", compressed_quality_size, quality_size, (double)compressed_quality_size / (double)quality_size * 100);
         skip_ahead(compressed_quality_size);
     }
 
@@ -339,7 +339,7 @@ static void print_4bit_and_exit(void)
 
 
 
-static inline void mask_dna_buffer(char *buffer, unsigned size)
+static inline void mask_dna_buffer(unsigned char *buffer, unsigned size)
 {
     unsigned pos = 0;
     while (pos < size)
@@ -352,7 +352,7 @@ static inline void mask_dna_buffer(char *buffer, unsigned size)
         {
             for (unsigned i = pos; i < end_pos; i++)
             {
-                buffer[i] += 32;
+                buffer[i] = (unsigned char)(buffer[i] + 32);
             }
         }
 
@@ -375,7 +375,7 @@ static inline void print_dna_buffer(int masking)
     unsigned long long n_bp_to_print = dna_buffer_pos;
     if (n_bp_to_print > total_seq_n_bp_remaining) { n_bp_to_print = total_seq_n_bp_remaining; }
 
-    if (masking) { mask_dna_buffer(dna_buffer, n_bp_to_print); }
+    if (masking) { mask_dna_buffer(dna_buffer, (unsigned)n_bp_to_print); }
 
     fwrite(dna_buffer, 1, n_bp_to_print, stdout);
 
@@ -385,7 +385,7 @@ static inline void print_dna_buffer(int masking)
 
 
 
-static inline void print_dna_split_into_lines(char *buffer, size_t size)
+static inline void print_dna_split_into_lines(unsigned char *buffer, size_t size)
 {
     //fwrite(buffer, 1, size, stdout);
 
@@ -429,8 +429,8 @@ static inline void print_dna_split_into_lines(char *buffer, size_t size)
     cur_line_n_bp_remaining = max_line_length - remaining_bp;*/
 
 
-    char *print_pos = (char *)out_print_buffer;
-    char *pos = buffer;
+    unsigned char *print_pos = out_print_buffer;
+    unsigned char *pos = buffer;
     size_t remaining_bp = size;
     while (remaining_bp > cur_line_n_bp_remaining)
     {
@@ -447,7 +447,7 @@ static inline void print_dna_split_into_lines(char *buffer, size_t size)
     print_pos += remaining_bp;
     cur_line_n_bp_remaining -= remaining_bp;
 
-    fwrite(out_print_buffer, 1, print_pos - (char *)out_print_buffer, stdout);
+    fwrite(out_print_buffer, 1, (size_t)(print_pos - out_print_buffer), stdout);
 }
 
 
@@ -460,9 +460,9 @@ static inline void print_dna_buffer_as_fasta(int masking)
     unsigned long long n_bp_to_print = dna_buffer_pos;
     if (n_bp_to_print > total_seq_n_bp_remaining) { n_bp_to_print = total_seq_n_bp_remaining; }
 
-    if (masking) { mask_dna_buffer(dna_buffer, n_bp_to_print); }
+    if (masking) { mask_dna_buffer(dna_buffer, (unsigned)n_bp_to_print); }
 
-    char *pos = dna_buffer;
+    unsigned char *pos = dna_buffer;
 
     while (n_bp_to_print >= cur_seq_len_n_bp_remaining)
     {

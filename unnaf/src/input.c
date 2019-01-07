@@ -23,7 +23,7 @@ static void skip_ahead(unsigned long long bytes)
     }
     else
     {
-        int error = fseek(IN, bytes, SEEK_CUR);
+        int error = fseek(IN, (long)bytes, SEEK_CUR);
         if (error) { incomplete(); }
     }
 }
@@ -337,8 +337,8 @@ static void initialize_quality_file_decompression(void)
     if (zstd_file_in_buffer.pos != zstd_file_in_buffer.size) { fprintf(stderr, "Can't decompress first block\n"); exit(1); }
     if (out.pos != 0) { fprintf(stderr,"Can't decompress first block\n"); exit(1); }
 
-    quality_buffer_filling_pos = out.pos;
-    quality_buffer_remaining = out.pos;
+    quality_buffer_filling_pos = (unsigned)out.pos;
+    quality_buffer_remaining = (unsigned)out.pos;
 }
 
 
@@ -404,7 +404,7 @@ static void refill_quality_buffer_from_file(void)
         file_bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &zstd_file_in_buffer);
         if (ZSTD_isError(file_bytes_to_read)) { fprintf(stderr, "Can't decompress quality: %s\n", ZSTD_getErrorName(file_bytes_to_read)); exit(1); }
 
-        quality_buffer_filling_pos += out.pos;
+        quality_buffer_filling_pos += (unsigned)out.pos;
     }
 
     quality_buffer_remaining = quality_buffer_filling_pos;

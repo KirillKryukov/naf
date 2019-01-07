@@ -89,7 +89,7 @@ ZSTD_inBuffer zstd_mem_in_buffer;
 unsigned long long cur_seq_index = 0;
 unsigned long long cur_seq_pos = 0;
 
-char *dna_buffer = 0;
+unsigned char *dna_buffer = 0;
 size_t dna_buffer_size = 0;
 size_t dna_buffer_flush_size = 0;
 unsigned dna_buffer_pos = 0;
@@ -122,7 +122,7 @@ unsigned long long cur_line_n_bp_remaining = 0;
 #include "output-fastq.c"
 
 
-static void done()
+static void done(void)
 {
     if (IN && IN != stdin) { fclose(IN); IN = 0; }
 
@@ -155,7 +155,7 @@ static void done()
 
 
 
-static void init()
+static void init(void)
 {
     atexit(done);
     init_tables();
@@ -163,7 +163,7 @@ static void init()
 
 
 
-static void usage()
+static void usage(void)
 {
     fprintf(stderr,
         "Usage: unnaf [OUTPUT-TYPE] [file.naf]\n"
@@ -281,7 +281,7 @@ int main(int argc, char **argv)
 
     dna_buffer_flush_size = ZSTD_DStreamOutSize() * 2;
     dna_buffer_size = dna_buffer_flush_size * 2 + 10;
-    dna_buffer = (char *)malloc(dna_buffer_size);
+    dna_buffer = (unsigned char *)malloc(dna_buffer_size);
     if (!dna_buffer) { fprintf(stderr, "Can't allocate %zu bytes for dna buffer\n", dna_buffer_size); exit(1); }
 
     out_print_buffer_size = dna_buffer_size * 2;
