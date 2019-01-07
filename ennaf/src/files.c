@@ -61,12 +61,12 @@ static void close_input_file(void)
 
 static void close_temp_files(void)
 {
-    if (IDS  != NULL) { fclose(IDS ); IDS  = NULL; }
-    if (COMM != NULL) { fclose(COMM); COMM = NULL; }
-    if (LEN  != NULL) { fclose(LEN ); LEN  = NULL; }
-    if (MASK != NULL) { fclose(MASK); MASK = NULL; }
-    if (SEQ  != NULL) { fclose(SEQ ); SEQ  = NULL; }
-    if (QUAL != NULL) { fclose(QUAL); QUAL = NULL; }
+    if (IDS  != NULL) { fclose_or_die(IDS ); IDS  = NULL; }
+    if (COMM != NULL) { fclose_or_die(COMM); COMM = NULL; }
+    if (LEN  != NULL) { fclose_or_die(LEN ); LEN  = NULL; }
+    if (MASK != NULL) { fclose_or_die(MASK); MASK = NULL; }
+    if (SEQ  != NULL) { fclose_or_die(SEQ ); SEQ  = NULL; }
+    if (QUAL != NULL) { fclose_or_die(QUAL); QUAL = NULL; }
 }
 
 

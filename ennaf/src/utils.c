@@ -121,6 +121,15 @@ static void fwrite_or_die(const void *ptr, size_t element_size, size_t n_element
 #define fwrite dont_use_fwrite
 
 
+static void fclose_or_die(FILE *F)
+{
+    assert(F != NULL);
+
+    int error = fclose(F);
+    if (error != 0) { fprintf(stderr, "Error: Can't write to file. Disk full?\n"); exit(1); }
+}
+
+
 static FILE* create_temp_file(char *path, char *purpose)
 {
     assert(path != NULL);

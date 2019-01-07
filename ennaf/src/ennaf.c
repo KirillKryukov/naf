@@ -11,15 +11,12 @@
   To do:
   Features:
     * Add support for name separators other than space.
-    * Improve parser robustness.
-  Efficiency:
-    * Accumulate ids, names, etc., before compressing.
   Quality:
     * Add error-checking wrappers for malloc/calloc/realloc.
 */
 
 #define VERSION "1.0.0"
-#define DATE "2019-01-06"
+#define DATE "2019-01-07"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -131,15 +128,14 @@ static size_t in_end = 0;
 
 static unsigned long long n_sequences = 0ull;
 
-static unsigned char sequence_header_start_char = '>';
-
 
 #include "files.c"
 #include "encoders.c"
 #include "process.c"
 
 
-#define FREE(p)  do { if (p != NULL) { free(p); p = NULL; } } while (0)
+#define FREE(p) \
+do { if ((p) != NULL) { free(p); (p) = NULL; } } while (0)
 
 
 static void done(void)
@@ -156,7 +152,7 @@ static void done(void)
     FREE(length_units);
     FREE(mask_units);
 
-    if (OUT != NULL && OUT != stdout) { fclose(OUT); OUT = NULL; }
+    if (OUT != NULL && OUT != stdout) { fclose_or_die(OUT); OUT = NULL; }
     close_input_file();
     close_temp_files();
 
@@ -249,7 +245,13 @@ static void set_line_length(char *str)
 
     char *end;
     long long a = strtoll(str, &end, 10);
+    if (*end != '\0') { fprintf(stderr, "Can't parse the value of --line-length parameter\n"); exit(1); }
     if (a < 0ll) { fprintf(stderr, "Error: Negative line length specified\n"); exit(1); }
+
+    char test_str[21];
+    int nc = snprintf(test_str, 21, "%lld", a);
+    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { fprintf(stderr, "Can't parse the value the --line-length parameter\n"); exit(1); }
+
     requested_line_length = (unsigned long long) a;
     line_length_is_specified = true;
 }
@@ -269,7 +271,7 @@ static void set_input_format(char *new_format)
 {
     assert(new_format != NULL);
 
-    if (in_format != in_format_unknown) { fprintf(stderr, "Error: double --in-format parameter\n"); exit(1); }
+    if (in_format != in_format_unknown) { fprintf(stderr, "Error: Input format specified more than once\n"); exit(1); }
     in_format = read_input_format(new_format);
     if (in_format == in_format_unknown) { fprintf(stderr, "Unknown input format specified: \"%s\"\n", new_format); exit(1); }
 }
@@ -277,14 +279,26 @@ static void set_input_format(char *new_format)
 
 static void detect_input_format(void)
 {
-    if (in_format == in_format_unknown && in_file_path != NULL)
+    if (in_format != in_format_unknown) { return; }
+    if (in_file_path != NULL)
     {
         char *ext = in_file_path + strlen(in_file_path);
         while (ext > in_file_path && *(ext-1) != '/' && *(ext-1) != '\\' && *(ext-1) != '.') { ext--; }
         in_format = read_input_format(ext);
+
+        if (in_format == in_format_unknown)
+        {
+            FILE *F = fopen(in_file_path, "rb");
+            if (F)
+            {
+                int c = fgetc(F);
+                fclose(F);
+                if (c == '>') { in_format = in_format_fasta; }
+                else if (c == '@') { in_format = in_format_fastq; }
+            }
+        }
     }
-    if (in_format == in_format_unknown) { fprintf(stderr, "Input format is not specified, and unknown file extension\n"); exit(1); }
-    if (in_format == in_format_fastq) { store_qual = 1; sequence_header_start_char = '@'; }
+    if (in_format == in_format_unknown) { fprintf(stderr, "Unknown input format\n"); exit(1); }
 }
 
 
@@ -319,7 +333,8 @@ static void show_help(void)
         "  --name NAME       - Use NAME as prefix for temporary files\n"
         "  --title TITLE     - Store TITLE as dataset title\n"
         "  --level N         - Use compression level N (from 1 to 22, default: 22)\n"
-        "  --in-format F     - Input is in format F (either fasta or fastq)\n"
+        "  --fasta           - Input is in FASTA format\n"
+        "  --fastq           - Input is in FASTQ format\n"
         "  --line-length N   - Override line length to N\n"
         "  --verbose         - Verbose mode\n"
         "  --keep-temp-files - Keep temporary files\n"
@@ -342,7 +357,7 @@ static void parse_command_line(int argc, char **argv)
             if (!strcmp(argv[i], "--name")) { i++; set_dataset_name(argv[i]); continue; }
             if (!strcmp(argv[i], "--title")) { i++; set_dataset_title(argv[i]); continue; }
             if (!strcmp(argv[i], "--level")) { i++; set_compression_level(argv[i]); continue; }
-            if (!strcmp(argv[i], "--in-format")) { i++; set_input_format(argv[i]); continue; }
+            if (!strcmp(argv[i], "--in-format")) { i++; set_input_format(argv[i]); continue; }  // Undocumented
             if (!strcmp(argv[i], "--line-length")) { i++; set_line_length(argv[i]); continue; }
         }
         if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
@@ -350,20 +365,22 @@ static void parse_command_line(int argc, char **argv)
         if (!strcmp(argv[i], "--verbose")) { verbose = true; continue; }
         if (!strcmp(argv[i], "--keep-temp-files")) { keep_temp_files = true; continue; }
         if (!strcmp(argv[i], "--no-mask")) { store_mask = false; continue; }
+        if (!strcmp(argv[i], "--fasta")) { set_input_format("fasta"); continue; }
+        if (!strcmp(argv[i], "--fastq")) { set_input_format("fastq"); continue; }
         fprintf(stderr, "Unknown or incomplete parameter \"%s\"\n", argv[i]);
         exit(1);
-    }
-
-    if (verbose)
-    {
-        if (dataset_name != NULL) { fprintf(stderr, "Dataset name is specified: \"%s\"\n", dataset_name); }
-        else { fprintf(stderr, "Dataset name is not specified\n"); }
     }
 }
 
 
 int main(int argc, char **argv)
 {
+    if (argc <= 1)
+    {
+        fprintf(stderr, "No input specified, use \"ennaf --help\" for help\n");
+        exit(0);
+    }
+
     atexit(done);
     init_utils();
     init_encoders();
@@ -371,17 +388,10 @@ int main(int argc, char **argv)
     parse_command_line(argc, argv);
     detect_temp_directory();
     detect_input_format();
+    store_qual = (in_format == in_format_fastq);
 
     open_input_file();
     open_output_file();
-    if (verbose)
-    {
-        fprintf(stderr, "Compressing %s (fd:%d) to %s (fd:%d)\n",
-                in_file_path ? in_file_path : "stdin", in_fd,
-                out_file_path ? out_file_path : "stdout", out_fd);
-        fprintf(stderr, "out_buffer_size: %zd bytes\n", out_buffer_size);
-    }
-
     make_temp_files();
 
     naf_header_start[4] = (unsigned char)( (extended_format << 7) |
@@ -395,7 +405,6 @@ int main(int argc, char **argv)
 
     fwrite_or_die(naf_header_start, 1, 6, OUT);
 
-
     if (store_ids ) { ids_cstream  = create_zstd_cstream(compression_level); }
     if (store_comm) { comm_cstream = create_zstd_cstream(compression_level); }
     if (store_len ) { len_cstream  = create_zstd_cstream(compression_level); }
@@ -403,11 +412,7 @@ int main(int argc, char **argv)
     if (store_seq ) { seq_cstream  = create_zstd_cstream(compression_level); }
     if (store_qual) { qual_cstream = create_zstd_cstream(compression_level); }
 
-
-
     process();
-
-
 
     if (mask_len > 0)
     {
