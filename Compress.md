@@ -2,7 +2,7 @@
 
 ## Synopsis
 
-`ennaf --in file.fa --out file.naf` - Compress a FASTA file. Input format is detected from '.fasta' file extension.
+`ennaf --in file.fa --out file.naf` - Compress a FASTA file. Input format is detected from ".fa" file extension.
 
 `ennaf --fasta <file.fa >file.naf` - Compress a using IO redirection (needs specifying input format).
 
