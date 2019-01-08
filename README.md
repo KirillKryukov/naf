@@ -36,25 +36,13 @@ and should be also possible with [WSL](https://docs.microsoft.com/en-us/windows/
 
 `ennaf --fasta <file.fasta >file.naf`
 
-Compression process stores temporary data on disk.
-Therefore please check the following before compressing large files:
-
-1. Temporary directory is specified in TMPDIR or TMP environment variable, or in --temp-dir command line option of your ennaf command.
- Note that ennaf doesn't have a default setting for temporary directory, such as "/tmp", it will only use directory specified in the environment or command line.
-1. Temporary directory is on your fastest SSD drive.
-1. Temporary directory has sufficient space to hold the compressed data.
- About 1/4 of the uncompressed data size should be normally fine, but safer to have 1/2 or more.
- Note that storage devices and filesystems can slow down when nearly full, so having extra free temporary space is generally a good idea.
-
-Compression strength can be controlled with "--level N", where N is from 1 to 22.
-This corresponds to zstd compression levels. 1 is the fastest with moderate compression. 22 is slow but gives the best compression.
-1 is the default setting.
+See `ennaf --help` and [Compression Manual](Compress.md) for detailed usage.
 
 ## Decompressing
 
 `unnaf file.naf >file.fasta`
 
-See `unnaf --help` for more options.
+See `unnaf --help` for options.
 
 ## Reference
 
