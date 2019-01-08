@@ -52,7 +52,7 @@ This corresponds to zstd compression levels. 1 is the fastest with moderate comp
 
 ## Decompressing
 
-`unnaf --masked-fasta <file.naf >file.fasta`
+`unnaf file.naf >file.fasta`
 
 See `unnaf --help` for more options.
 
