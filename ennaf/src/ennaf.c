@@ -31,6 +31,8 @@
 #include <time.h>
 #include <unistd.h>
 #include <poll.h>
+
+#define ZSTD_STATIC_LINKING_ONLY
 #include <zstd.h>
 
 #include "utils.c"
@@ -234,8 +236,13 @@ static void set_compression_level(char *str)
 
     char *end;
     long a = strtol(str, &end, 10);
+    long min_level = ZSTD_minCLevel();
     long max_level = ZSTD_maxCLevel();
-    if (a < 1l || a > max_level || *end != '\0') { fprintf(stderr, "Invalid value of --level, should be from 1 to %ld\n", max_level); exit(1); }
+    if (a < min_level || a > max_level || *end != '\0')
+    {
+        fprintf(stderr, "Invalid value of --level, should be from %ld to %ld\n", min_level, max_level);
+        exit(1);
+    }
     compression_level = (int)a;
 }
 
@@ -329,6 +336,7 @@ static void show_version(void)
 
 static void show_help(void)
 {
+    int min_level = ZSTD_minCLevel();
     int max_level = ZSTD_maxCLevel();
 
     fprintf(stderr,
@@ -339,7 +347,7 @@ static void show_help(void)
         "  --temp-dir DIR    - Use DIR as temporary directory\n"
         "  --name NAME       - Use NAME as prefix for temporary files\n"
         "  --title TITLE     - Store TITLE as dataset title\n"
-        "  --level N         - Use compression level N (from 1 to %d, default: 1)\n"
+        "  --level N         - Use compression level N (from %d to %d, default: 1)\n"
         "  --fasta           - Input is in FASTA format\n"
         "  --fastq           - Input is in FASTQ format\n"
         "  --line-length N   - Override line length to N\n"
@@ -348,7 +356,7 @@ static void show_help(void)
         "  --no-mask         - Don't store mask\n"
         "  --help            - Show help\n"
         "  --version         - Show version\n",
-        max_level);
+        min_level, max_level);
 }
 
 
