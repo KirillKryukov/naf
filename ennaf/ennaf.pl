@@ -1,5 +1,10 @@
 #!/usr/bin/env perl
 #
+# Prototype NAF compressor.
+# Should not be used anymore since it's now superseded by a C version.
+# Left for reference only.
+#
+#
 # ennaf - Converter from FASTA/FASTQ into NAF format
 #
 # Version 0.1.2 (October 9, 2018)
