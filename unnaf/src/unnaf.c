@@ -4,6 +4,8 @@
  * See README.md and LICENSE files of this repository
  */
 
+#define NDEBUG
+
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -22,8 +24,8 @@ typedef enum { UNDECIDED, FORMAT_NAME, PART_LIST, PART_SIZES, NUMBER_OF_SEQUENCE
 
 static OUTPUT_TYPE out_type = UNDECIDED;
 
-static char *in_file_name = 0;
-static FILE *IN = 0;
+static char *in_file_path = NULL;
+static FILE *IN = NULL;
 
 unsigned char header[6];
 int has_title = 0;
@@ -38,25 +40,25 @@ unsigned long long N;
 
 
 
-char *ids_buffer = 0;
-unsigned char *compressed_ids_buffer = 0;
-char **ids = 0;
+char *ids_buffer = NULL;
+unsigned char *compressed_ids_buffer = NULL;
+char **ids = NULL;
 
-char *names_buffer = 0;
-unsigned char *compressed_names_buffer = 0;
-char **names = 0;
+char *names_buffer = NULL;
+unsigned char *compressed_names_buffer = NULL;
+char **names = NULL;
 
-unsigned int *lengths_buffer = 0;
-unsigned char *compressed_lengths_buffer = 0;
+unsigned int *lengths_buffer = NULL;
+unsigned char *compressed_lengths_buffer = NULL;
 unsigned long long n_lengths = 0;
 
 unsigned long long mask_size = 0;
-unsigned char *mask_buffer = 0;
-unsigned char *compressed_mask_buffer = 0;
+unsigned char *mask_buffer = NULL;
+unsigned char *compressed_mask_buffer = NULL;
 
 unsigned long long total_seq_length = 0;
 unsigned long long compressed_seq_size = 0;
-unsigned char* compressed_seq_buffer = 0;
+unsigned char *compressed_seq_buffer = NULL;
 unsigned long long compressed_seq_pos = 0;
 
 unsigned long long total_quality_length = 0;
@@ -65,22 +67,22 @@ unsigned long long compressed_quality_size = 0;
 
 
 size_t in_buffer_size = 0;
-char *in_buffer = 0;
+char *in_buffer = NULL;
 
 size_t out_buffer_size = 0;
-char *out_buffer = 0;
+char *out_buffer = NULL;
 
 size_t mem_out_buffer_size = 0;
-unsigned char *mem_out_buffer = 0;
+unsigned char *mem_out_buffer = NULL;
 
 size_t out_print_buffer_size = 0;
-unsigned char *out_print_buffer = 0;
+unsigned char *out_print_buffer = NULL;
 
-ZSTD_DStream *input_decompression_stream = 0;
+ZSTD_DStream *input_decompression_stream = NULL;
 size_t file_bytes_to_read;
 ZSTD_inBuffer zstd_file_in_buffer;
 
-ZSTD_DStream *memory_decompression_stream = 0;
+ZSTD_DStream *memory_decompression_stream = NULL;
 size_t memory_bytes_to_read;
 ZSTD_inBuffer zstd_mem_in_buffer;
 
@@ -89,7 +91,7 @@ ZSTD_inBuffer zstd_mem_in_buffer;
 unsigned long long cur_seq_index = 0;
 unsigned long long cur_seq_pos = 0;
 
-unsigned char *dna_buffer = 0;
+unsigned char *dna_buffer = NULL;
 size_t dna_buffer_size = 0;
 size_t dna_buffer_flush_size = 0;
 unsigned dna_buffer_pos = 0;
@@ -97,7 +99,7 @@ unsigned dna_buffer_filling_pos = 0;
 unsigned dna_buffer_printing_pos = 0;
 unsigned dna_buffer_remaining = 0;
 
-char *quality_buffer = 0;
+char *quality_buffer = NULL;
 size_t quality_buffer_size = 0;
 size_t quality_buffer_flush_size = 0;
 unsigned quality_buffer_filling_pos = 0;
@@ -122,45 +124,40 @@ unsigned long long cur_line_n_bp_remaining = 0;
 #include "output-fastq.c"
 
 
+#define FREE(p) \
+do { if ((p) != NULL) { free(p); (p) = NULL; } } while (0)
+
+
 static void done(void)
 {
-    if (IN && IN != stdin) { fclose(IN); IN = 0; }
+    if (IN != NULL && IN != stdin) { fclose(IN); IN = NULL; }
 
-    if (ids) { free(ids); ids = 0; }
-    if (ids_buffer) { free(ids_buffer); ids_buffer = 0; }
-    if (compressed_ids_buffer) { free(compressed_ids_buffer); compressed_ids_buffer = 0; }
+    FREE(ids);
+    FREE(ids_buffer);
+    FREE(compressed_ids_buffer);
 
-    if (names) { free(names); names = 0; }
-    if (names_buffer) { free(names_buffer); names_buffer = 0; }
-    if (compressed_names_buffer) { free(compressed_names_buffer); compressed_names_buffer = 0; }
+    FREE(names);
+    FREE(names_buffer);
+    FREE(compressed_names_buffer);
 
-    if (lengths_buffer) { free(lengths_buffer); lengths_buffer = 0; }
-    if (compressed_lengths_buffer) { free(compressed_lengths_buffer); compressed_lengths_buffer = 0; }
+    FREE(lengths_buffer);
+    FREE(compressed_lengths_buffer);
 
-    if (mask_buffer) { free(mask_buffer); mask_buffer = 0; }
-    if (compressed_mask_buffer) { free(compressed_mask_buffer); compressed_mask_buffer = 0; }
+    FREE(mask_buffer);
+    FREE(compressed_mask_buffer);
 
-    if (compressed_seq_buffer) { free(compressed_seq_buffer); compressed_seq_buffer = 0; }
+    FREE(compressed_seq_buffer);
 
-    if (in_buffer) { free(in_buffer); in_buffer = 0; } 
-    if (out_buffer) { free(out_buffer); out_buffer = 0; } 
-    if (mem_out_buffer) { free(mem_out_buffer); mem_out_buffer = 0; }
-    if (out_print_buffer) { free(out_print_buffer); out_print_buffer = 0; }
-    if (input_decompression_stream) { ZSTD_freeDStream(input_decompression_stream); input_decompression_stream = 0; }
-    if (memory_decompression_stream) { ZSTD_freeDStream(memory_decompression_stream); memory_decompression_stream = 0; }
+    FREE(in_buffer);
+    FREE(out_buffer);
+    FREE(mem_out_buffer);
+    FREE(out_print_buffer);
+    FREE(input_decompression_stream);
+    FREE(memory_decompression_stream);
 
-    if (dna_buffer) { free(dna_buffer); dna_buffer = 0; }
-    if (quality_buffer) { free(quality_buffer); quality_buffer = 0; }
+    FREE(dna_buffer);
+    FREE(quality_buffer);
 }
-
-
-
-static void init(void)
-{
-    atexit(done);
-    init_tables();
-}
-
 
 
 static void usage(void)
@@ -188,25 +185,27 @@ static void usage(void)
 }
 
 
-
 static void set_out_type(OUTPUT_TYPE new_type)
 {
-    if (out_type != UNDECIDED) { fprintf(stderr, "Can specify only one output type\n"); exit(1); }
+    if (out_type != UNDECIDED) { fprintf(stderr, "Error: Only one output type should be specified\n"); exit(1); }
     out_type = new_type;
 }
 
 
-static void set_input_file_name(char *new_name)
+static void set_input_file_path(char *new_path)
 {
-    if (in_file_name != 0) { fprintf(stderr, "Can process only one file at a time\n"); exit(1); }
-    in_file_name = new_name;
+    assert(new_path != NULL);
+
+    if (in_file_path != NULL) { fprintf(stderr, "Error: Can process only one file at a time\n"); exit(1); }
+    if (*new_path == '\0') { fprintf(stderr, "Error: empty input path specified\n"); exit(1); }
+    in_file_path = new_path;
 }
 
 
 int main(int argc, char **argv)
 {
-    check_platform();
-    init();
+    atexit(done);
+    init_tables();
 
     for (int i = 1; i < argc; i++)
     {
@@ -232,18 +231,18 @@ int main(int argc, char **argv)
             else if (!strcmp(argv[i], "--fastq"            )) { set_out_type(FASTQ); }
             else { fprintf(stderr, "Unknown option \"%s\"\n", argv[i]); exit(1); }
         }
-        else { set_input_file_name(argv[i]); }
+        else { set_input_file_path(argv[i]); }
     }
 
-    if (in_file_name != 0)
+    if (in_file_path != NULL)
     {
-        IN = fopen(in_file_name, "rb");
-        if (!IN) { fprintf(stderr, "Can't open input file\n"); exit(1); }
+        IN = fopen(in_file_path, "rb");
+        if (IN == NULL) { fprintf(stderr, "Can't open input file\n"); exit(1); }
     }
     else
     {
-        if ( !freopen(0, "rb", stdin)
-#if _WIN32
+        if ( !freopen(NULL, "rb", stdin)
+#if _WIN32                	
              && _setmode(_fileno(stdin), _O_BINARY) < 0
 #endif
            ) { fprintf(stderr, "Can't read input in binary mode\n"); exit(1); }

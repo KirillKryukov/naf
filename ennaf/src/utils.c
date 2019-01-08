@@ -9,7 +9,6 @@ static_assert(sizeof(long) == 8, "Unsupported platform: long is not 8 bytes");
 static_assert(sizeof(void*) == 8, "Unsupported platform: void* is not 8 bytes");
 static_assert(sizeof(size_t) == 8, "Unsupported platform: size_t is not 8 bytes");
 static_assert(sizeof(ptrdiff_t) == 8, "Unsupported platform: ptrdiff_t is not 8 bytes");
-static_assert(sizeof(off_t) == 8, "Unsupported platform: off_t is not 8 bytes");
 static_assert(sizeof(long long) == 8, "Unsupported platform: long long is not 8 bytes");
 
 
