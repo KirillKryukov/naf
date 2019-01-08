@@ -4,15 +4,19 @@
  * See README.md and LICENSE files of this repository
  */
 
+#define VERSION "1.0.0"
+#define DATE "2019-01-08"
+#define COPYRIGHT_YEARS "2018-2019"
+
 #define NDEBUG
 
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <unistd.h>
 #include <zstd.h>
 
 #include "utils.c"
@@ -37,7 +41,6 @@ int has_data = 0;
 int has_quality = 0;
 unsigned long long max_line_length;
 unsigned long long N;
-
 
 
 char *ids_buffer = NULL;
@@ -65,7 +68,6 @@ unsigned long long total_quality_length = 0;
 unsigned long long compressed_quality_size = 0;
 
 
-
 size_t in_buffer_size = 0;
 char *in_buffer = NULL;
 
@@ -85,7 +87,6 @@ ZSTD_inBuffer zstd_file_in_buffer;
 ZSTD_DStream *memory_decompression_stream = NULL;
 size_t memory_bytes_to_read;
 ZSTD_inBuffer zstd_mem_in_buffer;
-
 
 
 unsigned long long cur_seq_index = 0;
@@ -160,7 +161,13 @@ static void done(void)
 }
 
 
-static void usage(void)
+static void show_version(void)
+{
+    fprintf(stderr, "unnaf - NAF decompressor, version " VERSION ", " DATE "\nCopyright (c) " COPYRIGHT_YEARS " Kirill Kryukov\n");
+}
+
+
+static void show_help(void)
 {
     fprintf(stderr,
         "Usage: unnaf [OUTPUT-TYPE] [file.naf]\n"
@@ -207,11 +214,13 @@ int main(int argc, char **argv)
     atexit(done);
     init_tables();
 
+    bool print_version = false;
+
     for (int i = 1; i < argc; i++)
     {
         if (!strncmp(argv[i], "--", 2))
         {
-            if (!strcmp(argv[i], "--help")) { usage(); exit(0); }
+            if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
             else if (!strcmp(argv[i], "--format"           )) { set_out_type(FORMAT_NAME); }
             else if (!strcmp(argv[i], "--part-list"        )) { set_out_type(PART_LIST); }
             else if (!strcmp(argv[i], "--sizes"            )) { set_out_type(PART_SIZES); }
@@ -229,9 +238,16 @@ int main(int argc, char **argv)
             else if (!strcmp(argv[i], "--fasta"            )) { set_out_type(FASTA); }
             else if (!strcmp(argv[i], "--masked-fasta"     )) { set_out_type(MASKED_FASTA); }
             else if (!strcmp(argv[i], "--fastq"            )) { set_out_type(FASTQ); }
+            else if (!strcmp(argv[i], "--version")) { print_version = true; }
             else { fprintf(stderr, "Unknown option \"%s\"\n", argv[i]); exit(1); }
         }
         else { set_input_file_path(argv[i]); }
+    }
+
+    if (print_version)
+    {
+        show_version();
+        exit(0);
     }
 
     if (in_file_path != NULL)
@@ -241,6 +257,8 @@ int main(int argc, char **argv)
     }
     else
     {
+        if (isatty(fileno(stdin))) { fprintf(stderr, "Error: Input file not specified and no input pipe\n"); exit(1); }
+
         if ( !freopen(NULL, "rb", stdin)
 #if _WIN32                	
              && _setmode(_fileno(stdin), _O_BINARY) < 0
@@ -253,8 +271,7 @@ int main(int argc, char **argv)
 
     if (out_type == UNDECIDED)
     {
-        if (has_quality) { out_type = FASTQ; }
-        else { out_type = MASKED_FASTA; }
+        out_type = has_quality ? FASTQ : MASKED_FASTA;
     }
 
     if (out_type == FORMAT_NAME) { printf("NAF v.%d\n", header[3]); exit(0); }
