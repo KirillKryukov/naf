@@ -19,10 +19,10 @@ typedef struct
 string_t;
 
 
-string_t name = { 0, 0, 0 };
-string_t comment = { 0, 0, 0 };
-string_t seq = { 0, 0, 0 };
-string_t qual = { 0, 0, 0 };
+string_t name    = { 0, 0, NULL };
+string_t comment = { 0, 0, NULL };
+string_t seq     = { 0, 0, NULL };
+string_t qual    = { 0, 0, NULL };
 
 
 __attribute__((always_inline))

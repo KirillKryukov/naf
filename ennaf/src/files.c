@@ -33,6 +33,8 @@ static void open_output_file(void)
     }
     else
     {
+        if (isatty(fileno(stdout))) { fprintf(stderr, "Won't write binary data to terminal\n"); exit(1); }
+
         if ( !freopen(NULL, "wb", stdout)
 #if _WIN32
              && _setmode(_fileno(stdout), _O_BINARY) < 0
