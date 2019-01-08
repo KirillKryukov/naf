@@ -470,8 +470,8 @@ static inline void print_dna_buffer_as_fasta(int masking)
         {
             //printf("\n::     seq %llu, length %llu: printing %llu bp (remains %llu bp this call, %llu bp total)\n", cur_seq_index, cur_seq_len_index, cur_seq_len_n_bp_remaining, n_bp_to_print, total_seq_n_bp_remaining);
 
-            //fwrite(pos, 1, cur_seq_len_n_bp_remaining, stdout);
-            print_dna_split_into_lines(pos, cur_seq_len_n_bp_remaining);
+            if (max_line_length > 0) { print_dna_split_into_lines(pos, cur_seq_len_n_bp_remaining); }
+            else { fwrite(pos, 1, cur_seq_len_n_bp_remaining, stdout); }
 
             pos += cur_seq_len_n_bp_remaining;
             n_bp_to_print -= cur_seq_len_n_bp_remaining;
@@ -497,8 +497,8 @@ static inline void print_dna_buffer_as_fasta(int masking)
 
     if (n_bp_to_print > 0)
     {
-        //fwrite(pos, 1, n_bp_to_print, stdout);
-        print_dna_split_into_lines(pos, n_bp_to_print);
+        if (max_line_length > 0) { print_dna_split_into_lines(pos, n_bp_to_print); }
+        else { fwrite(pos, 1, n_bp_to_print, stdout); }
 
         cur_seq_len_n_bp_remaining -= n_bp_to_print;
         total_seq_n_bp_remaining -= n_bp_to_print;
