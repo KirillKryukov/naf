@@ -27,7 +27,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <time.h>
 #include <unistd.h>
 #include <poll.h>
