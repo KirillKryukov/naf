@@ -5,13 +5,13 @@
 `unnaf file.naf >file.fa` - Decompress into default format
 (FASTQ if input NAF file contains qualities, FASTA otherwise).
 
-`unnaf --number file.naf` - Show number of sequences stored in 'file.naf'.
+`unnaf --number file.naf` - Show number of sequences stored in "file.naf".
 
 `unnaf --ids file.naf >ids.txt` - Extract sequence IDs (accession numbers).
 
-`unnaf --fasta <file.naf` - Extract FASTA-formatted sequences (even if file.naf has qualities).
+`unnaf --fasta file.naf >file.fa` - Extract FASTA-formatted sequences (even if "file.naf" has qualities).
 
-`unnaf --fastq <file.naf` - Decompress into FASTQ format (even if file.naf has qualities).
+`unnaf --fastq file.naf >file.fq` - Decompress into FASTQ format (even if "file.naf" has qualities).
 
 ## Output stream
 
