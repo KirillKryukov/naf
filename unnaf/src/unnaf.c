@@ -287,6 +287,12 @@ int main(int argc, char **argv)
 
     read_header();
 
+    if (!has_quality && out_type == FASTQ)
+    { 
+        fprintf(stderr, "Error: FASTQ output requested, but input has no qualities\n");
+        exit(1);
+    }
+
     if (out_type == UNDECIDED)
     {
         out_type = has_quality ? FASTQ : MASKED_FASTA;
