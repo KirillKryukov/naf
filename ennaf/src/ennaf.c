@@ -16,7 +16,7 @@
 */
 
 #define VERSION "1.0.0"
-#define DATE "2019-01-08"
+#define DATE "2019-01-09"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -75,7 +75,9 @@ static FILE* SEQ  = NULL;
 static FILE* QUAL = NULL;
 
 enum { in_format_unknown, in_format_fasta, in_format_fastq };
-static int in_format = in_format_unknown;
+static int in_format_from_command_line = in_format_unknown;
+static int in_format_from_input = in_format_unknown;
+static int in_format_from_extension = in_format_unknown;
 
 static bool extended_format = false;
 static bool store_title = false;
@@ -257,14 +259,14 @@ static void set_line_length(char *str)
 
     char test_str[21];
     int nc = snprintf(test_str, 21, "%lld", a);
-    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { fprintf(stderr, "Can't parse the value the --line-length parameter\n"); exit(1); }
+    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { fprintf(stderr, "Can't parse the value of --line-length parameter\n"); exit(1); }
 
     requested_line_length = (unsigned long long) a;
     line_length_is_specified = true;
 }
 
 
-static int read_input_format(char *str)
+static int parse_input_format(char *str)
 {
     assert(str != NULL);
 
@@ -274,38 +276,26 @@ static int read_input_format(char *str)
 }
 
 
-static void set_input_format(char *new_format)
+static void set_input_format_from_command_line(char *new_format)
 {
     assert(new_format != NULL);
 
-    if (in_format != in_format_unknown) { fprintf(stderr, "Error: Input format specified more than once\n"); exit(1); }
-    in_format = read_input_format(new_format);
-    if (in_format == in_format_unknown) { fprintf(stderr, "Unknown input format specified: \"%s\"\n", new_format); exit(1); }
+    if (in_format_from_command_line != in_format_unknown) { fprintf(stderr, "Error: Input format specified more than once\n"); exit(1); }
+    in_format_from_command_line = parse_input_format(new_format);
+    if (in_format_from_command_line == in_format_unknown) { fprintf(stderr, "Unknown input format specified: \"%s\"\n", new_format); exit(1); }
 }
 
 
-static void detect_input_format(void)
+static void detect_input_format_from_input_file_extension(void)
 {
-    if (in_format != in_format_unknown) { return; }
+    assert(in_format_from_extension == in_format_unknown);
+
     if (in_file_path != NULL)
     {
         char *ext = in_file_path + strlen(in_file_path);
         while (ext > in_file_path && *(ext-1) != '/' && *(ext-1) != '\\' && *(ext-1) != '.') { ext--; }
-        in_format = read_input_format(ext);
-
-        if (in_format == in_format_unknown)
-        {
-            FILE *F = fopen(in_file_path, "rb");
-            if (F)
-            {
-                int c = fgetc(F);
-                fclose(F);
-                if (c == '>') { in_format = in_format_fasta; }
-                else if (c == '@') { in_format = in_format_fastq; }
-            }
-        }
+        in_format_from_extension = parse_input_format(ext);
     }
-    if (in_format == in_format_unknown) { fprintf(stderr, "Unknown input format\n"); exit(1); }
 }
 
 
@@ -373,7 +363,7 @@ static void parse_command_line(int argc, char **argv)
             if (!strcmp(argv[i], "--name")) { i++; set_dataset_name(argv[i]); continue; }
             if (!strcmp(argv[i], "--title")) { i++; set_dataset_title(argv[i]); continue; }
             if (!strcmp(argv[i], "--level")) { i++; set_compression_level(argv[i]); continue; }
-            if (!strcmp(argv[i], "--in-format")) { i++; set_input_format(argv[i]); continue; }  // Undocumented
+            if (!strcmp(argv[i], "--in-format")) { i++; set_input_format_from_command_line(argv[i]); continue; }  // Undocumented
             if (!strcmp(argv[i], "--line-length")) { i++; set_line_length(argv[i]); continue; }
         }
         if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
@@ -381,8 +371,8 @@ static void parse_command_line(int argc, char **argv)
         if (!strcmp(argv[i], "--verbose")) { verbose = true; continue; }
         if (!strcmp(argv[i], "--keep-temp-files")) { keep_temp_files = true; continue; }
         if (!strcmp(argv[i], "--no-mask")) { store_mask = false; continue; }
-        if (!strcmp(argv[i], "--fasta")) { set_input_format("fasta"); continue; }
-        if (!strcmp(argv[i], "--fastq")) { set_input_format("fastq"); continue; }
+        if (!strcmp(argv[i], "--fasta")) { set_input_format_from_command_line("fasta"); continue; }
+        if (!strcmp(argv[i], "--fastq")) { set_input_format_from_command_line("fastq"); continue; }
         fprintf(stderr, "Unknown or incomplete parameter \"%s\"\n", argv[i]);
         exit(1);
     }
@@ -409,23 +399,13 @@ int main(int argc, char **argv)
 
     parse_command_line(argc, argv);
     detect_temp_directory();
-    detect_input_format();
-    store_qual = (in_format == in_format_fastq);
+    detect_input_format_from_input_file_extension();
 
     open_input_file();
-    open_output_file();
+    confirm_input_format();
+    store_qual = (in_format_from_input == in_format_fastq);
+
     make_temp_files();
-
-    naf_header_start[4] = (unsigned char)( (extended_format << 7) |
-                                           (store_title     << 6) |
-                                           (store_ids       << 5) |
-                                           (store_comm      << 4) |
-                                           (store_len       << 3) |
-                                           (store_mask      << 2) |
-                                           (store_seq       << 1) |
-                                            store_qual              );
-
-    fwrite_or_die(naf_header_start, 1, 6, OUT);
 
     if (store_ids ) { ids_cstream  = create_zstd_cstream(compression_level); }
     if (store_comm) { comm_cstream = create_zstd_cstream(compression_level); }
@@ -470,6 +450,21 @@ int main(int argc, char **argv)
 
     close_input_file();
     close_temp_files();
+
+
+    open_output_file();
+    naf_header_start[4] = (unsigned char)( (extended_format << 7) |
+                                           (store_title     << 6) |
+                                           (store_ids       << 5) |
+                                           (store_comm      << 4) |
+                                           (store_len       << 3) |
+                                           (store_mask      << 2) |
+                                           (store_seq       << 1) |
+                                            store_qual              );
+
+    fwrite_or_die(naf_header_start, 1, 6, OUT);
+
+
 
     unsigned long long out_line_length = line_length_is_specified ? requested_line_length : longest_line_length;
     if (verbose) { fprintf(stderr, "Output line length: %lld\n", out_line_length); }

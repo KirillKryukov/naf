@@ -6,6 +6,8 @@
 
 static void open_input_file(void)
 {
+    assert(in_buffer == NULL);
+
     if (in_file_path != NULL)
     {
         IN = fopen(in_file_path, "rb");
@@ -21,6 +23,8 @@ static void open_input_file(void)
         IN = stdin;
     }
     in_fd = fileno(IN);
+
+    in_buffer = (unsigned char *) malloc(in_buffer_size);
 }
 
 
@@ -74,6 +78,8 @@ static void close_temp_files(void)
 
 static void make_temp_files(void)
 {
+    assert(temp_dir != NULL);
+
     if (temp_prefix_length == 0 && dataset_name != NULL)
     {
         temp_prefix_length = strlen(dataset_name);

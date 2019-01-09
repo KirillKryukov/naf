@@ -2,11 +2,11 @@
 
 ## Synopsis
 
-`ennaf --in file.fa --out file.naf` - Compress a FASTA file. Input format is detected from ".fa" file extension.
+`ennaf --in file.fa --out file.naf` - Compress a FASTA file.
 
-`ennaf --fasta <file.fa >file.naf` - Compress a using IO redirection (needs specifying input format).
+`ennaf <file.fa >file.naf` - Compress a using IO redirection.
 
-`gzip -dc file.gz | ennaf --fasta >file.naf` - Recompress from gzip to naf on the fly.
+`gzip -dc file.gz | ennaf >file.naf` - Recompress from gzip to naf on the fly.
 
 ## Temporary storage
 
@@ -24,7 +24,6 @@ Therefore please check the following before compressing large files:
 ## Options
 
 **--in FILE** - Compress FILE. If omitted, stdin is used by default.
-In such case input format must be specified using `--fasta` or `--fastq`.
 
 **--out FILE** - Write compressed NAF format data to FILE.
 If omitted, stdout stream is used, but only if it's redirected into a file, or piped into next tool.
@@ -43,9 +42,9 @@ The default is 1. Higher levels provide better compression, but are slower.
 Maximum level is 22, however take care as levels above 19 are slow and use significant amount of RAM.
 Negative levels are supported, down to -131072, for higher speed at the expense of compactness.
 
-**--fasta** - Input is in FASTA format.
+**--fasta** - Proceed only if input is in FASTA format.
 
-**--fastq** - Input is in FASTQ format.
+**--fastq** - Proceed only if input is in FASTQ format.
 
 **--line-length N** - Store line length N in the output NAF file.
 If omitted, stores the maximum sequence line length from the input.
@@ -71,3 +70,12 @@ In database usage, data has to be compressed only once,
 while network transfer and decompression may be performed thousands of times by database users.
 Optimizing user experience is more important in such cases.
 So, `ennaf --level 22` is the best option for sequence databases.
+
+## Specifying input format
+
+Input format (FASTA of FASTQ) is automatically detected from the actual input data, so there's not need to specify it.
+However, explicitly specifying the format with `--fastq` or `--fastq`
+will make sure the compression occurs only if the input is in the expected format.
+
+In additon, input file extension is checked against specified format and actual format.
+A mismatching file extension produces a warning, but does not stop the compression.

@@ -3,7 +3,7 @@
  * Copyright (c) 2018-2019 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  *
- * FASTA/Q parser is influenced by Heng Li's kseq.h 
+ * The FASTA/Q parser is based on Heng Li's kseq.h.
  */
 
 #ifndef round_up_to_power_of_two
@@ -28,6 +28,8 @@ string_t qual    = { 0, 0, NULL };
 __attribute__((always_inline))
 static inline void refill_in_buffer(void)
 {
+    assert(in_buffer != NULL);
+
     in_begin = 0;
     while (1)
     {
@@ -124,13 +126,9 @@ static inline int get_fasta_seq(void)
 
 static void process_fasta(void)
 {
-    int c;
-    while ((c = in_get_char()) != -1 && c != '>') {}
-    if (c == -1) { return; }
-
     while (1)
     {
-        c = get_fasta_seq();
+        int c = get_fasta_seq();
 
         if (store_ids)
         {
@@ -202,13 +200,9 @@ static inline int get_fastq_seq(void)
 
 static void process_fastq(void)
 {
-    int c;
-    while ((c = in_get_char()) != -1 && c != '@') {}
-    if (c == -1) { return; }
-
     while (1)
     {
-        c = get_fastq_seq();
+        int c = get_fastq_seq();
 
         if (store_ids)
         {
@@ -252,11 +246,47 @@ static void process_fastq(void)
 }
 
 
+static void confirm_input_format(void)
+{
+    assert(in_format_from_input == in_format_unknown);
+
+    int c;
+    while ((c = in_get_char()) != -1 && is_space_arr[c]) {}
+    if (c == -1) { return; }
+
+    if (c == '>') { in_format_from_input = in_format_fasta; }
+    else if (c == '@') { in_format_from_input = in_format_fastq; }
+    else
+    {
+        fprintf(stderr, "Error: Input data is in unknown format: first non-space character is neither '>' nor '@'\n");
+        exit(1);
+    }
+
+    if (in_format_from_command_line != in_format_unknown &&
+        in_format_from_command_line != in_format_from_input)
+    {
+        fprintf(stderr, "Error: Input data format is different from format specified in the command line\n");
+        exit(1);
+    }    
+
+    if (in_format_from_extension != in_format_unknown &&
+        in_format_from_extension != in_format_from_input)
+    {
+        fprintf(stderr, "Warning: Input file extension does not match its actual format\n");
+    }
+
+    if (in_format_from_extension != in_format_unknown &&
+        in_format_from_command_line != in_format_unknown &&
+        in_format_from_extension != in_format_from_command_line)
+    {
+        fprintf(stderr, "Warning: Input file extension does not match format specified in the command line\n");
+    }
+}
+
+
 static void process(void)
 {
-    assert(in_buffer == NULL);
-
-    in_buffer = (unsigned char *) malloc(in_buffer_size);
+    if (in_format_from_input == in_format_unknown) { return; }
 
     name.allocated = 256;
     name.data = (unsigned char *)malloc(name.allocated);
@@ -265,11 +295,11 @@ static void process(void)
     seq.allocated = 256;
     seq.data = (unsigned char *)malloc(seq.allocated);
 
-    if (in_format == in_format_fasta)
+    if (in_format_from_input == in_format_fasta)
     {
         process_fasta();
     }
-    else if (in_format == in_format_fastq)
+    else if (in_format_from_input == in_format_fastq)
     {
         qual.allocated = 256;
         qual.data = (unsigned char *)malloc(qual.allocated);

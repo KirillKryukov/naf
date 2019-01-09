@@ -34,7 +34,7 @@ and should be also possible with [WSL](https://docs.microsoft.com/en-us/windows/
 
 ## Compressing
 
-`ennaf --fasta <file.fasta >file.naf`
+`ennaf <file.fasta >file.naf`
 
 See `ennaf --help` and [Compression Manual](Compress.md) for detailed usage.
 
