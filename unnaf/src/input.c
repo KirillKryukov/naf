@@ -4,7 +4,7 @@
  * See README.md and LICENSE files of this repository
  */
 
-enum { AHEAD_BUFFER_SIZE = 4096 };
+enum { AHEAD_BUFFER_SIZE = 16384 };
 static unsigned char ahead_buffer[AHEAD_BUFFER_SIZE];
 
 
@@ -31,8 +31,8 @@ static void skip_ahead(unsigned long long bytes)
 static void read_header(void)
 {
     if (fread(&header, 1, 6, IN) != 6) { incomplete(); }
-    if (header[0] != 0x01 || header[1] != 0xF9 || header[2] != 0xEC) { fprintf(stderr, "Not a NAF format\n"); exit(1); }
-    if (header[3] != 0x01) { fprintf(stderr, "Unknown version of NAF format\n"); exit(1); }
+    if (header[0] != 0x01 || header[1] != 0xF9 || header[2] != 0xEC) { fprintf(stderr, "Error: Not a NAF format\n"); exit(1); }
+    if (header[3] != 0x01) { fprintf(stderr, "Error: Unknown version of NAF format\n"); exit(1); }
 
     has_title   = (header[4] >> 6) & 1;
     has_ids     = (header[4] >> 5) & 1;
@@ -222,7 +222,7 @@ static void load_mask(void)
         {
             mask_on = 1;
             cur_mask = 1;
-            if (mask_size < 2) { fprintf(stderr," Corrupted mask\n"); exit(1); }
+            if (mask_size < 2) { fprintf(stderr, "Corrupted mask\n"); exit(1); }
         }
         cur_mask_remaining = mask_buffer[cur_mask];
     }
