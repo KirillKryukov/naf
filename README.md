@@ -42,7 +42,7 @@ See `ennaf --help` and [Compression Manual](Compress.md) for detailed usage.
 
 `unnaf file.naf >file.fasta`
 
-See `unnaf --help` for options.
+See `unnaf --help` and [Decompression Manual](Decompress.md).
 
 ## Reference
 

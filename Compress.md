@@ -61,7 +61,7 @@ If omitted, stores the maximum sequence line length from the input.
 
 **--help** - Show usage help.
 
-**--version** - Show versions.
+**--version** - Show version.
 
 ## Which compression level to choose?
 
