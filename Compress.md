@@ -1,12 +1,16 @@
-# Compression Manual
+# NAF Compression Manual
 
 ## Synopsis
 
 `ennaf --in file.fa --out file.naf` - Compress a FASTA file.
 
-`ennaf <file.fa >file.naf` - Compress a using IO redirection.
+`ennaf <file.fa >file.naf` - Compress using IO redirection.
 
-`gzip -dc file.gz | ennaf >file.naf` - Recompress from gzip to naf on the fly.
+`ennaf <file.fq >file.naf` - Compress a FASTQ file (format is detected automatically).
+
+`ennaf --level 22 <file.fa >file.naf` - Use maximum compression level.
+
+`gzip -dc file.gz | ennaf >file.naf` - Recompress from gzip to NAF on the fly.
 
 ## Temporary storage
 
