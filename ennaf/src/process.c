@@ -193,7 +193,7 @@ static inline int get_fastq_seq(void)
     }
 
     while ( (c = getuntil(is_space_arr, &qual)) != -1 && qual.length < seq.length) {}
-    if (qual.length != seq.length) { fprintf(stderr, "Error: quality of sequence %lld doesn't match sequence length\n", n_sequences + 1); }
+    if (qual.length != seq.length) { fprintf(stderr, "Error: quality of sequence %llu doesn't match sequence length\n", n_sequences + 1); }
 
     return c;
 }

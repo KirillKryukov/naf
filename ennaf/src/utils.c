@@ -178,7 +178,7 @@ static void flush_cstream(ZSTD_CStream *s, FILE *F)
 
     ZSTD_outBuffer output = { out_buffer, out_buffer_size, 0 };
     size_t const remainingToFlush = ZSTD_endStream(s, &output);
-    if (remainingToFlush) { fprintf(stderr, "not fully flushed"); exit(1); }
+    if (remainingToFlush) { fprintf(stderr, "Can't end zstd stream"); exit(1); }
     fwrite_or_die(out_buffer, 1, output.pos, F);
 }
 

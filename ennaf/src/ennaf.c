@@ -467,7 +467,7 @@ int main(int argc, char **argv)
 
 
     unsigned long long out_line_length = line_length_is_specified ? requested_line_length : longest_line_length;
-    if (verbose) { fprintf(stderr, "Output line length: %lld\n", out_line_length); }
+    if (verbose) { fprintf(stderr, "Output line length: %llu\n", out_line_length); }
     write_variable_length_encoded_number(OUT, out_line_length);
     write_variable_length_encoded_number(OUT, n_sequences);
 
