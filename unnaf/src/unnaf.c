@@ -23,10 +23,15 @@
 
 typedef enum { UNDECIDED, FORMAT_NAME, PART_LIST, PART_SIZES, NUMBER_OF_SEQUENCES,
                TITLE, IDS, NAMES, LENGTHS, TOTAL_LENGTH, MASK, TOTAL_MASK_LENGTH,
-               FOUR_BIT, DNA, MASKED_DNA, FASTA, MASKED_FASTA, FASTQ
+               FOUR_BIT,
+               DNA, MASKED_DNA, UNMASKED_DNA,
+               FASTA, MASKED_FASTA, UNMASKED_FASTA,
+               FASTQ
              } OUTPUT_TYPE;
 
 static OUTPUT_TYPE out_type = UNDECIDED;
+
+static bool use_mask = true;
 
 static char *in_file_path = NULL;
 static FILE *IN = NULL;
@@ -170,23 +175,25 @@ static void show_help(void)
 {
     fprintf(stderr,
         "Usage: unnaf [OUTPUT-TYPE] [file.naf]\n"
-        "Output type choices:\n"
-        "  --format    - File format version\n"
-        "  --part-list - List of parts\n"
-        "  --sizes     - Part sizes\n"
-        "  --number    - Number of sequences\n"
-        "  --title     - Dataset title\n"
-        "  --ids       - Sequence ids (accession numbers)\n"
-        "  --names     - Full sequence names (including ids)\n"
-        "  --lengths   - Sequence lengths\n"
+        "Options for selecting output type:\n"
+        "  --format       - File format version\n"
+        "  --part-list    - List of parts\n"
+        "  --sizes        - Part sizes\n"
+        "  --number       - Number of sequences\n"
+        "  --title        - Dataset title\n"
+        "  --ids          - Sequence ids (accession numbers)\n"
+        "  --names        - Full sequence names (including ids)\n"
+        "  --lengths      - Sequence lengths\n"
         "  --total-length - Sum of sequence lengths\n"
-        "  --mask      - Masked region lengths\n"
-        "  --4bit      - 4bit-encoded DNA (binary data)\n"
-        "  --dna       - Continuous DNA sequence without mask\n"
-        "  --masked-dna - Continuous masked DNA sequence\n"
-        "  --fasta     - FASTA-formatted sequences\n"
-        "  --masked-fasta - Masked FASTA-formatted sequences\n"
-        "  --fastq     - FASTQ-formatted sequences\n"
+        "  --mask         - Masked region lengths\n"
+        "  --4bit         - 4bit-encoded DNA (binary data)\n"
+        "  --dna          - Continuous DNA sequence\n"
+        "  --fasta        - FASTA-formatted sequences\n"
+        "  --fastq        - FASTQ-formatted sequences\n"
+        "Other options:\n"
+        "  --no-mask      - Ignore mask\n"
+        "  --help         - Show help\n"
+        "  --version      - Show version\n"
     );
 }
 
@@ -233,11 +240,17 @@ int main(int argc, char **argv)
             else if (!strcmp(argv[i], "--total-mask-length")) { set_out_type(TOTAL_MASK_LENGTH); }
             else if (!strcmp(argv[i], "--4bit"             )) { set_out_type(FOUR_BIT); }
             else if (!strcmp(argv[i], "--dna"              )) { set_out_type(DNA); }
-            else if (!strcmp(argv[i], "--masked-dna"       )) { set_out_type(MASKED_DNA); }
             else if (!strcmp(argv[i], "--fasta"            )) { set_out_type(FASTA); }
-            else if (!strcmp(argv[i], "--masked-fasta"     )) { set_out_type(MASKED_FASTA); }
             else if (!strcmp(argv[i], "--fastq"            )) { set_out_type(FASTQ); }
+            else if (!strcmp(argv[i], "--no-mask")) { use_mask = false; }
             else if (!strcmp(argv[i], "--version")) { print_version = true; }
+
+            // Deprecated undocumented options.
+            else if (!strcmp(argv[i], "--masked-dna"       )) { set_out_type(MASKED_DNA); }     // Instead use "--dna"
+            else if (!strcmp(argv[i], "--unmasked-dna"     )) { set_out_type(UNMASKED_DNA); }   // Instead use "--dna --no-mask"
+            else if (!strcmp(argv[i], "--masked-fasta"     )) { set_out_type(MASKED_FASTA); }   // Instead use "--fasta"
+            else if (!strcmp(argv[i], "--unmasked-fasta"   )) { set_out_type(UNMASKED_FASTA); } // Instead use "--fasta --no-mask"
+
             else { fprintf(stderr, "Unknown option \"%s\"\n", argv[i]); exit(1); }
         }
         else { set_input_file_path(argv[i]); }
@@ -256,7 +269,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        if (isatty(fileno(stdin))) { fprintf(stderr, "Error: Input file not specified and no input pipe\n"); exit(1); }
+        if (isatty(fileno(stdin))) { fprintf(stderr, "No input specified, use \"unnaf --help\" for help\n"); exit(1); }
 
         if ( !freopen(NULL, "rb", stdin)
 #if _WIN32                	
@@ -309,11 +322,13 @@ int main(int argc, char **argv)
     out_print_buffer = (unsigned char *)malloc(out_print_buffer_size);
     if (!out_print_buffer) { fprintf(stderr, "Can't allocate %zu bytes for dna buffer\n", out_print_buffer_size); exit(1); }
 
-    if (out_type == DNA) { print_dna_and_exit(0); }
-    if (out_type == MASKED_DNA) { print_dna_and_exit(has_mask); }
+    if (out_type == DNA) { print_dna_and_exit(use_mask && has_mask); }
+    if (out_type == MASKED_DNA) { print_dna_and_exit(use_mask && has_mask); }
+    if (out_type == UNMASKED_DNA) { print_dna_and_exit(0); }
 
-    if (out_type == FASTA) { print_fasta_and_exit(0); }
-    if (out_type == MASKED_FASTA) { print_fasta_and_exit(has_mask); }
+    if (out_type == FASTA) { print_fasta_and_exit(use_mask && has_mask); }
+    if (out_type == MASKED_FASTA) { print_fasta_and_exit(use_mask && has_mask); }
+    if (out_type == UNMASKED_FASTA) { print_fasta_and_exit(0); }
 
     if (out_type == FASTQ) { print_fastq_and_exit(0); }
 
