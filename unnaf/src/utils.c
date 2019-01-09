@@ -40,8 +40,15 @@ static void init_tables(void)
 }
 
 
+/*
+ * Reads a number in variable length encoding.
+ */
 static unsigned long long read_number(FILE *F)
 {
+    assert(F != NULL);
+
+    static char* overflow_msg = "Invalid input: overflow reading a variable length encoded number\n";
+
     unsigned long long a = 0;
     unsigned char c;
 
@@ -49,10 +56,12 @@ static unsigned long long read_number(FILE *F)
 
     while (c & 128)
     {
+        if (a & (127ull << 57)) { fprintf(stderr, overflow_msg); exit(1); }
         a = (a << 7) | (c & 127);
         if (!fread(&c, 1, 1, F)) { incomplete(); }
     }
 
+    if (a & (127ull << 57)) { fprintf(stderr, overflow_msg); exit(1); }
     a = (a << 7) | c;
 
     return a;
