@@ -12,7 +12,7 @@ static_assert(sizeof(ptrdiff_t) == 8, "Unsupported platform: ptrdiff_t is not 8 
 static_assert(sizeof(long long) == 8, "Unsupported platform: long long is not 8 bytes");
 
 
-unsigned char code_to_nuc[16] = {'?','T','G','K','C','Y','S','B','A','W','R','D','M','H','V','N'};
+unsigned char code_to_nuc[16] = {'-','T','G','K','C','Y','S','B','A','W','R','D','M','H','V','N'};
 //unsigned char nuc_to_code[256];
 unsigned short codes_to_nucs[256];
 
