@@ -266,6 +266,12 @@ int main(int argc, char **argv)
         IN = stdin;
     }
 
+    if (out_type == FOUR_BIT && isatty(fileno(stdout)))
+    {
+        fprintf(stderr, "Won't write binary data to terminal\n");
+        exit(1);
+    }
+
     read_header();
 
     if (out_type == UNDECIDED)
