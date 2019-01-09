@@ -56,12 +56,12 @@ static unsigned long long read_number(FILE *F)
 
     while (c & 128)
     {
-        if (a & (127ull << 57)) { fprintf(stderr, overflow_msg); exit(1); }
+        if (a & (127ull << 57)) { fputs(overflow_msg, stderr); exit(1); }
         a = (a << 7) | (c & 127);
         if (!fread(&c, 1, 1, F)) { incomplete(); }
     }
 
-    if (a & (127ull << 57)) { fprintf(stderr, overflow_msg); exit(1); }
+    if (a & (127ull << 57)) { fputs(overflow_msg, stderr); exit(1); }
     a = (a << 7) | c;
 
     return a;
