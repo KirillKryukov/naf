@@ -305,7 +305,7 @@ static void detect_temp_directory(void)
     if (temp_dir == NULL) { temp_dir = getenv("TMP"); }
     if (temp_dir == NULL)
     {
-        fprintf(stderr, "Temp directory is not specified, and can't autodetect\n"
+        fprintf(stderr, "Temp directory is not specified\n"
                 "Please either set TMPDIR or TMP environment variable, or add '--temp-dir DIR' to command line.\n");
         exit(1);
     }

@@ -104,7 +104,8 @@ static inline int get_fasta_seq(void)
     comment.length = 0;
     seq.length = 0;
 
-    if ( (c = getuntil(is_space_arr, &name)) == -1) { comment.data[0] = '\0'; return -1; }
+    // At this point the '>' was already read, so we immediately proceed to read the name.
+    if ( (c = getuntil(is_space_arr, &name)) == -1) { comment.data[0] = '\0'; return -1; } // No need to 0-terminate sequence.
 
     if (is_eol_arr[c]) { comment.data[0] = '\0'; }
     else if (getuntil(is_eol_arr, &comment) == -1) { return -1; }
@@ -126,7 +127,7 @@ static inline int get_fasta_seq(void)
 
 static void process_fasta(void)
 {
-    while (1)
+    for (;;)
     {
         int c = get_fasta_seq();
 
@@ -200,7 +201,7 @@ static inline int get_fastq_seq(void)
 
 static void process_fastq(void)
 {
-    while (1)
+    for (;;)
     {
         int c = get_fastq_seq();
 
@@ -286,6 +287,7 @@ static void confirm_input_format(void)
 
 static void process(void)
 {
+    // If input format is unknown at this point, it indicates empty input.
     if (in_format_from_input == in_format_unknown) { return; }
 
     name.allocated = 256;

@@ -151,6 +151,11 @@ static void extract_mask(const unsigned char *seq, size_t len)
 }
 
 
+/*
+ * Copies the content of a temporary file into output stream.
+ * Leaves out the first 4 bytes of the temporary file.
+ * Writes data size first, in variable length format.
+ */
 static void copy_file_to_out(char* from_path)
 {
     assert(from_path != NULL);
