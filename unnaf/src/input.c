@@ -8,7 +8,6 @@ enum { AHEAD_BUFFER_SIZE = 4096 };
 static unsigned char ahead_buffer[AHEAD_BUFFER_SIZE];
 
 
-
 static void skip_ahead(unsigned long long bytes)
 {
     if (IN == stdin)
@@ -29,7 +28,6 @@ static void skip_ahead(unsigned long long bytes)
 }
 
 
-
 static void read_header(void)
 {
     if (fread(&header, 1, 6, IN) != 6) { incomplete(); }
@@ -46,7 +44,6 @@ static void read_header(void)
 }
 
 
-
 static void skip_title(void)
 {
     if (has_title)
@@ -55,7 +52,6 @@ static void skip_title(void)
         skip_ahead(title_size);
     }
 }
-
 
 
 static void skip_ids(void)
@@ -69,7 +65,6 @@ static void skip_ids(void)
 }
 
 
-
 static void skip_names(void)
 {
     if (has_names)
@@ -79,7 +74,6 @@ static void skip_names(void)
         skip_ahead(compressed_names_size);
     }
 }
-
 
 
 static void skip_lengths(void)
@@ -93,7 +87,6 @@ static void skip_lengths(void)
 }
 
 
-
 static void skip_mask(void)
 {
     if (has_mask)
@@ -105,7 +98,6 @@ static void skip_mask(void)
 }
 
 
-
 /*static void skip_data(void)
 {
     if (has_data)
@@ -115,7 +107,6 @@ static void skip_mask(void)
         skip_ahead(compressed_data_size);
     }
 }*/
-
 
 
 static void load_ids(void)
@@ -151,7 +142,6 @@ static void load_ids(void)
 }
 
 
-
 static void load_names(void)
 {
     unsigned long long names_size = read_number(IN);
@@ -185,7 +175,6 @@ static void load_names(void)
 }
 
 
-
 static void load_lengths(void)
 {
     unsigned long long lengths_size = read_number(IN);
@@ -206,7 +195,6 @@ static void load_lengths(void)
     free(compressed_lengths_buffer);
     compressed_lengths_buffer = 0;
 }
-
 
 
 static void load_mask(void)
@@ -241,7 +229,6 @@ static void load_mask(void)
 }
 
 
-
 static void load_compressed_sequence(void)
 {
     total_seq_length = read_number(IN);
@@ -253,7 +240,6 @@ static void load_compressed_sequence(void)
     put_magic_number(compressed_seq_buffer);
     if (fread(compressed_seq_buffer + 4, 1, compressed_seq_size, IN) != compressed_seq_size) { incomplete(); }
 }
-
 
 
 static size_t initialize_input_decompression(void)
@@ -291,7 +277,6 @@ static size_t initialize_input_decompression(void)
 }
 
 
-
 static void initialize_memory_decompression(void)
 {
     mem_out_buffer_size = ZSTD_DStreamOutSize();
@@ -304,7 +289,6 @@ static void initialize_memory_decompression(void)
     memory_bytes_to_read = ZSTD_initDStream(memory_decompression_stream);
     if (ZSTD_isError(memory_bytes_to_read)) { fprintf(stderr, "Can't initialize memory decompression stream: %s\n", ZSTD_getErrorName(memory_bytes_to_read)); exit(1); }
 }
-
 
 
 static void initialize_quality_file_decompression(void)
@@ -342,14 +326,12 @@ static void initialize_quality_file_decompression(void)
 }
 
 
-
 static inline size_t read_next_chunk(void* buffer, size_t size)
 {
     size_t could_read = fread(buffer, 1, size, IN);
     if (could_read != size) { incomplete(); }
     return could_read;
 }
-
 
 
 static void refill_dna_buffer_from_memory(void)
@@ -381,7 +363,6 @@ static void refill_dna_buffer_from_memory(void)
     dna_buffer_remaining = dna_buffer_filling_pos;
     dna_buffer_printing_pos = 0;
 }
-
 
 
 static void refill_quality_buffer_from_file(void)

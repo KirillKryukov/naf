@@ -20,7 +20,6 @@ static void print_list_of_parts_and_exit(void)
 }
 
 
-
 __attribute__ ((noreturn))
 static void print_part_sizes_and_exit(void)
 {
@@ -83,7 +82,6 @@ static void print_part_sizes_and_exit(void)
 }
 
 
-
 __attribute__ ((noreturn))
 static void print_title_and_exit(void)
 {
@@ -105,7 +103,6 @@ static void print_title_and_exit(void)
 }
 
 
-
 __attribute__ ((noreturn))
 static void print_ids_and_exit(void)
 {
@@ -117,7 +114,6 @@ static void print_ids_and_exit(void)
 
     exit(0);
 }
-
 
 
 static inline void print_name(unsigned long long index)
@@ -142,7 +138,6 @@ static inline void print_name(unsigned long long index)
 }
 
 
-
 static inline void print_fasta_name(unsigned long long index)
 {
     fputc('>', stdout);
@@ -151,14 +146,12 @@ static inline void print_fasta_name(unsigned long long index)
 }
 
 
-
 static inline void print_fastq_name(unsigned long long index)
 {
     fputc('@', stdout);
     print_name(index);
     fputc('\n', stdout); 
 }
-
 
 
 __attribute__ ((noreturn))
@@ -198,7 +191,6 @@ static void print_names_and_exit(void)
 }
 
 
-
 __attribute__ ((noreturn))
 static void print_lengths_and_exit(void)
 {
@@ -226,7 +218,6 @@ static void print_lengths_and_exit(void)
 }
 
 
-
 __attribute__ ((noreturn))
 static void print_total_length_and_exit(void)
 {
@@ -244,7 +235,6 @@ static void print_total_length_and_exit(void)
 
     exit(0);
 }
-
 
 
 __attribute__ ((noreturn))
@@ -275,7 +265,6 @@ static void print_mask_and_exit(void)
 }
 
 
-
 __attribute__ ((noreturn))
 static void print_total_mask_length_and_exit(void)
 {
@@ -301,7 +290,6 @@ static void print_total_mask_length_and_exit(void)
 
     exit(0);
 }
-
 
 
 __attribute__ ((noreturn))
@@ -338,7 +326,6 @@ static void print_4bit_and_exit(void)
 }
 
 
-
 static inline void mask_dna_buffer(unsigned char *buffer, unsigned size)
 {
     unsigned pos = 0;
@@ -369,7 +356,6 @@ static inline void mask_dna_buffer(unsigned char *buffer, unsigned size)
 }
 
 
-
 static inline void print_dna_buffer(int masking)
 {
     unsigned long long n_bp_to_print = dna_buffer_pos;
@@ -382,7 +368,6 @@ static inline void print_dna_buffer(int masking)
     total_seq_n_bp_remaining -= n_bp_to_print;
     dna_buffer_pos = 0;
 }
-
 
 
 static inline void print_dna_split_into_lines(unsigned char *buffer, size_t size)
@@ -451,7 +436,6 @@ static inline void print_dna_split_into_lines(unsigned char *buffer, size_t size
 }
 
 
-
 static inline void print_dna_buffer_as_fasta(int masking)
 {
     //printf("\n:: print_dna_buffer_as_fasta(), %llu bp remaining, buffer has %u bp\n", total_seq_n_bp_remaining, dna_buffer_pos);
@@ -508,7 +492,6 @@ static inline void print_dna_buffer_as_fasta(int masking)
 }
 
 
-
 static inline void write_4bit_as_dna(unsigned char *buffer, size_t size, int masking)
 {
     for (unsigned int i = 0; i < size; i++)
@@ -521,7 +504,6 @@ static inline void write_4bit_as_dna(unsigned char *buffer, size_t size, int mas
 }
 
 
-
 static inline void write_4bit_as_fasta(unsigned char *buffer, size_t size, int masking)
 {
     for (unsigned int i = 0; i < size; i++)
@@ -532,7 +514,6 @@ static inline void write_4bit_as_fasta(unsigned char *buffer, size_t size, int m
 
     if (dna_buffer_pos > dna_buffer_flush_size) { print_dna_buffer_as_fasta(masking); }
 }
-
 
 
 __attribute__ ((noreturn))
@@ -570,7 +551,6 @@ static void print_dna_and_exit(int masking)
 
     exit(0);
 }
-
 
 
 __attribute__ ((noreturn))

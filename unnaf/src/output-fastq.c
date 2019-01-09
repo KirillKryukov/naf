@@ -22,7 +22,6 @@ static void print_dna_from_memory(unsigned int len)
 }
 
 
-
 static void print_next_sequence_from_memory(void)
 {
     while (lengths_buffer[cur_seq_len_index] == 4294967295u)
@@ -34,7 +33,6 @@ static void print_next_sequence_from_memory(void)
     cur_seq_len_index++;
     fputc('\n', stdout);
 }
-
 
 
 static void print_quality_from_file(unsigned int len)
@@ -55,7 +53,6 @@ static void print_quality_from_file(unsigned int len)
 }
 
 
-
 static void print_next_quality_from_file(void)
 {
     while (lengths_buffer[cur_qual_len_index] == 4294967295u)
@@ -67,7 +64,6 @@ static void print_next_quality_from_file(void)
     cur_qual_len_index++;
     fputc('\n', stdout);
 }
-
 
 
 __attribute__ ((noreturn))

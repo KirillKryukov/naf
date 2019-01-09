@@ -31,94 +31,93 @@ static OUTPUT_TYPE out_type = UNDECIDED;
 static char *in_file_path = NULL;
 static FILE *IN = NULL;
 
-unsigned char header[6];
-int has_title = 0;
-int has_ids = 0;
-int has_names = 0;
-int has_lengths = 0;
-int has_mask = 0;
-int has_data = 0;
-int has_quality = 0;
-unsigned long long max_line_length;
-unsigned long long N;
+static unsigned char header[6];
+static int has_title = 0;
+static int has_ids = 0;
+static int has_names = 0;
+static int has_lengths = 0;
+static int has_mask = 0;
+static int has_data = 0;
+static int has_quality = 0;
+static unsigned long long max_line_length;
+static unsigned long long N;
 
 
-char *ids_buffer = NULL;
-unsigned char *compressed_ids_buffer = NULL;
-char **ids = NULL;
+static char *ids_buffer = NULL;
+static unsigned char *compressed_ids_buffer = NULL;
+static char **ids = NULL;
 
-char *names_buffer = NULL;
-unsigned char *compressed_names_buffer = NULL;
-char **names = NULL;
+static char *names_buffer = NULL;
+static unsigned char *compressed_names_buffer = NULL;
+static char **names = NULL;
 
-unsigned int *lengths_buffer = NULL;
-unsigned char *compressed_lengths_buffer = NULL;
-unsigned long long n_lengths = 0;
+static unsigned int *lengths_buffer = NULL;
+static unsigned char *compressed_lengths_buffer = NULL;
+static unsigned long long n_lengths = 0;
 
-unsigned long long mask_size = 0;
-unsigned char *mask_buffer = NULL;
-unsigned char *compressed_mask_buffer = NULL;
+static unsigned long long mask_size = 0;
+static unsigned char *mask_buffer = NULL;
+static unsigned char *compressed_mask_buffer = NULL;
 
-unsigned long long total_seq_length = 0;
-unsigned long long compressed_seq_size = 0;
-unsigned char *compressed_seq_buffer = NULL;
-unsigned long long compressed_seq_pos = 0;
+static unsigned long long total_seq_length = 0;
+static unsigned long long compressed_seq_size = 0;
+static unsigned char *compressed_seq_buffer = NULL;
+static unsigned long long compressed_seq_pos = 0;
 
-unsigned long long total_quality_length = 0;
-unsigned long long compressed_quality_size = 0;
-
-
-size_t in_buffer_size = 0;
-char *in_buffer = NULL;
-
-size_t out_buffer_size = 0;
-char *out_buffer = NULL;
-
-size_t mem_out_buffer_size = 0;
-unsigned char *mem_out_buffer = NULL;
-
-size_t out_print_buffer_size = 0;
-unsigned char *out_print_buffer = NULL;
-
-ZSTD_DStream *input_decompression_stream = NULL;
-size_t file_bytes_to_read;
-ZSTD_inBuffer zstd_file_in_buffer;
-
-ZSTD_DStream *memory_decompression_stream = NULL;
-size_t memory_bytes_to_read;
-ZSTD_inBuffer zstd_mem_in_buffer;
+static unsigned long long total_quality_length = 0;
+static unsigned long long compressed_quality_size = 0;
 
 
-unsigned long long cur_seq_index = 0;
-unsigned long long cur_seq_pos = 0;
+static size_t in_buffer_size = 0;
+static char *in_buffer = NULL;
 
-unsigned char *dna_buffer = NULL;
-size_t dna_buffer_size = 0;
-size_t dna_buffer_flush_size = 0;
-unsigned dna_buffer_pos = 0;
-unsigned dna_buffer_filling_pos = 0;
-unsigned dna_buffer_printing_pos = 0;
-unsigned dna_buffer_remaining = 0;
+static size_t out_buffer_size = 0;
+static char *out_buffer = NULL;
 
-char *quality_buffer = NULL;
-size_t quality_buffer_size = 0;
-size_t quality_buffer_flush_size = 0;
-unsigned quality_buffer_filling_pos = 0;
-unsigned quality_buffer_printing_pos = 0;
-unsigned quality_buffer_remaining = 0;
+static size_t mem_out_buffer_size = 0;
+static unsigned char *mem_out_buffer = NULL;
 
-unsigned long long total_seq_n_bp_remaining = 0;
+static size_t out_print_buffer_size = 0;
+static unsigned char *out_print_buffer = NULL;
 
-unsigned long long cur_seq_len_index = 0;
-unsigned long long cur_seq_len_n_bp_remaining = 0;
+static ZSTD_DStream *input_decompression_stream = NULL;
+static size_t file_bytes_to_read;
+static ZSTD_inBuffer zstd_file_in_buffer;
 
-unsigned long long cur_qual_len_index = 0;
+static ZSTD_DStream *memory_decompression_stream = NULL;
+static size_t memory_bytes_to_read;
+static ZSTD_inBuffer zstd_mem_in_buffer;
 
-unsigned long long cur_mask = 0;
-unsigned int cur_mask_remaining = 0;
-int mask_on = 0;
 
-unsigned long long cur_line_n_bp_remaining = 0;
+static unsigned long long cur_seq_index = 0;
+
+static unsigned char *dna_buffer = NULL;
+static size_t dna_buffer_size = 0;
+static size_t dna_buffer_flush_size = 0;
+static unsigned dna_buffer_pos = 0;
+static unsigned dna_buffer_filling_pos = 0;
+static unsigned dna_buffer_printing_pos = 0;
+static unsigned dna_buffer_remaining = 0;
+
+static char *quality_buffer = NULL;
+static size_t quality_buffer_size = 0;
+static size_t quality_buffer_flush_size = 0;
+static unsigned quality_buffer_filling_pos = 0;
+static unsigned quality_buffer_printing_pos = 0;
+static unsigned quality_buffer_remaining = 0;
+
+static unsigned long long total_seq_n_bp_remaining = 0;
+
+static unsigned long long cur_seq_len_index = 0;
+static unsigned long long cur_seq_len_n_bp_remaining = 0;
+
+static unsigned long long cur_qual_len_index = 0;
+
+static unsigned long long cur_mask = 0;
+static unsigned int cur_mask_remaining = 0;
+static int mask_on = 0;
+
+static unsigned long long cur_line_n_bp_remaining = 0;
 
 #include "input.c"
 #include "output.c"
