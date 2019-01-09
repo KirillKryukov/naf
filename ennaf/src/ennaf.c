@@ -387,7 +387,7 @@ static void parse_command_line(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    if (argc <= 1)
+    if (argc <= 1 && isatty(fileno(stdin)))
     {
         fprintf(stderr, "No input specified, use \"ennaf --help\" for help\n");
         exit(0);
