@@ -15,11 +15,7 @@ static void open_input_file(void)
     }
     else
     {
-        if ( !freopen(NULL, "rb", stdin)
-#if _WIN32
-             && _setmode(_fileno(stdin), _O_BINARY) < 0
-#endif
-           ) { fprintf(stderr, "Can't read input in binary mode\n"); exit(1); }
+        if (!freopen(NULL, "rb", stdin)) { fprintf(stderr, "Can't read input in binary mode\n"); exit(1); }
         IN = stdin;
     }
     in_fd = fileno(IN);
@@ -38,12 +34,7 @@ static void open_output_file(void)
     else
     {
         if (isatty(fileno(stdout))) { fprintf(stderr, "Won't write binary data to terminal\n"); exit(1); }
-
-        if ( !freopen(NULL, "wb", stdout)
-#if _WIN32
-             && _setmode(_fileno(stdout), _O_BINARY) < 0
-#endif
-           ) { fprintf(stderr, "Can't set output stream to binary mode\n"); exit(1); }
+        if (!freopen(NULL, "wb", stdout)) { fprintf(stderr, "Can't set output stream to binary mode\n"); exit(1); }
         OUT = stdout;
     }
     out_fd = fileno(OUT);

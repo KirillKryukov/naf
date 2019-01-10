@@ -129,7 +129,7 @@ static void fclose_or_die(FILE *F)
 }
 
 
-static FILE* create_temp_file(char *path, char *purpose)
+static FILE* create_temp_file(char *path, const char *purpose)
 {
     assert(path != NULL);
     assert(purpose != NULL);

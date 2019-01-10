@@ -37,7 +37,7 @@
 #include "utils.c"
 
 
-static unsigned char naf_header_start[6] = "\x01\xF9\xEC\x01\x00\x20";
+static unsigned char naf_header_start[7] = "\x01\xF9\xEC\x01\x00\x20";
 
 static bool verbose = false;
 static bool keep_temp_files = false;
@@ -266,7 +266,7 @@ static void set_line_length(char *str)
 }
 
 
-static int parse_input_format(char *str)
+static int parse_input_format(const char *str)
 {
     assert(str != NULL);
 
@@ -276,7 +276,7 @@ static int parse_input_format(char *str)
 }
 
 
-static void set_input_format_from_command_line(char *new_format)
+static void set_input_format_from_command_line(const char *new_format)
 {
     assert(new_format != NULL);
 
