@@ -270,12 +270,7 @@ int main(int argc, char **argv)
     else
     {
         if (isatty(fileno(stdin))) { fprintf(stderr, "No input specified, use \"unnaf --help\" for help\n"); exit(1); }
-
-        if ( !freopen(NULL, "rb", stdin)
-#if _WIN32                	
-             && _setmode(_fileno(stdin), _O_BINARY) < 0
-#endif
-           ) { fprintf(stderr, "Can't read input in binary mode\n"); exit(1); }
+        if (!freopen(NULL, "rb", stdin)) { fprintf(stderr, "Can't read input in binary mode\n"); exit(1); }
         IN = stdin;
     }
 

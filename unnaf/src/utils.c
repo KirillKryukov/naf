@@ -47,7 +47,7 @@ static unsigned long long read_number(FILE *F)
 {
     assert(F != NULL);
 
-    static char* overflow_msg = "Invalid input: overflow reading a variable length encoded number\n";
+    static const char *overflow_msg = "Invalid input: overflow reading a variable length encoded number\n";
 
     unsigned long long a = 0;
     unsigned char c;
