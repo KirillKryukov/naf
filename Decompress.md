@@ -11,7 +11,7 @@
 
 `unnaf --fasta file.naf >file.fa` - Extract FASTA-formatted sequences (even if "file.naf" has qualities).
 
-`unnaf --fastq file.naf >file.fq` - Decompress into FASTQ format (even if "file.naf" has qualities).
+`unnaf --fastq file.naf >file.fq` - Decompress into FASTQ format (fails if "file.naf" has no qualities).
 
 ## Output stream
 
