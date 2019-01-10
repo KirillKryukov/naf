@@ -54,6 +54,9 @@ Only one of these options should be specified:
 
 ## Other options
 
+**--line-length N** - Divide sequences into lines of N bp, ignoring line length stored in the NAF file.
+Effective only for `--fasta` output. Line length of 0 means unlimited lines, i.e., each sequence printed in single line.
+
 **--no-mask** - Ignore mask, useful only for `--fasta` and `--dna` outputs.
 
 **--help** - Show usage help.

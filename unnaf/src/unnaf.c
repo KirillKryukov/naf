@@ -5,7 +5,7 @@
  */
 
 #define VERSION "1.0.0"
-#define DATE "2019-01-09"
+#define DATE "2019-01-10"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -124,6 +124,10 @@ static int mask_on = 0;
 
 static unsigned long long cur_line_n_bp_remaining = 0;
 
+static bool line_length_is_specified = false;
+static unsigned long long requested_line_length = 0ull;
+
+
 #include "input.c"
 #include "output.c"
 #include "output-fastq.c"
@@ -165,6 +169,41 @@ static void done(void)
 }
 
 
+static void set_out_type(OUTPUT_TYPE new_type)
+{
+    if (out_type != UNDECIDED) { fprintf(stderr, "Error: Only one output type should be specified\n"); exit(1); }
+    out_type = new_type;
+}
+
+
+static void set_input_file_path(char *new_path)
+{
+    assert(new_path != NULL);
+
+    if (in_file_path != NULL) { fprintf(stderr, "Error: Can process only one file at a time\n"); exit(1); }
+    if (*new_path == '\0') { fprintf(stderr, "Error: empty input path specified\n"); exit(1); }
+    in_file_path = new_path;
+}
+
+
+static void set_line_length(char *str)
+{
+    assert(str != NULL);
+
+    char *end;
+    long long a = strtoll(str, &end, 10);
+    if (*end != '\0') { fprintf(stderr, "Can't parse the value of --line-length parameter\n"); exit(1); }
+    if (a < 0ll) { fprintf(stderr, "Error: Negative line length specified\n"); exit(1); }
+
+    char test_str[21];
+    int nc = snprintf(test_str, 21, "%lld", a);
+    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { fprintf(stderr, "Can't parse the value of --line-length parameter\n"); exit(1); }
+
+    requested_line_length = (unsigned long long) a;
+    line_length_is_specified = true;
+}
+
+
 static void show_version(void)
 {
     fprintf(stderr, "unnaf - NAF decompressor, version " VERSION ", " DATE "\nCopyright (c) " COPYRIGHT_YEARS " Kirill Kryukov\n");
@@ -191,27 +230,11 @@ static void show_help(void)
         "  --fasta        - FASTA-formatted sequences\n"
         "  --fastq        - FASTQ-formatted sequences\n"
         "Other options:\n"
+        "  --line-length N - Use lines of width N for FASTA output\n"
         "  --no-mask      - Ignore mask\n"
         "  --help         - Show help\n"
         "  --version      - Show version\n"
     );
-}
-
-
-static void set_out_type(OUTPUT_TYPE new_type)
-{
-    if (out_type != UNDECIDED) { fprintf(stderr, "Error: Only one output type should be specified\n"); exit(1); }
-    out_type = new_type;
-}
-
-
-static void set_input_file_path(char *new_path)
-{
-    assert(new_path != NULL);
-
-    if (in_file_path != NULL) { fprintf(stderr, "Error: Can process only one file at a time\n"); exit(1); }
-    if (*new_path == '\0') { fprintf(stderr, "Error: empty input path specified\n"); exit(1); }
-    in_file_path = new_path;
 }
 
 
@@ -224,8 +247,13 @@ int main(int argc, char **argv)
 
     for (int i = 1; i < argc; i++)
     {
-        if (!strncmp(argv[i], "--", 2))
+        if (argv[i][0] == '-' && argv[i][1] == '-')
+        //if (!strncmp(argv[i], "--", 2))
         {
+            if (i < argc - 1)
+            {
+                if (!strcmp(argv[i], "--line-length")) { i++; set_line_length(argv[i]); continue; }
+            }
             if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
             else if (!strcmp(argv[i], "--format"           )) { set_out_type(FORMAT_NAME); }
             else if (!strcmp(argv[i], "--part-list"        )) { set_out_type(PART_LIST); }
@@ -297,6 +325,8 @@ int main(int argc, char **argv)
     if (out_type == PART_LIST) { print_list_of_parts_and_exit(); }
 
     max_line_length = read_number(IN);
+    if (line_length_is_specified) { max_line_length = requested_line_length; }
+
     N = read_number(IN);
     if (out_type == NUMBER_OF_SEQUENCES) { printf("%llu\n", N); exit(0); }
     if (!N) { exit(0); }
