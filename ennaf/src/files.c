@@ -70,15 +70,16 @@ static void close_temp_files(void)
 static void make_temp_files(void)
 {
     assert(temp_dir != NULL);
+    assert(temp_prefix == NULL);
+    assert(temp_prefix_length == 0);
 
-    if (temp_prefix_length == 0 && dataset_name != NULL)
+    if (dataset_name != NULL)
     {
         temp_prefix_length = strlen(dataset_name);
         temp_prefix = (char*)malloc(temp_prefix_length + 1);
         strcpy(temp_prefix, dataset_name);
     }
-
-    if (temp_prefix_length == 0 && in_file_path != NULL)
+    else if (in_file_path != NULL)
     {
         char *in_file_name = in_file_path + strlen(in_file_path);
         while (in_file_name > in_file_path && *(in_file_name-1) != '/' && *(in_file_name-1) != '\\') { in_file_name--; }
@@ -87,19 +88,14 @@ static void make_temp_files(void)
         temp_prefix = (char*)malloc(temp_prefix_length + 1);
         strcpy(temp_prefix, in_file_name);
     }
-
-    if (temp_prefix_length == 0)
+    else
     {
-        pid_t pid = getpid();
-        char pid_str[30];
-        snprintf(pid_str, 30, "%d", pid);
-        temp_prefix_length = strlen(pid_str) + 11;
-
-        srand((unsigned)time(0));
+        long long pid = getpid();  // Some C std libs define pid_t as 'int', some as 'long long'.
+        srand((unsigned)time(NULL));
         long r = rand() % 2147483648;
-
-        temp_prefix = (char*)malloc(temp_prefix_length + 1);
-        snprintf(temp_prefix, temp_prefix_length, "%d-%ld", pid, r);
+        temp_prefix = (char*)malloc(32);
+        snprintf(temp_prefix, 32, "%lld-%ld", pid, r);
+        temp_prefix_length = strlen(temp_prefix);
     }
 
     if (verbose) { fprintf(stderr, "Temp file prefix: \"%s\"\n", temp_prefix); }

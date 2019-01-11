@@ -16,7 +16,7 @@
 */
 
 #define VERSION "1.0.0"
-#define DATE "2019-01-09"
+#define DATE "2019-01-11"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -56,8 +56,8 @@ static char *temp_dir = NULL;
 static char *dataset_name = NULL;
 static char *dataset_title = NULL;
 
-size_t temp_prefix_length = 0;
-size_t temp_path_length = 0;
+static size_t temp_prefix_length = 0;
+static size_t temp_path_length = 0;
 static char *temp_prefix = NULL;
 
 static char *ids_path  = NULL;
