@@ -98,7 +98,6 @@ static void fread_or_die(void *ptr, size_t element_size, size_t n_elements, FILE
     size_t elements_read = fread(ptr, element_size, n_elements, F);
     if (elements_read != n_elements) { fprintf(stderr, "Error reading from file\n"); exit(1); }
 }
-#define fread dont_use_fread
 
 
 static void fwrite_or_die(const void *ptr, size_t element_size, size_t n_elements, FILE *F)

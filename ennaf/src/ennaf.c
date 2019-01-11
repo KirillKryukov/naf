@@ -29,7 +29,6 @@
 #include <errno.h>
 #include <time.h>
 #include <unistd.h>
-#include <poll.h>
 
 #define ZSTD_STATIC_LINKING_ONLY
 #include <zstd.h>

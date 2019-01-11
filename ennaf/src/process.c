@@ -31,19 +31,7 @@ static inline void refill_in_buffer(void)
     assert(in_buffer != NULL);
 
     in_begin = 0;
-    while (1)
-    {
-        ssize_t could_read = read(in_fd, in_buffer, in_buffer_size);
-        if (could_read >= 0) { in_end = (size_t)could_read; return; }
-        if (errno == EINTR) { continue; }
-        else if (errno == EAGAIN || errno == EWOULDBLOCK)
-        {
-            struct pollfd p = { in_fd, POLLIN, 0 };
-            poll(&p, 1, -1);
-            continue;
-        }
-        else { fprintf(stderr, "Error reading input\n"); exit(1); }
-    }
+    in_end = fread(in_buffer, 1, in_buffer_size, IN);
 }
 
 
