@@ -4,7 +4,7 @@
 TARGET = unnaf
 
 CC = cc
-CFLAGS = -std=gnu11 -Wall -Wextra -flto -O3 -march=native -ffast-math -s
+CFLAGS = -std=gnu99 -Wall -Wextra -flto -O3 -march=native -ffast-math -s
 LDFLAGS = -lzstd
 
 .PHONY: default all clean install uninstall

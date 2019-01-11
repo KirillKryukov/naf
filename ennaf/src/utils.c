@@ -4,14 +4,6 @@
  * See README.md and LICENSE files of this repository
  */
 
-static_assert(sizeof(int) == 4, "Unsupported platform: int is not 4 bytes");
-static_assert(sizeof(long) == 8, "Unsupported platform: long is not 8 bytes");
-static_assert(sizeof(void*) == 8, "Unsupported platform: void* is not 8 bytes");
-static_assert(sizeof(size_t) == 8, "Unsupported platform: size_t is not 8 bytes");
-static_assert(sizeof(ptrdiff_t) == 8, "Unsupported platform: ptrdiff_t is not 8 bytes");
-static_assert(sizeof(long long) == 8, "Unsupported platform: long long is not 8 bytes");
-
-
 static bool is_eol_arr[256];
 static bool is_space_arr[256];
 static bool is_space_or_gt_arr[256];
