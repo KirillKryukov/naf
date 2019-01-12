@@ -32,7 +32,6 @@ static void open_output_file(void)
     }
     else
     {
-        if (isatty(fileno(stdout))) { fprintf(stderr, "Won't write binary data to terminal\n"); exit(1); }
         if (!freopen(NULL, "wb", stdout)) { fprintf(stderr, "Can't set output stream to binary mode\n"); exit(1); }
         OUT = stdout;
     }

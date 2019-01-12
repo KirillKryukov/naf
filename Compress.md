@@ -4,6 +4,8 @@
 
 `ennaf file.fa --out file.naf` - Compress a FASTA file.
 
+`ennaf file.fa` - Compress into 'file.fa.naf' (the original file is not deleted).
+
 `ennaf <file.fa >file.naf` - Compress using IO redirection.
 
 `ennaf file.fq >file.naf` - Compress a FASTQ file (format is detected automatically).

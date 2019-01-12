@@ -44,6 +44,7 @@ static char *in_file_path = NULL;
 static FILE *IN = NULL;
 
 static char *out_file_path = NULL;
+static char *out_file_path_auto = NULL;
 static FILE *OUT = NULL;
 
 static int compression_level = 1;
@@ -159,6 +160,7 @@ static void done(void)
     FREE(length_units);
     FREE(mask_units);
 
+    FREE(out_file_path_auto);
     if (OUT != NULL && OUT != stdout) { fclose_or_die(OUT); OUT = NULL; }
     close_input_file();
     close_temp_files();
@@ -421,6 +423,23 @@ int main(int argc, char **argv)
     confirm_input_format();
     store_qual = (in_format_from_input == in_format_fastq);
 
+    if (out_file_path == NULL && isatty(fileno(stdout)))
+    {
+        if (in_file_path == NULL)
+        {
+            fprintf(stderr, "Error: Output file is not specified\n");
+            exit(1);
+        }
+        else
+        {
+            size_t len = strlen(in_file_path) + 5;
+            out_file_path_auto = (char*)malloc(len);
+            snprintf(out_file_path_auto, len, "%s.naf", in_file_path);
+            out_file_path = out_file_path_auto;
+        }
+    }
+    open_output_file();
+
     make_temp_files();
 
     if (store_ids ) { ids_cstream  = create_zstd_cstream(compression_level); }
@@ -471,7 +490,6 @@ int main(int argc, char **argv)
     close_temp_files();
 
 
-    open_output_file();
     naf_header_start[4] = (unsigned char)( (extended_format << 7) |
                                            (store_title     << 6) |
                                            (store_ids       << 5) |
