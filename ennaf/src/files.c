@@ -108,7 +108,7 @@ static void make_temp_files(void)
     if (store_qual) { qual_path = (char*)malloc(temp_path_length); }
 
     if (store_ids ) { snprintf(ids_path , temp_path_length, "%s/%s.ids",      temp_dir, temp_prefix); }
-    if (store_comm) { snprintf(comm_path, temp_path_length, "%s/%s.names",    temp_dir, temp_prefix); }
+    if (store_comm) { snprintf(comm_path, temp_path_length, "%s/%s.comments", temp_dir, temp_prefix); }
     if (store_len ) { snprintf(len_path , temp_path_length, "%s/%s.lengths",  temp_dir, temp_prefix); }
     if (store_mask) { snprintf(mask_path, temp_path_length, "%s/%s.mask",     temp_dir, temp_prefix); }
     if (store_seq ) { snprintf(seq_path , temp_path_length, "%s/%s.sequence", temp_dir, temp_prefix); }
