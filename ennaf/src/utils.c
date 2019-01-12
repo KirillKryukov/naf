@@ -141,7 +141,10 @@ static ZSTD_CStream* create_zstd_cstream(int level)
 }
 
 
-static void write_to_cstream(ZSTD_CStream *s, FILE *F, void *data, size_t size)
+/*
+ * Returns the number of bytes written to file.
+ */
+static size_t write_to_cstream(ZSTD_CStream *s, FILE *F, void *data, size_t size)
 {
     assert(s != NULL);
     assert(F != NULL);
@@ -150,17 +153,23 @@ static void write_to_cstream(ZSTD_CStream *s, FILE *F, void *data, size_t size)
     assert(out_buffer_size != 0);
 
     ZSTD_inBuffer input = { data, size, 0 };
+    size_t bytes_written = 0;
     while (input.pos < input.size)
     {
         ZSTD_outBuffer output = { out_buffer, out_buffer_size, 0 };
         size_t toRead = ZSTD_compressStream(s, &output, &input);
         if (ZSTD_isError(toRead)) { fprintf(stderr, "ZSTD_compressStream() error: %s\n", ZSTD_getErrorName(toRead)); exit(1); }
         fwrite_or_die(out_buffer, 1, output.pos, F);
+        bytes_written += output.pos;
     }
+    return bytes_written;
 }
 
 
-static void flush_cstream(ZSTD_CStream *s, FILE *F)
+/*
+ * Returns the number of bytes written to file.
+ */
+static size_t flush_cstream(ZSTD_CStream *s, FILE *F)
 {
     assert(s != NULL);
     assert(F != NULL);
@@ -171,6 +180,7 @@ static void flush_cstream(ZSTD_CStream *s, FILE *F)
     size_t const remainingToFlush = ZSTD_endStream(s, &output);
     if (remainingToFlush) { fprintf(stderr, "Can't end zstd stream"); exit(1); }
     fwrite_or_die(out_buffer, 1, output.pos, F);
+    return output.pos;
 }
 
 

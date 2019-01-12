@@ -122,13 +122,13 @@ static void process_fasta(void)
         if (store_ids)
         {
             ids_size_original += name.length + 1;
-            write_to_cstream(ids_cstream, IDS, name.data, name.length + 1);
+            ids_size_compressed += write_to_cstream(ids_cstream, IDS, name.data, name.length + 1);
         }
 
         if (store_comm)
         {
             comm_size_original += comment.length + 1;
-            write_to_cstream(comm_cstream, COMM, comment.data, comment.length + 1);
+            comm_size_compressed += write_to_cstream(comm_cstream, COMM, comment.data, comment.length + 1);
         }
 
         if (store_len)
@@ -196,13 +196,13 @@ static void process_fastq(void)
         if (store_ids)
         {
             ids_size_original += name.length + 1;
-            write_to_cstream(ids_cstream, IDS, name.data, name.length + 1);
+            ids_size_compressed += write_to_cstream(ids_cstream, IDS, name.data, name.length + 1);
         }
 
         if (store_comm)
         {
             comm_size_original += comment.length + 1;
-            write_to_cstream(comm_cstream, COMM, comment.data, comment.length + 1);
+            comm_size_compressed += write_to_cstream(comm_cstream, COMM, comment.data, comment.length + 1);
         }
 
         if (store_len)
@@ -224,7 +224,7 @@ static void process_fastq(void)
         if (store_qual)
         {
             qual_size_original += qual.length;
-            write_to_cstream(qual_cstream, QUAL, qual.data, qual.length);
+            qual_size_compressed += write_to_cstream(qual_cstream, QUAL, qual.data, qual.length);
         }
 
         n_sequences++;

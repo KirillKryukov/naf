@@ -41,7 +41,7 @@ static void encode_dna(const unsigned char *str, size_t size)
         *out_4bit_pos++ |= (unsigned char)(nuc_code[*p] * 16);
         if (out_4bit_pos >= out_4bit_buffer + out_buffer_size)
         {
-            write_to_cstream(seq_cstream, SEQ, out_4bit_buffer, out_buffer_size);
+            seq_size_compressed += write_to_cstream(seq_cstream, SEQ, out_4bit_buffer, out_buffer_size);
             out_4bit_pos = out_4bit_buffer;
         }
         parity = false;
@@ -55,7 +55,7 @@ static void encode_dna(const unsigned char *str, size_t size)
                           (unsigned char)(nuc_code[*(p+1)] * 16);
         if (out_4bit_pos >= out_4bit_buffer + out_buffer_size)
         {
-            write_to_cstream(seq_cstream, SEQ, out_4bit_buffer, out_buffer_size);
+            seq_size_compressed += write_to_cstream(seq_cstream, SEQ, out_4bit_buffer, out_buffer_size);
             out_4bit_pos = out_4bit_buffer;
         }
     }
@@ -81,7 +81,7 @@ static void add_length(size_t len)
         len -= 0xFFFFFFFFull;
         if (length_unit_index >= length_units_buffer_n_units)
         {
-            write_to_cstream(len_cstream, LEN, length_units, sizeof(unsigned int) * length_units_buffer_n_units);
+            len_size_compressed += write_to_cstream(len_cstream, LEN, length_units, sizeof(unsigned int) * length_units_buffer_n_units);
             n_length_units_stored += length_units_buffer_n_units;
             length_unit_index = 0;
         }
@@ -90,7 +90,7 @@ static void add_length(size_t len)
     length_units[length_unit_index++] = (unsigned int)len;
     if (length_unit_index >= length_units_buffer_n_units)
     {
-        write_to_cstream(len_cstream, LEN, length_units, sizeof(unsigned int) * length_units_buffer_n_units);
+        len_size_compressed += write_to_cstream(len_cstream, LEN, length_units, sizeof(unsigned int) * length_units_buffer_n_units);
         n_length_units_stored += length_units_buffer_n_units;
         length_unit_index = 0;
     }
@@ -112,7 +112,7 @@ static void add_mask(unsigned long long len)
         len -= 255ull;
         if (mask_units_pos >= mask_units_end)
         {
-            write_to_cstream(mask_cstream, MASK, mask_units, mask_units_buffer_size);
+            mask_size_compressed += write_to_cstream(mask_cstream, MASK, mask_units, mask_units_buffer_size);
             n_mask_units_stored += mask_units_buffer_size;
             mask_units_pos = mask_units;
         }
@@ -121,7 +121,7 @@ static void add_mask(unsigned long long len)
     *mask_units_pos++ = (unsigned char)len;
     if (mask_units_pos >= mask_units_end)
     {
-        write_to_cstream(mask_cstream, MASK, mask_units, mask_units_buffer_size);
+        mask_size_compressed += write_to_cstream(mask_cstream, MASK, mask_units, mask_units_buffer_size);
         n_mask_units_stored += mask_units_buffer_size;
         mask_units_pos = mask_units;
     }
@@ -152,11 +152,10 @@ static void extract_mask(const unsigned char *seq, size_t len)
 
 
 /*
- * Copies the content of a temporary file into output stream.
- * Leaves out the first 4 bytes of the temporary file.
- * Writes data size first, in variable length format.
+ * Copies the content of a file into output stream.
+ * Starts from "start", copies exactly "expected_size" bytes.
  */
-static void copy_file_to_out(char* from_path)
+static void copy_file_to_out(char* from_path, long start, unsigned long long data_size)
 {
     assert(from_path != NULL);
     assert(file_copy_buffer != NULL);
@@ -165,17 +164,9 @@ static void copy_file_to_out(char* from_path)
     FILE *FROM = fopen(from_path, "rb");
     if (FROM == NULL) { fprintf(stderr, "Can't open \"%s\"\n", from_path); exit(1); }
 
-    if (fseek(FROM, 0, SEEK_END) != 0) { fprintf(stderr, "Can't seek to the end of file \"%s\"\n", from_path); exit(1); }
-    long file_size = ftell(FROM);
-    if (file_size < 0) { fprintf(stderr, "Can't determine size of \"%s\"\n", from_path); exit(1); }
-    if (file_size < 4) { fprintf(stderr, "\"%s\" is smaller than 4 bytes\n", from_path); exit(1); }
+    if (fseek(FROM, start, SEEK_SET) != 0) { fprintf(stderr, "Can't seek to data start in \"%s\"\n", from_path); exit(1); }
 
-    size_t data_size = (size_t)(file_size - 4);
-    write_variable_length_encoded_number(OUT, data_size);
-
-    if (fseek(FROM, 4, SEEK_SET) != 0) { fprintf(stderr, "Can't seek to data start in \"%s\"\n", from_path); exit(1); }
-
-    size_t remaining = data_size;
+    unsigned long long remaining = data_size;
     while (remaining > 0)
     {
         size_t to_read = (file_copy_buffer_size <= remaining) ? file_copy_buffer_size : remaining;

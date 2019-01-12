@@ -16,7 +16,7 @@
 */
 
 #define VERSION "1.0.0"
-#define DATE "2019-01-11"
+#define DATE "2019-01-12"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -93,6 +93,14 @@ static ZSTD_CStream *len_cstream  = NULL;
 static ZSTD_CStream *mask_cstream = NULL;
 static ZSTD_CStream *seq_cstream  = NULL;
 static ZSTD_CStream *qual_cstream = NULL;
+
+static unsigned long long ids_size_compressed  = 0ull;
+static unsigned long long comm_size_compressed = 0ull;
+static unsigned long long len_size_compressed  = 0ull;
+static unsigned long long mask_size_compressed = 0ull;
+static unsigned long long seq_size_compressed  = 0ull;
+static unsigned long long qual_size_compressed = 0ull;
+
 
 static bool parity = false;
 static unsigned char* out_4bit_buffer = NULL;
@@ -422,14 +430,14 @@ int main(int argc, char **argv)
 
     if (length_unit_index > 0)
     {
-        write_to_cstream(len_cstream, LEN, length_units, sizeof(unsigned int) * length_unit_index);
+        len_size_compressed += write_to_cstream(len_cstream, LEN, length_units, sizeof(unsigned int) * length_unit_index);
         n_length_units_stored += length_unit_index;
         length_unit_index = 0;
     }
 
     if (mask_units_pos > mask_units)
     {
-        write_to_cstream(mask_cstream, MASK, mask_units, (size_t)(mask_units_pos - mask_units));
+        mask_size_compressed += write_to_cstream(mask_cstream, MASK, mask_units, (size_t)(mask_units_pos - mask_units));
         n_mask_units_stored += (unsigned long long)(mask_units_pos - mask_units);
         mask_units_pos = mask_units;
     }
@@ -437,15 +445,18 @@ int main(int argc, char **argv)
     if (store_seq)
     {
         if (parity) { out_4bit_pos++; }
-        if (out_4bit_pos > out_4bit_buffer) { write_to_cstream(seq_cstream, SEQ, out_4bit_buffer, (size_t)(out_4bit_pos - out_4bit_buffer) ); }
+        if (out_4bit_pos > out_4bit_buffer)
+        {
+            seq_size_compressed += write_to_cstream(seq_cstream, SEQ, out_4bit_buffer, (size_t)(out_4bit_pos - out_4bit_buffer) );
+        }
     }
 
-    if (store_ids ) { flush_cstream(ids_cstream , IDS ); }
-    if (store_comm) { flush_cstream(comm_cstream, COMM); }
-    if (store_len ) { flush_cstream(len_cstream , LEN ); }
-    if (store_mask) { flush_cstream(mask_cstream, MASK); }
-    if (store_seq ) { flush_cstream(seq_cstream , SEQ ); }
-    if (store_qual) { flush_cstream(qual_cstream, QUAL); }
+    if (store_ids ) { ids_size_compressed  += flush_cstream(ids_cstream , IDS ); }
+    if (store_comm) { comm_size_compressed += flush_cstream(comm_cstream, COMM); }
+    if (store_len ) { len_size_compressed  += flush_cstream(len_cstream , LEN ); }
+    if (store_mask) { mask_size_compressed += flush_cstream(mask_cstream, MASK); }
+    if (store_seq ) { seq_size_compressed  += flush_cstream(seq_cstream , SEQ ); }
+    if (store_qual) { qual_size_compressed += flush_cstream(qual_cstream, QUAL); }
 
     close_input_file();
     close_temp_files();
@@ -479,38 +490,50 @@ int main(int argc, char **argv)
 
     if (store_ids)
     {
+        assert(ids_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, ids_size_original);
-        copy_file_to_out(ids_path);
+        write_variable_length_encoded_number(OUT, ids_size_compressed - 4);
+        copy_file_to_out(ids_path, 4, ids_size_compressed - 4);
     }
 
     if (store_comm)
     {
+        assert(comm_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, comm_size_original);
-        copy_file_to_out(comm_path);
+        write_variable_length_encoded_number(OUT, comm_size_compressed - 4);
+        copy_file_to_out(comm_path, 4, comm_size_compressed - 4);
     }
 
     if (store_len)
     {
+        assert(len_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, sizeof(unsigned int) * n_length_units_stored);
-        copy_file_to_out(len_path);
+        write_variable_length_encoded_number(OUT, len_size_compressed - 4);
+        copy_file_to_out(len_path, 4, len_size_compressed - 4);
     }
 
     if (store_mask)
     {
+        assert(mask_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, n_mask_units_stored);
-        copy_file_to_out(mask_path);
+        write_variable_length_encoded_number(OUT, mask_size_compressed - 4);
+        copy_file_to_out(mask_path, 4, mask_size_compressed - 4);
     }
 
     if (store_seq)
     {
+        assert(seq_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, seq_size_original);
-        copy_file_to_out(seq_path);
+        write_variable_length_encoded_number(OUT, seq_size_compressed - 4);
+        copy_file_to_out(seq_path, 4, seq_size_compressed - 4);
     }
 
     if (store_qual)
     {
+        assert(qual_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, qual_size_original);
-        copy_file_to_out(qual_path);
+        write_variable_length_encoded_number(OUT, qual_size_compressed - 4);
+        copy_file_to_out(qual_path, 4, qual_size_compressed - 4);
     }
 
     if (verbose) { fprintf(stderr, "Processed %llu sequences\n", n_sequences); }
