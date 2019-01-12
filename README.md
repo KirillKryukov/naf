@@ -37,7 +37,7 @@ In case if your system has no static zstd library (such as cygwin currently), tr
 
 ## Compressing
 
-`ennaf <file.fasta >file.naf`
+`ennaf <file.fa >file.naf`
 
 See `ennaf --help` and [Compression Manual](Compress.md) for detailed usage.
 

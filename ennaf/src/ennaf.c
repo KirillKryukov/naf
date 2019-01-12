@@ -188,8 +188,8 @@ static void set_input_file_path(char *new_path)
 {
     assert(new_path != NULL);
 
-    if (in_file_path != NULL) { fprintf(stderr, "Error: double --in parameter\n"); exit(1); }
-    if (*new_path == '\0') { fprintf(stderr, "Error: empty --in parameter\n"); exit(1); }
+    if (in_file_path != NULL) { fputs("Can process only one file at a time\n", stderr); exit(1); }
+    if (*new_path == '\0') { fputs("Error: empty input file name\n", stderr); exit(1); }
     in_file_path = new_path;
 }
 
@@ -334,14 +334,13 @@ static void show_help(void)
     int max_level = ZSTD_maxCLevel();
 
     fprintf(stderr,
-        "Usage: ennaf [OPTIONS] [<infile] [>outfile]\n"
+        "Usage: ennaf [OPTIONS] [infile]\n"
         "Options:\n"
-        "  --in FILE         - Compress FILE (stdin by default)\n"
         "  --out FILE        - Write compressed output to FILE (stdout by default)\n"
         "  --temp-dir DIR    - Use DIR as temporary directory\n"
         "  --name NAME       - Use NAME as prefix for temporary files\n"
         "  --title TITLE     - Store TITLE as dataset title\n"
-        "  --level N         - Use compression level N (from %d to %d, default: 1)\n"
+        "  -# | --level #    - Use compression level # (from %d to %d, default: 1)\n"
         "  --fasta           - Input is in FASTA format\n"
         "  --fastq           - Input is in FASTQ format\n"
         "  --line-length N   - Override line length to N\n"
@@ -360,26 +359,34 @@ static void parse_command_line(int argc, char **argv)
 
     for (int i = 1; i < argc; i++)
     {
-        if (i < argc - 1)
+        if (argv[i][0] == '-')
         {
-            if (!strcmp(argv[i], "--in")) { i++; set_input_file_path(argv[i]); continue; }
-            if (!strcmp(argv[i], "--out")) { i++; set_output_file_path(argv[i]); continue; }
-            if (!strcmp(argv[i], "--temp-dir")) { i++; set_temp_dir(argv[i]); continue; }
-            if (!strcmp(argv[i], "--name")) { i++; set_dataset_name(argv[i]); continue; }
-            if (!strcmp(argv[i], "--title")) { i++; set_dataset_title(argv[i]); continue; }
-            if (!strcmp(argv[i], "--level")) { i++; set_compression_level(argv[i]); continue; }
-            if (!strcmp(argv[i], "--in-format")) { i++; set_input_format_from_command_line(argv[i]); continue; }  // Undocumented
-            if (!strcmp(argv[i], "--line-length")) { i++; set_line_length(argv[i]); continue; }
+            if (argv[i][1] == '-')
+            {
+                if (i < argc - 1)
+                {
+                    if (!strcmp(argv[i], "--in")) { i++; set_input_file_path(argv[i]); continue; }  // Undocumented
+                    if (!strcmp(argv[i], "--out")) { i++; set_output_file_path(argv[i]); continue; }
+                    if (!strcmp(argv[i], "--temp-dir")) { i++; set_temp_dir(argv[i]); continue; }
+                    if (!strcmp(argv[i], "--name")) { i++; set_dataset_name(argv[i]); continue; }
+                    if (!strcmp(argv[i], "--title")) { i++; set_dataset_title(argv[i]); continue; }
+                    if (!strcmp(argv[i], "--level")) { i++; set_compression_level(argv[i]); continue; }
+                    if (!strcmp(argv[i], "--in-format")) { i++; set_input_format_from_command_line(argv[i]); continue; }  // Undocumented
+                    if (!strcmp(argv[i], "--line-length")) { i++; set_line_length(argv[i]); continue; }
+                }
+                if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
+                if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
+                if (!strcmp(argv[i], "--verbose")) { verbose = true; continue; }
+                if (!strcmp(argv[i], "--keep-temp-files")) { keep_temp_files = true; continue; }
+                if (!strcmp(argv[i], "--no-mask")) { store_mask = false; continue; }
+                if (!strcmp(argv[i], "--fasta")) { set_input_format_from_command_line("fasta"); continue; }
+                if (!strcmp(argv[i], "--fastq")) { set_input_format_from_command_line("fastq"); continue; }
+            }
+            if (argv[i][1] >= '0' && argv[i][1] <= '9') { set_compression_level(argv[i]+1); continue; }
+            fprintf(stderr, "Unknown or incomplete parameter \"%s\"\n", argv[i]);
+            exit(1);
         }
-        if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
-        if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
-        if (!strcmp(argv[i], "--verbose")) { verbose = true; continue; }
-        if (!strcmp(argv[i], "--keep-temp-files")) { keep_temp_files = true; continue; }
-        if (!strcmp(argv[i], "--no-mask")) { store_mask = false; continue; }
-        if (!strcmp(argv[i], "--fasta")) { set_input_format_from_command_line("fasta"); continue; }
-        if (!strcmp(argv[i], "--fastq")) { set_input_format_from_command_line("fastq"); continue; }
-        fprintf(stderr, "Unknown or incomplete parameter \"%s\"\n", argv[i]);
-        exit(1);
+        set_input_file_path(argv[i]);
     }
 
     if (print_version)

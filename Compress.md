@@ -2,13 +2,13 @@
 
 ## Synopsis
 
-`ennaf --in file.fa --out file.naf` - Compress a FASTA file.
+`ennaf file.fa --out file.naf` - Compress a FASTA file.
 
 `ennaf <file.fa >file.naf` - Compress using IO redirection.
 
-`ennaf <file.fq >file.naf` - Compress a FASTQ file (format is detected automatically).
+`ennaf file.fq >file.naf` - Compress a FASTQ file (format is detected automatically).
 
-`ennaf --level 22 <file.fa >file.naf` - Use maximum compression level.
+`ennaf --22 file.fa >file.naf` - Use maximum compression level.
 
 `gzip -dc file.gz | ennaf >file.naf` - Recompress from gzip to NAF on the fly.
 
@@ -26,8 +26,6 @@ Therefore please check the following before compressing large files:
  Note that storage devices and filesystems can slow down when nearly full, so having extra free temporary space is generally a good idea.
 
 ## Options
-
-**--in FILE** - Compress FILE. If omitted, stdin is used by default.
 
 **--out FILE** - Write compressed NAF format data to FILE.
 If omitted, stdout stream is used, but only if it's redirected into a file, or piped into next tool.
