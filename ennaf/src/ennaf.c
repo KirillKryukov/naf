@@ -399,17 +399,17 @@ static void parse_command_line(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    if (argc <= 1 && isatty(fileno(stdin)))
-    {
-        fprintf(stderr, "No input specified, use \"ennaf --help\" for help\n");
-        exit(0);
-    }
-
     atexit(done);
     init_utils();
     init_encoders();
 
     parse_command_line(argc, argv);
+    if (in_file_path == NULL && isatty(fileno(stdin)))
+    {
+        fprintf(stderr, "No input specified, use \"ennaf --help\" for help\n");
+        exit(0);
+    }
+
     detect_temp_directory();
     detect_input_format_from_input_file_extension();
 
