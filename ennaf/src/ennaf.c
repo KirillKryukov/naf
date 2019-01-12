@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include <errno.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -483,8 +482,6 @@ int main(int argc, char **argv)
                                             store_qual              );
 
     fwrite_or_die(naf_header_start, 1, 6, OUT);
-
-
 
     unsigned long long out_line_length = line_length_is_specified ? requested_line_length : longest_line_length;
     if (verbose) { fprintf(stderr, "Output line length: %llu\n", out_line_length); }
