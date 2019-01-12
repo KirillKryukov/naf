@@ -1,4 +1,5 @@
 # Nucleotide Archival Format (NAF)
+
 NAF is a binary file format for DNA sequence data.
 It's based on [zstd](http://www.zstd.net/), and features strong compression and fast decompression.
 It supports FASTA and FASTQ-formatted sequences, ambiguous IUPAC codes, masked sequence,
@@ -17,7 +18,7 @@ However, if you decompress it back with _unnaf_, your space is again _un-enough_
 ## Installing
 
 Prerequisites: git (for downloading), zstd, gcc, make.
-(E.g., to install on Ubuntu: `sudo apt install git gcc make zstd libzstd-dev`).
+(E.g., to install on Ubuntu: `sudo apt install git gcc make libzstd-dev`).
 
 Installing:
 ```
@@ -31,6 +32,8 @@ For a staged install, add "DESTDIR=DIR". E.g., `make DESTDIR=/tmp/stage install`
 
 On Windows it can be installed using [cygwin](https://www.cygwin.com/),
 and should be also possible with [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
+
+In case if your system has no static zstd library (such as cygwin currently), try adding `LDFLAGS=-lzstd` to the make command.
 
 ## Compressing
 
