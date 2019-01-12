@@ -299,7 +299,7 @@ static void detect_input_format_from_input_file_extension(void)
     {
         char *ext = in_file_path + strlen(in_file_path);
         while (ext > in_file_path && *(ext-1) != '/' && *(ext-1) != '\\' && *(ext-1) != '.') { ext--; }
-        in_format_from_extension = parse_input_format(ext);
+        if (ext > in_file_path && *(ext-1) == '.') { in_format_from_extension = parse_input_format(ext); }
     }
 }
 
@@ -365,14 +365,16 @@ static void parse_command_line(int argc, char **argv)
             {
                 if (i < argc - 1)
                 {
-                    if (!strcmp(argv[i], "--in")) { i++; set_input_file_path(argv[i]); continue; }  // Undocumented
                     if (!strcmp(argv[i], "--out")) { i++; set_output_file_path(argv[i]); continue; }
                     if (!strcmp(argv[i], "--temp-dir")) { i++; set_temp_dir(argv[i]); continue; }
                     if (!strcmp(argv[i], "--name")) { i++; set_dataset_name(argv[i]); continue; }
                     if (!strcmp(argv[i], "--title")) { i++; set_dataset_title(argv[i]); continue; }
                     if (!strcmp(argv[i], "--level")) { i++; set_compression_level(argv[i]); continue; }
-                    if (!strcmp(argv[i], "--in-format")) { i++; set_input_format_from_command_line(argv[i]); continue; }  // Undocumented
                     if (!strcmp(argv[i], "--line-length")) { i++; set_line_length(argv[i]); continue; }
+
+                    // Deprecated, undocumented.
+                    if (!strcmp(argv[i], "--in")) { i++; set_input_file_path(argv[i]); continue; }
+                    if (!strcmp(argv[i], "--in-format")) { i++; set_input_format_from_command_line(argv[i]); continue; }
                 }
                 if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
                 if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
