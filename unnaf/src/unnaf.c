@@ -5,7 +5,7 @@
  */
 
 #define VERSION "1.0.0"
-#define DATE "2019-01-10"
+#define DATE "2019-01-12"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -232,9 +232,65 @@ static void show_help(void)
         "Other options:\n"
         "  --line-length N - Use lines of width N for FASTA output\n"
         "  --no-mask      - Ignore mask\n"
-        "  --help         - Show help\n"
-        "  --version      - Show version\n"
+        "  -h, --help     - Show help\n"
+        "  -V, --version  - Show version\n"
     );
+}
+
+
+static void parse_command_line(int argc, char **argv)
+{
+    bool print_version = false;
+
+    for (int i = 1; i < argc; i++)
+    {
+        if (argv[i][0] == '-')
+        {
+            if (argv[i][1] == '-')
+            {
+                if (i < argc - 1)
+                {
+                    if (!strcmp(argv[i], "--line-length")) { i++; set_line_length(argv[i]); continue; }
+                }
+                if (!strcmp(argv[i], "--format"           )) { set_out_type(FORMAT_NAME        ); continue; }
+                if (!strcmp(argv[i], "--part-list"        )) { set_out_type(PART_LIST          ); continue; }
+                if (!strcmp(argv[i], "--sizes"            )) { set_out_type(PART_SIZES         ); continue; }
+                if (!strcmp(argv[i], "--number"           )) { set_out_type(NUMBER_OF_SEQUENCES); continue; }
+                if (!strcmp(argv[i], "--title"            )) { set_out_type(TITLE              ); continue; }
+                if (!strcmp(argv[i], "--ids"              )) { set_out_type(IDS                ); continue; }
+                if (!strcmp(argv[i], "--names"            )) { set_out_type(NAMES              ); continue; }
+                if (!strcmp(argv[i], "--lengths"          )) { set_out_type(LENGTHS            ); continue; }
+                if (!strcmp(argv[i], "--total-length"     )) { set_out_type(TOTAL_LENGTH       ); continue; }
+                if (!strcmp(argv[i], "--mask"             )) { set_out_type(MASK               ); continue; }
+                if (!strcmp(argv[i], "--total-mask-length")) { set_out_type(TOTAL_MASK_LENGTH  ); continue; }
+                if (!strcmp(argv[i], "--4bit"             )) { set_out_type(FOUR_BIT           ); continue; }
+                if (!strcmp(argv[i], "--dna"              )) { set_out_type(DNA                ); continue; }
+                if (!strcmp(argv[i], "--fasta"            )) { set_out_type(FASTA              ); continue; }
+                if (!strcmp(argv[i], "--fastq"            )) { set_out_type(FASTQ              ); continue; }
+                if (!strcmp(argv[i], "--no-mask")) { use_mask = false; continue; }
+                if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
+                if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
+
+                // Deprecated undocumented options.
+                if (!strcmp(argv[i], "--masked-dna"       )) { set_out_type(MASKED_DNA); continue; }     // Instead use "--dna"
+                if (!strcmp(argv[i], "--unmasked-dna"     )) { set_out_type(UNMASKED_DNA); continue; }   // Instead use "--dna --no-mask"
+                if (!strcmp(argv[i], "--masked-fasta"     )) { set_out_type(MASKED_FASTA); continue; }   // Instead use "--fasta"
+                if (!strcmp(argv[i], "--unmasked-fasta"   )) { set_out_type(UNMASKED_FASTA); continue; } // Instead use "--fasta --no-mask"
+            }
+            if (!strcmp(argv[i], "-h")) { show_help(); exit(0); }
+            if (!strcmp(argv[i], "-V")) { print_version = true; continue; }
+
+            fprintf(stderr, "Unknown or incomplete argument \"%s\"\n", argv[i]);
+            exit(1);
+        }
+        set_input_file_path(argv[i]);
+    }
+
+    if (print_version)
+    {
+        show_version();
+        exit(0);
+    }
 }
 
 
@@ -243,50 +299,10 @@ int main(int argc, char **argv)
     atexit(done);
     init_tables();
 
-    bool print_version = false;
-
-    for (int i = 1; i < argc; i++)
+    parse_command_line(argc, argv);
+    if (in_file_path == NULL && isatty(fileno(stdin)))
     {
-        if (argv[i][0] == '-' && argv[i][1] == '-')
-        //if (!strncmp(argv[i], "--", 2))
-        {
-            if (i < argc - 1)
-            {
-                if (!strcmp(argv[i], "--line-length")) { i++; set_line_length(argv[i]); continue; }
-            }
-            if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
-            else if (!strcmp(argv[i], "--format"           )) { set_out_type(FORMAT_NAME); }
-            else if (!strcmp(argv[i], "--part-list"        )) { set_out_type(PART_LIST); }
-            else if (!strcmp(argv[i], "--sizes"            )) { set_out_type(PART_SIZES); }
-            else if (!strcmp(argv[i], "--number"           )) { set_out_type(NUMBER_OF_SEQUENCES); }
-            else if (!strcmp(argv[i], "--title"            )) { set_out_type(TITLE); }
-            else if (!strcmp(argv[i], "--ids"              )) { set_out_type(IDS); }
-            else if (!strcmp(argv[i], "--names"            )) { set_out_type(NAMES); }
-            else if (!strcmp(argv[i], "--lengths"          )) { set_out_type(LENGTHS); }
-            else if (!strcmp(argv[i], "--total-length"     )) { set_out_type(TOTAL_LENGTH); }
-            else if (!strcmp(argv[i], "--mask"             )) { set_out_type(MASK); }
-            else if (!strcmp(argv[i], "--total-mask-length")) { set_out_type(TOTAL_MASK_LENGTH); }
-            else if (!strcmp(argv[i], "--4bit"             )) { set_out_type(FOUR_BIT); }
-            else if (!strcmp(argv[i], "--dna"              )) { set_out_type(DNA); }
-            else if (!strcmp(argv[i], "--fasta"            )) { set_out_type(FASTA); }
-            else if (!strcmp(argv[i], "--fastq"            )) { set_out_type(FASTQ); }
-            else if (!strcmp(argv[i], "--no-mask")) { use_mask = false; }
-            else if (!strcmp(argv[i], "--version")) { print_version = true; }
-
-            // Deprecated undocumented options.
-            else if (!strcmp(argv[i], "--masked-dna"       )) { set_out_type(MASKED_DNA); }     // Instead use "--dna"
-            else if (!strcmp(argv[i], "--unmasked-dna"     )) { set_out_type(UNMASKED_DNA); }   // Instead use "--dna --no-mask"
-            else if (!strcmp(argv[i], "--masked-fasta"     )) { set_out_type(MASKED_FASTA); }   // Instead use "--fasta"
-            else if (!strcmp(argv[i], "--unmasked-fasta"   )) { set_out_type(UNMASKED_FASTA); } // Instead use "--fasta --no-mask"
-
-            else { fprintf(stderr, "Unknown option \"%s\"\n", argv[i]); exit(1); }
-        }
-        else { set_input_file_path(argv[i]); }
-    }
-
-    if (print_version)
-    {
-        show_version();
+        fprintf(stderr, "No input specified, use \"unnaf -h\" for help\n");
         exit(0);
     }
 
@@ -297,7 +313,6 @@ int main(int argc, char **argv)
     }
     else
     {
-        if (isatty(fileno(stdin))) { fprintf(stderr, "No input specified, use \"unnaf --help\" for help\n"); exit(1); }
         if (!freopen(NULL, "rb", stdin)) { fprintf(stderr, "Can't read input in binary mode\n"); exit(1); }
         IN = stdin;
     }

@@ -59,6 +59,6 @@ Effective only for `--fasta` output. Line length of 0 means unlimited lines, i.e
 
 **--no-mask** - Ignore mask, useful only for `--fasta` and `--dna` outputs.
 
-**--help** - Show usage help.
+**-h**, **--help** - Show usage help.
 
-**--version** - Show version.
+**-V**, **--version** - Show version.

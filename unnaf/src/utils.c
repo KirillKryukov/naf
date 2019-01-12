@@ -4,9 +4,8 @@
  * See README.md and LICENSE files of this repository
  */
 
-unsigned char code_to_nuc[16] = {'-','T','G','K','C','Y','S','B','A','W','R','D','M','H','V','N'};
-//unsigned char nuc_to_code[256];
-unsigned short codes_to_nucs[256];
+static unsigned char code_to_nuc[16] = {'-','T','G','K','C','Y','S','B','A','W','R','D','M','H','V','N'};
+static unsigned short codes_to_nucs[256];
 
 
 __attribute__ ((noreturn))
@@ -19,9 +18,6 @@ static inline void incomplete(void)
 
 static void init_tables(void)
 {
-    //memset(nuc_to_code, 0, 256);
-    //for (unsigned i = 1; i < 16; i++) { nuc_to_code[code_to_nuc[i]] = i; }
-
     for (unsigned i = 0; i < 16; i++)
     {
         for (unsigned j = 0; j < 16; j++)

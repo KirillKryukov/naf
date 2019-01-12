@@ -385,7 +385,8 @@ static void parse_command_line(int argc, char **argv)
             if (argv[i][1] >= '0' && argv[i][1] <= '9') { set_compression_level(argv[i]+1); continue; }
             if (!strcmp(argv[i], "-h")) { show_help(); exit(0); }
             if (!strcmp(argv[i], "-V")) { print_version = true; continue; }
-            fprintf(stderr, "Unknown or incomplete parameter \"%s\"\n", argv[i]);
+
+            fprintf(stderr, "Unknown or incomplete argument \"%s\"\n", argv[i]);
             exit(1);
         }
         set_input_file_path(argv[i]);
