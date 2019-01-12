@@ -138,13 +138,13 @@ static void process_fasta(void)
 
         if (store_mask)
         {
-            extract_mask( (unsigned char *) seq.data, seq.length);
+            extract_mask(seq.data, seq.length);
         }
 
         if (store_seq)
         {
             seq_size_original += seq.length;
-            encode_dna( (unsigned char *) seq.data, seq.length);
+            encode_dna(seq.data, seq.length);
         }
 
         n_sequences++;
@@ -212,13 +212,13 @@ static void process_fastq(void)
 
         if (store_mask)
         {
-            extract_mask( (unsigned char *) seq.data, seq.length);
+            extract_mask(seq.data, seq.length);
         }
 
         if (store_seq)
         {
             seq_size_original += seq.length;
-            encode_dna( (unsigned char *) seq.data, seq.length);
+            encode_dna(seq.data, seq.length);
         }
 
         if (store_qual)
