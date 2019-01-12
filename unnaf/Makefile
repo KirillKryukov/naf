@@ -5,7 +5,7 @@ TARGET = unnaf
 
 CC = cc
 CFLAGS = -std=gnu99 -Wall -Wextra -O3 -march=native -ffast-math -s
-LDFLAGS = -lzstd
+LDFLAGS ?= -l:libzstd.a
 
 .PHONY: default all clean install uninstall
 
