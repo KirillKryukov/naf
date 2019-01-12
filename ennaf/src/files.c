@@ -18,7 +18,6 @@ static void open_input_file(void)
         if (!freopen(NULL, "rb", stdin)) { fprintf(stderr, "Can't read input in binary mode\n"); exit(1); }
         IN = stdin;
     }
-    in_fd = fileno(IN);
 
     in_buffer = (unsigned char *) malloc(in_buffer_size);
 }
@@ -37,7 +36,6 @@ static void open_output_file(void)
         if (!freopen(NULL, "wb", stdout)) { fprintf(stderr, "Can't set output stream to binary mode\n"); exit(1); }
         OUT = stdout;
     }
-    out_fd = fileno(OUT);
 }
 
 

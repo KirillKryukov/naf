@@ -43,11 +43,9 @@ static bool keep_temp_files = false;
 
 static char *in_file_path = NULL;
 static FILE *IN = NULL;
-static int in_fd = -1;
 
 static char *out_file_path = NULL;
 static FILE *OUT = NULL;
-static int out_fd = -1;
 
 static int compression_level = 1;
 
