@@ -8,7 +8,7 @@
 
 `ennaf file.fq >file.naf` - Compress a FASTQ file (format is detected automatically).
 
-`ennaf --22 file.fa >file.naf` - Use maximum compression level.
+`ennaf -22 file.fa >file.naf` - Use maximum compression level.
 
 `gzip -dc file.gz | ennaf >file.naf` - Recompress from gzip to NAF on the fly.
 
@@ -39,10 +39,12 @@ If both variables are not defined, the compressor exits without writing anything
 
 **--title TITLE** - Store TITLE as dataset title in the output NAF file.
 
-**--level N** - Use compression level N. This corresponds to zstd compression level.
+**-#** - Use compression level #. This corresponds to zstd compression level.
 The default is 1. Higher levels provide better compression, but are slower.
 Maximum level is 22, however take care as levels above 19 are slow and use significant amount of RAM.
-Negative levels are supported, down to -131072, for higher speed at the expense of compactness.
+
+**--level #** - Use compression level #.
+Same with `-#`, but also supports even faster negative levels, down to -131072.
 
 **--fasta** - Proceed only if input is in FASTA format.
 
@@ -64,14 +66,14 @@ If omitted, stores the maximum sequence line length from the input.
 ## Which compression level to choose?
 
 The default level 1 is suitable when time is limited, or when the machine doing the compression is not fast enough (or has too little RAM).
-For example, when transferring reads from a sequencer machine, `ennaf --level 1` can be used instead of gzip.
+For example, when transferring reads from a sequencer machine, `ennaf -1` can be used instead of gzip.
 
 On the other hand, if you compress data for storing in a database,
 the maximum level 22 may be preferable, even though it's slower.
 In database usage, data has to be compressed only once,
 while network transfer and decompression may be performed thousands of times by database users.
 Optimizing user experience is more important in such cases.
-So, `ennaf --level 22` is the best option for sequence databases.
+So, `ennaf -22` is the best option for sequence databases.
 
 ## Specifying input format
 
