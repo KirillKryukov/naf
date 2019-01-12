@@ -7,7 +7,11 @@
  */
 
 #ifndef round_up_to_power_of_two
+#if __x86_64__
 #define round_up_to_power_of_two(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, (x)|=(x)>>32, ++(x))
+#else
+#define round_up_to_power_of_two(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
+#endif
 #endif
 
 
