@@ -59,9 +59,9 @@ If omitted, stores the maximum sequence line length from the input.
 
 **--no-mask** - Don't store sequence mask (lower/upper characters).
 
-**--help** - Show usage help.
+**-h**, **--help** - Show usage help.
 
-**--version** - Show version.
+**-V**, **--version** - Show version.
 
 ## Which compression level to choose?
 

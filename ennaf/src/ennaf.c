@@ -340,15 +340,15 @@ static void show_help(void)
         "  --temp-dir DIR    - Use DIR as temporary directory\n"
         "  --name NAME       - Use NAME as prefix for temporary files\n"
         "  --title TITLE     - Store TITLE as dataset title\n"
-        "  -# | --level #    - Use compression level # (from %d to %d, default: 1)\n"
+        "  -#, --level #     - Use compression level # (from %d to %d, default: 1)\n"
         "  --fasta           - Input is in FASTA format\n"
         "  --fastq           - Input is in FASTQ format\n"
         "  --line-length N   - Override line length to N\n"
         "  --verbose         - Verbose mode\n"
         "  --keep-temp-files - Keep temporary files\n"
         "  --no-mask         - Don't store mask\n"
-        "  --help            - Show help\n"
-        "  --version         - Show version\n",
+        "  -h, --help        - Show help\n"
+        "  -V, --version     - Show version\n",
         min_level, max_level);
 }
 
@@ -383,6 +383,8 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--fastq")) { set_input_format_from_command_line("fastq"); continue; }
             }
             if (argv[i][1] >= '0' && argv[i][1] <= '9') { set_compression_level(argv[i]+1); continue; }
+            if (!strcmp(argv[i], "-h")) { show_help(); exit(0); }
+            if (!strcmp(argv[i], "-V")) { print_version = true; continue; }
             fprintf(stderr, "Unknown or incomplete parameter \"%s\"\n", argv[i]);
             exit(1);
         }
@@ -406,7 +408,7 @@ int main(int argc, char **argv)
     parse_command_line(argc, argv);
     if (in_file_path == NULL && isatty(fileno(stdin)))
     {
-        fprintf(stderr, "No input specified, use \"ennaf --help\" for help\n");
+        fprintf(stderr, "No input specified, use \"ennaf -h\" for help\n");
         exit(0);
     }
 

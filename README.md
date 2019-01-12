@@ -39,7 +39,7 @@ In case if your system has no static zstd library (such as cygwin currently), tr
 
 `ennaf <file.fa >file.naf`
 
-See `ennaf --help` and [Compression Manual](Compress.md) for detailed usage.
+See `ennaf -h` and [Compression Manual](Compress.md) for detailed usage.
 
 ## Decompressing
 
