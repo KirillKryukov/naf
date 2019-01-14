@@ -120,6 +120,15 @@ static void fclose_or_die(FILE *F)
 }
 
 
+static void fflush_or_die(FILE *F)
+{
+    assert(F != NULL);
+
+    int error = fflush(F);
+    if (error != 0) { fprintf(stderr, "Error: Can't write to file. Disk full?\n"); exit(1); }
+}
+
+
 static FILE* create_temp_file(char *path, const char *purpose)
 {
     assert(path != NULL);
