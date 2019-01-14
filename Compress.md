@@ -91,6 +91,7 @@ A mismatching file extension produces a warning, but does not stop the compressi
 
   * If `-c` is specified, the compressed output is written to stdout (standard output stream).
   * If `-o FILE` is specified, the compressed output is written to FILE.
-  * Otherwise (no `-o` or `-c`), if output is redirected away from console, compressed output is sent to stdout (standard output stream).
-  * Otherwise (no `-o`, `-c`, and stdout is console), if input file is specified, output file is automatically named by appending ".naf" to input path.
-  * Otherwise an error message is shown.
+  * Otherwise (no `-o` or `-c`)
+    * If output is redirected away from console, compressed output is sent to stdout (standard output stream).
+    * If stdout is console and input file is specified, output file is automatically named by appending ".naf" to input path.
+    * Otherwise an error message is shown.
