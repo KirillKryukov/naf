@@ -6,7 +6,7 @@
 
 `ennaf file.fa` - Compress into automatically named 'file.fa.naf' (the original file is never deleted).
 
-`ennaf <file.fa >file.naf` - Compress using IO redirection.
+`ennaf -c <file.fa >file.naf` - Compress using IO redirection.
 
 `ennaf file.fq -o file.naf` - Compress a FASTQ file (format is detected automatically).
 
@@ -81,7 +81,7 @@ So, `ennaf -22` is the best option for sequence databases.
 ## Specifying input format
 
 Input format (FASTA of FASTQ) is automatically detected from the actual input data, so there's not need to specify it.
-However, explicitly specifying the format with `--fastq` or `--fastq`
+However, explicitly specifying the format with `--fasta` or `--fastq`
 will make sure the compression occurs only if the input is in the expected format.
 
 In additon, input file extension is checked against specified format and actual format.
