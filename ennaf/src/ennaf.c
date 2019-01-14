@@ -16,7 +16,7 @@
 */
 
 #define VERSION "1.0.0"
-#define DATE "2019-01-12"
+#define DATE "2019-01-14"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -48,6 +48,7 @@ static FILE *IN = NULL;
 static char *out_file_path = NULL;
 static char *out_file_path_auto = NULL;
 static FILE *OUT = NULL;
+static bool force_stdout = false;
 
 static int compression_level = 1;
 
@@ -342,19 +343,20 @@ static void show_help(void)
     fprintf(stderr,
         "Usage: ennaf [OPTIONS] [infile]\n"
         "Options:\n"
-        "  --out FILE        - Write compressed output to FILE\n"
-        "  --temp-dir DIR    - Use DIR as temporary directory\n"
-        "  --name NAME       - Use NAME as prefix for temporary files\n"
-        "  --title TITLE     - Store TITLE as dataset title\n"
-        "  -#, --level #     - Use compression level # (from %d to %d, default: 1)\n"
-        "  --fasta           - Input is in FASTA format\n"
-        "  --fastq           - Input is in FASTQ format\n"
-        "  --line-length N   - Override line length to N\n"
-        "  --verbose         - Verbose mode\n"
-        "  --keep-temp-files - Keep temporary files\n"
-        "  --no-mask         - Don't store mask\n"
-        "  -h, --help        - Show help\n"
-        "  -V, --version     - Show version\n",
+        "  -o FILE            - Write compressed output to FILE\n"
+        "  -c                 - Write to standard output\n"
+        "  -#, --level #      - Use compression level # (from %d to %d, default: 1)\n"
+        "  --temp-dir DIR     - Use DIR as temporary directory\n"
+        "  --name NAME        - Use NAME as prefix for temporary files\n"
+        "  --title TITLE      - Store TITLE as dataset title\n"
+        "  --fasta            - Input is in FASTA format\n"
+        "  --fastq            - Input is in FASTQ format\n"
+        "  --line-length N    - Override line length to N\n"
+        "  --verbose          - Verbose mode\n"
+        "  --keep-temp-files  - Keep temporary files\n"
+        "  --no-mask          - Don't store mask\n"
+        "  -h, --help         - Show help\n"
+        "  -V, --version      - Show version\n",
         min_level, max_level);
 }
 
@@ -371,7 +373,6 @@ static void parse_command_line(int argc, char **argv)
             {
                 if (i < argc - 1)
                 {
-                    if (!strcmp(argv[i], "--out")) { i++; set_output_file_path(argv[i]); continue; }
                     if (!strcmp(argv[i], "--temp-dir")) { i++; set_temp_dir(argv[i]); continue; }
                     if (!strcmp(argv[i], "--name")) { i++; set_dataset_name(argv[i]); continue; }
                     if (!strcmp(argv[i], "--title")) { i++; set_dataset_title(argv[i]); continue; }
@@ -379,6 +380,7 @@ static void parse_command_line(int argc, char **argv)
                     if (!strcmp(argv[i], "--line-length")) { i++; set_line_length(argv[i]); continue; }
 
                     // Deprecated, undocumented.
+                    if (!strcmp(argv[i], "--out")) { i++; set_output_file_path(argv[i]); continue; }
                     if (!strcmp(argv[i], "--in")) { i++; set_input_file_path(argv[i]); continue; }
                     if (!strcmp(argv[i], "--in-format")) { i++; set_input_format_from_command_line(argv[i]); continue; }
                 }
@@ -390,6 +392,13 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--fasta")) { set_input_format_from_command_line("fasta"); continue; }
                 if (!strcmp(argv[i], "--fastq")) { set_input_format_from_command_line("fastq"); continue; }
             }
+
+            if (i < argc - 1)
+            {
+                if (!strcmp(argv[i], "-o")) { i++; set_output_file_path(argv[i]); continue; }
+            }
+
+            if (!strcmp(argv[i], "-c")) { force_stdout = true; continue; }
             if (argv[i][1] >= '0' && argv[i][1] <= '9') { set_compression_level(argv[i]+1); continue; }
             if (!strcmp(argv[i], "-h")) { show_help(); exit(0); }
             if (!strcmp(argv[i], "-V")) { print_version = true; continue; }
@@ -404,6 +413,12 @@ static void parse_command_line(int argc, char **argv)
     {
         show_version();
         exit(0);
+    }
+
+    if (force_stdout && out_file_path != NULL)
+    {
+        fprintf(stderr, "Error: -c and -o arguments can't be used together\n");
+        exit(1);
     }
 }
 
@@ -428,7 +443,7 @@ int main(int argc, char **argv)
     confirm_input_format();
     store_qual = (in_format_from_input == in_format_fastq);
 
-    if (out_file_path == NULL && isatty(fileno(stdout)))
+    if (!force_stdout && out_file_path == NULL && isatty(fileno(stdout)))
     {
         if (in_file_path == NULL)
         {

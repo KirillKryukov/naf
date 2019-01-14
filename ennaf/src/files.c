@@ -25,7 +25,7 @@ static void open_input_file(void)
 
 static void open_output_file(void)
 {
-    if (out_file_path != NULL)
+    if (out_file_path != NULL && !force_stdout)
     {
         OUT = fopen(out_file_path, "wb");
         if (OUT == NULL) { fprintf(stderr, "Can't create output file\n"); exit(1); }

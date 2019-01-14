@@ -2,35 +2,30 @@
 
 ## Synopsis
 
-`ennaf file.fa --out file.naf` - Compress a FASTA file.
+`ennaf file.fa -o file.naf` - Compress a FASTA file with default compression level 1.
 
-`ennaf file.fa` - Compress into 'file.fa.naf' (the original file is not deleted).
+`ennaf file.fa` - Compress into automatically named 'file.fa.naf' (the original file is never deleted).
 
 `ennaf <file.fa >file.naf` - Compress using IO redirection.
 
-`ennaf file.fq >file.naf` - Compress a FASTQ file (format is detected automatically).
+`ennaf file.fq -o file.naf` - Compress a FASTQ file (format is detected automatically).
 
-`ennaf -22 file.fa >file.naf` - Use maximum compression level.
+`ennaf -22 file.fa -o file.naf` - Use maximum compression level.
 
-`gzip -dc file.gz | ennaf >file.naf` - Recompress from gzip to NAF on the fly.
-
-## Temporary storage
-
-Compression process stores temporary data on disk.
-Therefore please check the following before compressing large files:
-
-1. Temporary directory is specified in TMPDIR or TMP environment variable,
- or in `--temp-dir` command line option of your ennaf command.
- Note that ennaf doesn't have a default setting for temporary directory, such as "/tmp", it will only use directory specified in the environment or command line.
-1. Temporary directory is on your fastest SSD drive.
-1. Temporary directory has sufficient space to hold the compressed data.
- About 1/4 of the uncompressed data size should be normally fine, but safer to have 1/2 or more.
- Note that storage devices and filesystems can slow down when nearly full, so having extra free temporary space is generally a good idea.
+`gzip -dc file.gz | ennaf -o file.naf` - Recompress from gzip to NAF on the fly.
 
 ## Options
 
-**--out FILE** - Write compressed NAF format data to FILE.
-If omitted, stdout stream is used, but only if it's redirected into a file, or piped into next tool.
+**-o FILE** - Write compressed NAF format data to FILE.
+
+**-c** - Write compressed output to standard output.
+
+**-#** - Use compression level #. This corresponds to zstd compression level.
+The default is 1. Higher levels provide better compression, but are slower.
+Maximum level is 22, however take care as levels above 19 are slow and use significant amount of RAM.
+
+**--level #** - Use compression level #.
+Same with `-#`, but also supports even faster negative levels, down to -131072.
 
 **--temp-dir DIR** - Use DIR for temporary files.
 If omitted, uses directory specified in enviroment variable `TMPDIR`.
@@ -40,13 +35,6 @@ If both variables are not defined, the compressor exits without writing anything
 **--name NAME** - Use NAME as prefix for temporary files. It omitted, generates a random prefix.
 
 **--title TITLE** - Store TITLE as dataset title in the output NAF file.
-
-**-#** - Use compression level #. This corresponds to zstd compression level.
-The default is 1. Higher levels provide better compression, but are slower.
-Maximum level is 22, however take care as levels above 19 are slow and use significant amount of RAM.
-
-**--level #** - Use compression level #.
-Same with `-#`, but also supports even faster negative levels, down to -131072.
 
 **--fasta** - Proceed only if input is in FASTA format.
 
@@ -64,6 +52,19 @@ If omitted, stores the maximum sequence line length from the input.
 **-h**, **--help** - Show usage help.
 
 **-V**, **--version** - Show version.
+
+## Temporary storage
+
+Compression process stores temporary data on disk.
+Therefore please check the following before compressing large files:
+
+1. Temporary directory is specified in TMPDIR or TMP environment variable,
+ or in `--temp-dir` command line option of your ennaf command.
+ Note that ennaf doesn't have a default setting for temporary directory, such as "/tmp", it will only use directory specified in the environment or command line.
+1. Temporary directory is on your fastest SSD drive.
+1. Temporary directory has sufficient space to hold the compressed data.
+ About 1/4 of the uncompressed data size should be normally fine, but safer to have 1/2 or more.
+ Note that storage devices and filesystems can slow down when nearly full, so having extra free temporary space is generally a good idea.
 
 ## Which compression level to choose?
 
@@ -85,3 +86,11 @@ will make sure the compression occurs only if the input is in the expected forma
 
 In additon, input file extension is checked against specified format and actual format.
 A mismatching file extension produces a warning, but does not stop the compression.
+
+## Where the compressed output goes?
+
+  * If `-c` is specified, the compressed output is written to stdout (standard output stream).
+  * If `-o FILE` is specified, the compressed output is written to FILE.
+  * Otherwise (no `-o` or `-c`), if output is redirected away from console, compressed output is sent to stdout (standard output stream).
+  * Otherwise (no `-o`, `-c`, and stdout is console), if input file is specified, output file is automatically named by appending ".naf" to input path.
+  * Otherwise an error message is shown.
