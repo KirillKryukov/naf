@@ -42,6 +42,8 @@ static unsigned long long read_number(FILE *F)
 
     if (!fread(&c, 1, 1, F)) { incomplete(); }
 
+    if (c == 128) { fputs("Invalid input: error parsing variable length encoded number\n", stderr); exit(1); }
+
     while (c & 128)
     {
         if (a & (127ull << 57)) { fputs(overflow_msg, stderr); exit(1); }
