@@ -25,6 +25,11 @@
 #define HAVE_NO_STAT_ST_MTIMENSEC
 #endif
 
+#ifdef __APPLE__
+#define HAVE_NO_STAT_ST_MTIM_TV_NSEC
+#endif
+
+
 
 #ifndef HAVE_NO_CHMOD
 #define HAVE_CHMOD
