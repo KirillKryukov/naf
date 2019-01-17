@@ -7,16 +7,8 @@
  *   - Does not allow specifying name separator, always uses space.
  */
 
-/*
-  To do:
-  Features:
-    * Add support for name separators other than space.
-  Quality:
-    * Add error-checking wrappers for malloc/calloc/realloc.
-*/
-
 #define VERSION "1.0.0"
-#define DATE "2019-01-14"
+#define DATE "2019-01-17"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -600,16 +592,16 @@ int main(int argc, char **argv)
 
 #if defined(HAVE_FUTIMENS)
         struct timespec input_timestamp[2];
-        input_timestamp[0].tv_sec = input_stat.st_atime;
-        input_timestamp[1].tv_sec = input_stat.st_mtime;
+        input_timestamp[0].tv_sec = A_TIME_SEC(input_stat);
+        input_timestamp[1].tv_sec = M_TIME_SEC(input_stat);
         input_timestamp[0].tv_nsec = A_TIME_NSEC(input_stat);
         input_timestamp[1].tv_nsec = M_TIME_NSEC(input_stat);
         if (futimens(fileno(OUT), input_timestamp) != 0) { fprintf(stderr, "Can't transfer timestamp from input to output file\n"); }
         //if (verbose) { fprintf(stderr, "Changed output timestamp using futimens()\n"); }
 #elif defined(HAVE_FUTIMES)
         struct timeval input_timestamp[2];
-        input_timestamp[0].tv_sec = input_stat.st_atime;
-        input_timestamp[1].tv_sec = input_stat.st_mtime;
+        input_timestamp[0].tv_sec = A_TIME_SEC(input_stat);
+        input_timestamp[1].tv_sec = M_TIME_SEC(input_stat);
         input_timestamp[0].tv_usec = A_TIME_NSEC(input_stat) / 1000;
         input_timestamp[1].tv_usec = M_TIME_NSEC(input_stat) / 1000;
         if (futimes(fileno(OUT), input_timestamp) != 0) { fprintf(stderr, "Can't transfer timestamp from input to output file\n"); }
@@ -624,8 +616,8 @@ int main(int argc, char **argv)
 #elif defined(HAVE_FUTIMES)
 #elif defined(HAVE_UTIME)
         struct utimbuf input_timestamp;
-        input_timestamp.actime = input_stat.st_atime;
-        input_timestamp.modtime = input_stat.st_mtime;
+        input_timestamp.actime = A_TIME_SEC(input_stat);
+        input_timestamp.modtime = M_TIME_SEC(input_stat);
         if (utime(out_file_path, &input_timestamp) != 0) { fprintf(stderr, "Can't transfer timestamp from input to output file\n"); }
         //if (verbose) { fprintf(stderr, "Changed output timestamp using utime()\n"); }
 #endif

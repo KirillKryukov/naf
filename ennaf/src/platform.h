@@ -25,10 +25,6 @@
 #define HAVE_NO_STAT_ST_MTIMENSEC
 #endif
 
-#ifdef __APPLE__
-#define HAVE_NO_STAT_ST_MTIM_TV_NSEC
-#endif
-
 
 
 #ifndef HAVE_NO_CHMOD
@@ -38,6 +34,8 @@
 #ifndef HAVE_NO_CHOWN
 #define HAVE_CHOWN
 #endif
+
+
 
 #ifndef HAVE_NO_STAT_ST_MTIM_TV_NSEC
 #define HAVE_STAT_ST_MTIM_TV_NSEC
@@ -69,13 +67,24 @@
 #include <utime.h>
 #endif
 
-#if defined(HAVE_STAT_ST_MTIM_TV_NSEC)
+#if defined(__APPLE__)
+#define A_TIME_SEC(fs)  ((fs).st_atimespec.tv_sec)
+#define M_TIME_SEC(fs)  ((fs).st_mtimespec.tv_sec)
+#define A_TIME_NSEC(fs) ((fs).st_atimespec.tv_nsec)
+#define M_TIME_NSEC(fs) ((fs).st_mtimespec.tv_nsec)
+#elif defined(HAVE_STAT_ST_MTIM_TV_NSEC)
+#define A_TIME_SEC(fs)  ((fs).st_atim.tv_sec)
+#define M_TIME_SEC(fs)  ((fs).st_mtim.tv_sec)
 #define A_TIME_NSEC(fs) ((fs).st_atim.tv_nsec)
 #define M_TIME_NSEC(fs) ((fs).st_mtim.tv_nsec)
 #elif defined(HAVE_STAT_ST_MTIMENSEC)
+#define A_TIME_SEC(fs)  ((fs).st_atime)
+#define M_TIME_SEC(fs)  ((fs).st_mtime)
 #define A_TIME_NSEC(fs) ((fs).st_atimensec)
 #define M_TIME_NSEC(fs) ((fs).st_mtimensec)
 #else
+#define A_TIME_SEC(fs)  ((fs).st_atime)
+#define M_TIME_SEC(fs)  ((fs).st_mtime)
 #define A_TIME_NSEC(fs) (0)
 #define M_TIME_NSEC(fs) (0)
 #endif
