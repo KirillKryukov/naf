@@ -26,13 +26,13 @@ However, if you decompress it back with _unnaf_, your space is again _un-enough_
 ### Building from source
 
 Prerequisites: git (for downloading), zstd, gcc, make.
-(E.g., to install on Ubuntu: `sudo apt install git gcc make libzstd-dev`).
+E.g., to install on Ubuntu: `sudo apt install git gcc make libzstd-dev`.
 
-Installing:
-```
-git clone https://github.com/KirillKryukov/naf.git
-cd naf && make && sudo make install
-```
+  * Obtaining the source code:
+    * The latest released version: [Version 1.0.0 source](http://kirill-kryukov.com/study/naf/files/naf-tools-1.0.0-source.zip)
+    * The current source from github: `git clone https://github.com/KirillKryukov/naf.git`
+
+Building and installing: `cd naf && make && sudo make install`
 
 To install in alternative location, add "prefix=DIR" to the "make install" command. E.g., `sudo make prefix=/usr/local/bio install`
 
