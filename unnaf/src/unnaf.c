@@ -5,7 +5,7 @@
  */
 
 #define VERSION "1.0.0"
-#define DATE "2019-01-15"
+#define DATE "2019-01-17"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -31,6 +31,7 @@ typedef enum { UNDECIDED, FORMAT_NAME, PART_LIST, PART_SIZES, NUMBER_OF_SEQUENCE
 
 static OUTPUT_TYPE out_type = UNDECIDED;
 
+static bool verbose = false;
 static bool use_mask = true;
 
 static char *in_file_path = NULL;
@@ -206,7 +207,11 @@ static void set_line_length(char *str)
 
 static void show_version(void)
 {
-    fprintf(stderr, "unnaf - NAF decompressor, version " VERSION ", " DATE "\nCopyright (c) " COPYRIGHT_YEARS " Kirill Kryukov\n");
+    fputs("unnaf - NAF decompressor, version " VERSION ", " DATE "\nCopyright (c) " COPYRIGHT_YEARS " Kirill Kryukov\n", stderr);
+    if (verbose)
+    {
+        fprintf(stderr, "Built with zstd " ZSTD_VERSION_STRING ", using runtime zstd %s\n", ZSTD_versionString());
+    }
 }
 
 
@@ -269,6 +274,7 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--fastq"            )) { set_out_type(FASTQ              ); continue; }
                 if (!strcmp(argv[i], "--no-mask")) { use_mask = false; continue; }
                 if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
+                if (!strcmp(argv[i], "--verbose")) { verbose = true; continue; }
                 if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
 
                 // Deprecated undocumented options.
