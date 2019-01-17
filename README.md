@@ -17,6 +17,12 @@ However, if you decompress it back with _unnaf_, your space is again _un-enough_
 
 ## Installing
 
+### Binaries
+
+  * Version 1.0.0, 2019-01-17
+    * [Windows 32-bit](http://kirill-kryukov.com/study/naf/files/naf-tools-1.0.0-windows-32-bit.zip)
+    * [Windows 64-bit](http://kirill-kryukov.com/study/naf/files/naf-tools-1.0.0-windows-64-bit.zip)
+
 ### Building from source
 
 Prerequisites: git (for downloading), zstd, gcc, make.
