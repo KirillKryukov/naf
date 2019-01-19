@@ -7,8 +7,8 @@
  *   - Does not allow specifying name separator, always uses space.
  */
 
-#define VERSION "1.0.0"
-#define DATE "2019-01-17"
+#define VERSION "1.0.1"
+#define DATE "2019-01-19"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -159,7 +159,7 @@ static void done(void)
     FREE(mask_units);
 
     FREE(out_file_path_auto);
-    if (OUT != NULL && OUT != stdout) { fclose_or_die(OUT); OUT = NULL; }
+    close_output_file();
     close_input_file();
     close_temp_files();
 
@@ -579,49 +579,8 @@ int main(int argc, char **argv)
         copy_file_to_out(qual_path, 4, qual_size_compressed - 4);
     }
 
-    if (in_file_path != NULL && out_file_path != NULL && have_input_stat)
-    {
-        fflush_or_die(OUT);
-
-#ifdef HAVE_CHMOD
-        if (fchmod(fileno(OUT), input_stat.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO)) != 0) { fprintf(stderr, "Can't transfer permissions from input to output file\n"); }
-#endif
-#ifdef HAVE_CHOWN
-        if (fchown(fileno(OUT), input_stat.st_uid, input_stat.st_gid) != 0) { fprintf(stderr, "Can't transfer ownership from input to output file\n"); }
-#endif
-
-#if defined(HAVE_FUTIMENS)
-        struct timespec input_timestamp[2];
-        input_timestamp[0].tv_sec = A_TIME_SEC(input_stat);
-        input_timestamp[1].tv_sec = M_TIME_SEC(input_stat);
-        input_timestamp[0].tv_nsec = A_TIME_NSEC(input_stat);
-        input_timestamp[1].tv_nsec = M_TIME_NSEC(input_stat);
-        if (futimens(fileno(OUT), input_timestamp) != 0) { fprintf(stderr, "Can't transfer timestamp from input to output file\n"); }
-        //if (verbose) { fprintf(stderr, "Changed output timestamp using futimens()\n"); }
-#elif defined(HAVE_FUTIMES)
-        struct timeval input_timestamp[2];
-        input_timestamp[0].tv_sec = A_TIME_SEC(input_stat);
-        input_timestamp[1].tv_sec = M_TIME_SEC(input_stat);
-        input_timestamp[0].tv_usec = A_TIME_NSEC(input_stat) / 1000;
-        input_timestamp[1].tv_usec = M_TIME_NSEC(input_stat) / 1000;
-        if (futimes(fileno(OUT), input_timestamp) != 0) { fprintf(stderr, "Can't transfer timestamp from input to output file\n"); }
-        //if (verbose) { fprintf(stderr, "Changed output timestamp using futimes()\n"); }
-#elif defined(HAVE_UTIME)
-#endif
-
-        fclose_or_die(OUT);
-        OUT = NULL;
-
-#if defined(HAVE_FUTIMENS)
-#elif defined(HAVE_FUTIMES)
-#elif defined(HAVE_UTIME)
-        struct utimbuf input_timestamp;
-        input_timestamp.actime = A_TIME_SEC(input_stat);
-        input_timestamp.modtime = M_TIME_SEC(input_stat);
-        if (utime(out_file_path, &input_timestamp) != 0) { fprintf(stderr, "Can't transfer timestamp from input to output file\n"); }
-        //if (verbose) { fprintf(stderr, "Changed output timestamp using utime()\n"); }
-#endif
-    }
+    if (in_file_path != NULL && out_file_path != NULL && have_input_stat) { close_output_file_and_set_stat(); }
+    else { close_output_file(); }
 
     if (verbose) { fprintf(stderr, "Processed %llu sequences\n", n_sequences); }
 

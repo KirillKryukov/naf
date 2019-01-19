@@ -130,3 +130,58 @@ static void make_temp_files(void)
     if (store_seq ) { SEQ  = create_temp_file(seq_path , "sequence"); }
     if (store_qual) { QUAL = create_temp_file(qual_path, "quality" ); }
 }
+
+
+static void close_output_file(void)
+{
+    if (OUT != NULL && OUT != stdout)
+    {
+        fclose_or_die(OUT);
+        OUT = NULL;
+    }
+}
+
+
+static void close_output_file_and_set_stat(void)
+{
+    fflush_or_die(OUT);
+
+#ifdef HAVE_CHMOD
+    if (fchmod(fileno(OUT), input_stat.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO)) != 0) { fprintf(stderr, "Can't transfer permissions from input to output file\n"); }
+#endif
+#ifdef HAVE_CHOWN
+    if (fchown(fileno(OUT), input_stat.st_uid, input_stat.st_gid) != 0) { fprintf(stderr, "Can't transfer ownership from input to output file\n"); }
+#endif
+
+#if defined(HAVE_FUTIMENS)
+    struct timespec input_timestamp[2];
+    input_timestamp[0].tv_sec = A_TIME_SEC(input_stat);
+    input_timestamp[1].tv_sec = M_TIME_SEC(input_stat);
+    input_timestamp[0].tv_nsec = A_TIME_NSEC(input_stat);
+    input_timestamp[1].tv_nsec = M_TIME_NSEC(input_stat);
+    if (futimens(fileno(OUT), input_timestamp) != 0) { fprintf(stderr, "Can't transfer timestamp from input to output file\n"); }
+    //if (verbose) { fprintf(stderr, "Changed output timestamp using futimens()\n"); }
+#elif defined(HAVE_FUTIMES)
+    struct timeval input_timestamp[2];
+    input_timestamp[0].tv_sec = A_TIME_SEC(input_stat);
+    input_timestamp[1].tv_sec = M_TIME_SEC(input_stat);
+    input_timestamp[0].tv_usec = A_TIME_NSEC(input_stat) / 1000;
+    input_timestamp[1].tv_usec = M_TIME_NSEC(input_stat) / 1000;
+    if (futimes(fileno(OUT), input_timestamp) != 0) { fprintf(stderr, "Can't transfer timestamp from input to output file\n"); }
+    //if (verbose) { fprintf(stderr, "Changed output timestamp using futimes()\n"); }
+#elif defined(HAVE_UTIME)
+#endif
+
+    fclose_or_die(OUT);
+    OUT = NULL;
+
+#if defined(HAVE_FUTIMENS)
+#elif defined(HAVE_FUTIMES)
+#elif defined(HAVE_UTIME)
+    struct utimbuf input_timestamp;
+    input_timestamp.actime = A_TIME_SEC(input_stat);
+    input_timestamp.modtime = M_TIME_SEC(input_stat);
+    if (utime(out_file_path, &input_timestamp) != 0) { fprintf(stderr, "Can't transfer timestamp from input to output file\n"); }
+    //if (verbose) { fprintf(stderr, "Changed output timestamp using utime()\n"); }
+#endif
+}

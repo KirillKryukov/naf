@@ -3,16 +3,7 @@
 #define ENNAF_PLATFORM_H
 
 
-#ifdef __MINGW32__
-#define HAVE_NO_CHMOD
-#define HAVE_NO_CHOWN
-#define HAVE_NO_STAT_ST_MTIM_TV_NSEC
-#define HAVE_NO_STAT_ST_MTIMENSEC
-#define HAVE_NO_FUTIMENS
-#define HAVE_NO_FUTIMES
-#endif
-
-#ifdef __MINGW64__
+#if defined(__MINGW32__) || defined(__MINGW64__)
 #define HAVE_NO_CHMOD
 #define HAVE_NO_CHOWN
 #define HAVE_NO_STAT_ST_MTIM_TV_NSEC
