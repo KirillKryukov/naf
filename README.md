@@ -5,9 +5,9 @@ It's based on [zstd](http://www.zstd.net/), and features strong compression and 
 It supports FASTA and FASTQ-formatted sequences, ambiguous IUPAC codes, masked sequence,
 and has no limit on sequence length or number of sequences. See [NAF homepage](http://kirill-kryukov.com/study/naf/) for details and benchmarks.
 
-| Example benchmark: 1,464 _Helicobacter_ genomes (2.5 GB): |
-|-----------------------------------------------------------|
-| <img src="http://kirill-kryukov.com/study/naf/images/Helicobacter-compressed-size-vs-comp-dec-time.svg" width="49%" height="49%"> <img src="http://kirill-kryukov.com/study/naf/images/Helicobacter-compressed-size-vs-dec-time.svg" width="49%" height="49%"> |
+| Example benchmark: SILVA Database (948 MB): |
+|---------------------------------------------|
+| <img src="http://kirill-kryukov.com/study/naf/images/SILVA-ratio-vs-cd-speed-lin.svg" width="49%" height="49%"> <img src="http://kirill-kryukov.com/study/naf/images/SILVA-ratio-vs-d-speed-lin.svg" width="49%" height="49%"> |
 
 
 ## Format specification
