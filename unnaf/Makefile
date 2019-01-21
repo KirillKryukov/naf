@@ -11,10 +11,10 @@ LDFLAGS ?= -l:libzstd.a
 
 SOURCES = $(wildcard src/*)
 
+default: $(TARGET)
+
 $(TARGET): $(SOURCES)
 	$(CC) $(CFLAGS) -o $@ src/unnaf.c $(LDFLAGS)
-
-default: $(TARGET)
 
 all: default
 
