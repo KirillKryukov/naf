@@ -243,15 +243,18 @@ static void confirm_input_format(void)
 {
     assert(in_format_from_input == in_format_unknown);
 
+    int last_c = '\n';
     int c;
-    while ((c = in_get_char()) != -1 && is_space_arr[c]) {}
+
+    while ((c = in_get_char()) != -1 && is_space_arr[c]) { last_c = c; }
     if (c == -1) { return; }
 
-    if (c == '>') { in_format_from_input = in_format_fasta; }
-    else if (c == '@') { in_format_from_input = in_format_fastq; }
+    if (c == '>' && is_eol_arr[last_c]) { in_format_from_input = in_format_fasta; }
+    else if (c == '@' && is_eol_arr[last_c]) { in_format_from_input = in_format_fastq; }
     else
     {
-        fprintf(stderr, "Error: Input data is in unknown format: first non-space character is neither '>' nor '@'\n");
+        if (c == '>' || c == '@') { fprintf(stderr, "Invalid input: First '%c' is not at the beginning of the line\n", c); }
+        else { fputs("Input data is in unknown format: first non-space character is neither '>' nor '@'\n", stderr); }
         exit(1);
     }
 
