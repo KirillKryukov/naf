@@ -7,7 +7,7 @@
  *   - Does not allow specifying name separator, always uses space.
  */
 
-#define VERSION "1.0.1"
+#define VERSION "1.1.0"
 #define DATE "2019-01-24"
 #define COPYRIGHT_YEARS "2018-2019"
 

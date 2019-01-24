@@ -40,13 +40,17 @@ static void report_unexpected_input_char_stats(void)
         fprintf(stderr, "input has %llu unexpected %s codes:\n", total, in_seq_type_name);
         for (unsigned i = 0; i < 32; i++)
         {
-            if (n_unexpected_charactes[i]) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_charactes[i]); }
+            if (n_unexpected_charactes[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_charactes[i]); }
         }
-        for (unsigned i = 32; i < 256; i++)
+        for (unsigned i = 32; i < 127; i++)
         {
-            if (n_unexpected_charactes[i]) { fprintf(stderr, "    '%c': %llu\n", (unsigned char)i, n_unexpected_charactes[i]); }
+            if (n_unexpected_charactes[i] != 0) { fprintf(stderr, "    '%c': %llu\n", (unsigned char)i, n_unexpected_charactes[i]); }
         }
-        if (n_unexpected_charactes[256]) { fprintf(stderr, "    EOF: %llu\n", n_unexpected_charactes[256]); }
+        for (unsigned i = 127; i < 256; i++)
+        {
+            if (n_unexpected_charactes[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_charactes[i]); }
+        }
+        if (n_unexpected_charactes[256] != 0) { fprintf(stderr, "    EOF: %llu\n", n_unexpected_charactes[256]); }
     }
 }
 
