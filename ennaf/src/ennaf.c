@@ -26,7 +26,7 @@
 #include <zstd.h>
 
 #include "platform.h"
-
+#include "tables.c"
 
 static unsigned char naf_header_start[7] = "\x01\xF9\xEC\x01\x00\x20";
 
@@ -136,18 +136,15 @@ static unsigned long long n_sequences = 0ull;
 static bool have_input_stat = false;
 static struct stat input_stat;
 
-static bool is_eol_arr[256];
-static bool is_space_arr[256];
 static bool is_space_or_plus_arr[256];
 
 static unsigned char nuc_code[256];
-static bool is_unexpected_arr[256];
+static const bool *is_unexpected_arr = is_unexpected_dna_arr;
 
 static size_t out_buffer_size = 0;
 static void *out_buffer = NULL;
 
 static unsigned long long n_unexpected_charactes[256];
-
 
 #include "utils.c"
 #include "files.c"

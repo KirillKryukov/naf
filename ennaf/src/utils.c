@@ -9,20 +9,7 @@ static void init_utils(void)
 {
     assert(out_buffer == NULL);
 
-    memset(is_eol_arr, 0, sizeof(is_eol_arr));
-    memset(is_space_arr, 0, sizeof(is_space_arr));
     memset(is_space_or_plus_arr, 0, sizeof(is_space_or_plus_arr));
-
-    is_eol_arr['\n'] = true;
-    is_eol_arr['\f'] = true;
-    is_eol_arr['\r'] = true;
-
-    is_space_arr['\t'] = true;
-    is_space_arr['\n'] = true;
-    is_space_arr['\v'] = true;
-    is_space_arr['\f'] = true;
-    is_space_arr['\r'] = true;
-    is_space_arr[' '] = true;
 
     is_space_or_plus_arr['\t'] = true;
     is_space_or_plus_arr['\n'] = true;
@@ -51,25 +38,6 @@ static void init_utils(void)
     nuc_code['V'] = 14; nuc_code['v'] = 14;
     nuc_code['N'] = 15; nuc_code['n'] = 15;
     nuc_code['-'] = 0;
-
-    memset(is_unexpected_arr, true, sizeof(is_unexpected_arr));
-
-    is_unexpected_arr['A'] = false; is_unexpected_arr['a'] = false;
-    is_unexpected_arr['C'] = false; is_unexpected_arr['c'] = false;
-    is_unexpected_arr['G'] = false; is_unexpected_arr['g'] = false;
-    is_unexpected_arr['T'] = false; is_unexpected_arr['t'] = false;
-    is_unexpected_arr['R'] = false; is_unexpected_arr['r'] = false;
-    is_unexpected_arr['Y'] = false; is_unexpected_arr['y'] = false;
-    is_unexpected_arr['S'] = false; is_unexpected_arr['s'] = false;
-    is_unexpected_arr['W'] = false; is_unexpected_arr['w'] = false;
-    is_unexpected_arr['K'] = false; is_unexpected_arr['k'] = false;
-    is_unexpected_arr['M'] = false; is_unexpected_arr['m'] = false;
-    is_unexpected_arr['B'] = false; is_unexpected_arr['b'] = false;
-    is_unexpected_arr['D'] = false; is_unexpected_arr['d'] = false;
-    is_unexpected_arr['H'] = false; is_unexpected_arr['h'] = false;
-    is_unexpected_arr['V'] = false; is_unexpected_arr['v'] = false;
-    is_unexpected_arr['N'] = false; is_unexpected_arr['n'] = false;
-    is_unexpected_arr['-'] = false;
 
     memset(n_unexpected_charactes, 0, sizeof(n_unexpected_charactes));
 

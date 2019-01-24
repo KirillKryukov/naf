@@ -57,7 +57,7 @@ static inline int in_get_char(void)
 }
 
 
-static inline int getuntil(bool *delim_arr, string_t *str)
+static inline int getuntil(const bool *delim_arr, string_t *str)
 {
     int c = -1;
     for (;;)
