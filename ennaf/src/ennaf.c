@@ -72,6 +72,7 @@ static int in_format_from_extension = in_format_unknown;
 
 enum { seq_type_dna, seq_type_rna, seq_type_protein, seq_type_text };
 static int in_seq_type_expected = seq_type_dna;
+static const char *in_seq_type_name = "DNA";
 
 static bool extended_format = false;
 static bool store_title = false;
@@ -140,11 +141,10 @@ static bool is_space_or_plus_arr[256];
 
 static unsigned char nuc_code[256];
 static const bool *is_unexpected_arr = is_unexpected_dna_arr;
+static bool abort_on_unexpected_code = false;
 
 static size_t out_buffer_size = 0;
 static void *out_buffer = NULL;
-
-static unsigned long long n_unexpected_charactes[256];
 
 #include "utils.c"
 #include "files.c"
@@ -404,6 +404,7 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--rna")) { in_seq_type_expected = seq_type_rna; continue; }
                 if (!strcmp(argv[i], "--protein")) { in_seq_type_expected = seq_type_protein; continue; }
                 if (!strcmp(argv[i], "--text")) { in_seq_type_expected = seq_type_text; continue; }
+                if (!strcmp(argv[i], "--strict")) { abort_on_unexpected_code = true; continue; }
             }
 
             if (i < argc - 1)
@@ -449,8 +450,21 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-    if (in_seq_type_expected == seq_type_rna) { is_unexpected_arr = is_unexpected_rna_arr; }
-    //else if (in_seq_type_expected == seq_type_protein) { is_unexpected_arr = is_unexpected_protein_arr; }
+    if (in_seq_type_expected == seq_type_dna)
+    {
+        is_unexpected_arr = is_unexpected_dna_arr;
+        in_seq_type_name = "DNA";
+    }
+    if (in_seq_type_expected == seq_type_rna)
+    {
+        is_unexpected_arr = is_unexpected_rna_arr;
+        in_seq_type_name = "RNA";
+    }
+    else if (in_seq_type_expected == seq_type_protein)
+    {
+        is_unexpected_arr = is_unexpected_protein_arr;
+        in_seq_type_name = "protein";
+    }
 
     detect_temp_directory();
     detect_input_format_from_input_file_extension();
@@ -605,6 +619,8 @@ int main(int argc, char **argv)
 
     if (in_file_path != NULL && out_file_path != NULL && have_input_stat) { close_output_file_and_set_stat(); }
     else { close_output_file(); }
+
+    report_unexpected_input_char_stats();
 
     if (verbose) { fprintf(stderr, "Processed %llu sequences\n", n_sequences); }
 

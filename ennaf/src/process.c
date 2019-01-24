@@ -3,7 +3,7 @@
  * Copyright (c) 2018-2019 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  *
- * The FASTA/Q parser is based on Heng Li's kseq.h.
+ * The FASTA/Q parser was originally based on Heng Li's kseq.h.
  */
 
 #ifndef round_up_to_power_of_two
@@ -31,9 +31,25 @@ static string_t seq     = { 0, 0, NULL };
 static string_t qual    = { 0, 0, NULL };
 
 
+static void report_unexpected_input_char_stats(void)
+{
+    unsigned long long total = 0;
+    for (unsigned i = 0; i < 257; i++) { total += n_unexpected_charactes[i]; }
+    if (total > 0)
+    {
+        fprintf(stderr, "input has %llu unexpected %s codes\n", total, in_seq_type_name);
+    }
+}
+
+
 static void unexpected_input_char(unsigned c)
 {
-    fprintf(stderr, "Unexpected nucleotide code: \"%c\"\n", (unsigned char)c);
+    if (abort_on_unexpected_code)
+    {
+        fprintf(stderr, "Error: Unexpected %s code '%c'\n", in_seq_type_name, (unsigned char)c);
+        exit(1);
+    }
+    else { n_unexpected_charactes[c]++; }
 }
 
 
@@ -134,8 +150,8 @@ static inline unsigned get_fasta_seq(void)
             old_len = seq.length;
 
             c = in_get_char();
-            if (c == '>' || c == INEOF) { break; }
-            else if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
+            if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
+            else if (c == '>' || c == INEOF) { break; }
             else if (is_eol_arr[c])
             {
                 while (c != INEOF && is_eol_arr[c]) { c = in_get_char(); }
