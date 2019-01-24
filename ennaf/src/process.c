@@ -29,6 +29,12 @@ static string_t seq     = { 0, 0, NULL };
 static string_t qual    = { 0, 0, NULL };
 
 
+static void unexpected_input_char(int c)
+{
+    fprintf(stderr, "Unexpected nucleotide code: \"%c\"\n", c);
+}
+
+
 __attribute__((always_inline))
 static inline void refill_in_buffer(void)
 {
@@ -88,6 +94,21 @@ static inline int getuntil(bool *delim_arr, string_t *str)
 
 
 __attribute__((always_inline))
+static inline void str_append_char(string_t *str, unsigned char c)
+{
+    if (str->allocated < str->length + 1)
+    {
+        str->allocated = str->length + 1;
+        round_up_to_power_of_two(str->allocated);
+        str->data = (unsigned char *)realloc(str->data, str->allocated);
+    }
+
+    str->data[str->length] = c;
+    str->length++;
+}
+
+
+__attribute__((always_inline))
 static inline int get_fasta_seq(void)
 {
     int c;
@@ -103,14 +124,33 @@ static inline int get_fasta_seq(void)
     else if (getuntil(is_eol_arr, &comment) == -1) { return -1; }
 
     size_t old_len = seq.length;
-    while ( (c = getuntil(is_space_or_gt_arr, &seq)) != -1)
+    while ( (c = getuntil(is_non_nucleotide_arr, &seq)) != -1)
     {
         if (is_eol_arr[c])
         {
             if (seq.length - old_len > longest_line_length) { longest_line_length = seq.length - old_len; }
             old_len = seq.length;
+
+            c = in_get_char();
+            if (c == '>' || c == -1) { break; }
+            else if (!is_non_nucleotide_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
+            else if (is_eol_arr[c])
+            {
+                while (c != -1 && is_eol_arr[c]) { c = in_get_char(); }
+                if (c == '>' || c == -1) { break; }
+                else if (!is_non_nucleotide_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
+                else if (is_space_arr[c]) {}
+                else { unexpected_input_char(c); str_append_char(&seq, 'N'); }
+            }
+            else if (is_space_arr[c]) {}
+            else { unexpected_input_char(c); str_append_char(&seq, 'N'); }
         }
-        else if (c == '>') { break; }
+        else if (is_space_arr[c]) {}
+        else
+        {
+            unexpected_input_char(c);
+            str_append_char(&seq, 'N');
+        }
     }
 
     return c;
