@@ -12,7 +12,7 @@ and has no limit on sequence length or number of sequences. See [NAF homepage](h
 
 ## Format specification
 
-NAF specification is in public domain: [NAFv1.pdf](NAFv1.pdf)
+NAF specification is in public domain: [NAFv2.pdf](NAFv2.pdf)
 
 ## Encoder and decoder
 
