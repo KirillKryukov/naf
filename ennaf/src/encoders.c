@@ -6,11 +6,14 @@
 
 static void init_encoders(void)
 {
-    assert(out_buffer_size != 0);
     assert(out_4bit_buffer == NULL);
+    assert(out_buffer == NULL);
     assert(file_copy_buffer == NULL);
     assert(length_units == NULL);
     assert(mask_units == NULL);
+
+    out_buffer_size = ZSTD_CStreamOutSize();
+    out_buffer = malloc(out_buffer_size);
 
     out_4bit_buffer = (unsigned char *) malloc(out_buffer_size);
     out_4bit_pos = out_4bit_buffer;

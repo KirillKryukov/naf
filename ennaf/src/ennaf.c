@@ -139,9 +139,6 @@ static unsigned long long n_sequences = 0ull;
 static bool have_input_stat = false;
 static struct stat input_stat;
 
-static bool is_space_or_plus_arr[256];
-
-static unsigned char nuc_code[256];
 static const bool *is_unexpected_arr = is_unexpected_dna_arr;
 static bool abort_on_unexpected_code = false;
 
@@ -450,7 +447,6 @@ static void parse_command_line(int argc, char **argv)
 int main(int argc, char **argv)
 {
     atexit(done);
-    init_utils();
     init_encoders();
 
     parse_command_line(argc, argv);

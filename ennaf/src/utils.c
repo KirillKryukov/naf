@@ -5,47 +5,6 @@
  */
 
 
-static void init_utils(void)
-{
-    assert(out_buffer == NULL);
-
-    memset(is_space_or_plus_arr, 0, sizeof(is_space_or_plus_arr));
-
-    is_space_or_plus_arr['\t'] = true;
-    is_space_or_plus_arr['\n'] = true;
-    is_space_or_plus_arr['\v'] = true;
-    is_space_or_plus_arr['\f'] = true;
-    is_space_or_plus_arr['\r'] = true;
-    is_space_or_plus_arr[' '] = true;
-    is_space_or_plus_arr['+'] = true;
-
-    memset(nuc_code, 15, 256);
-
-    nuc_code['A'] = 8;  nuc_code['a'] = 8;
-    nuc_code['C'] = 4;  nuc_code['c'] = 4;
-    nuc_code['G'] = 2;  nuc_code['g'] = 2;
-    nuc_code['T'] = 1;  nuc_code['t'] = 1;
-    nuc_code['U'] = 1;  nuc_code['u'] = 1;
-    nuc_code['R'] = 10; nuc_code['r'] = 10;
-    nuc_code['Y'] = 5;  nuc_code['y'] = 5;
-    nuc_code['S'] = 6;  nuc_code['s'] = 6;
-    nuc_code['W'] = 9;  nuc_code['w'] = 9;
-    nuc_code['K'] = 3;  nuc_code['k'] = 3;
-    nuc_code['M'] = 12; nuc_code['m'] = 12;
-    nuc_code['B'] = 7;  nuc_code['b'] = 7;
-    nuc_code['D'] = 11; nuc_code['d'] = 11;
-    nuc_code['H'] = 13; nuc_code['h'] = 13;
-    nuc_code['V'] = 14; nuc_code['v'] = 14;
-    nuc_code['N'] = 15; nuc_code['n'] = 15;
-    nuc_code['-'] = 0;
-
-    memset(n_unexpected_charactes, 0, sizeof(n_unexpected_charactes));
-
-    out_buffer_size = ZSTD_CStreamOutSize();
-    out_buffer = malloc(out_buffer_size);
-}
-
-
 static bool string_has_characters_unsafe_in_file_names(char *str)
 {
     assert(str != NULL);

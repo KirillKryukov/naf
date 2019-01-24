@@ -33,24 +33,49 @@ static string_t qual    = { 0, 0, NULL };
 
 static void report_unexpected_input_char_stats(void)
 {
-    unsigned long long total = 0;
-    for (unsigned i = 0; i < 257; i++) { total += n_unexpected_charactes[i]; }
-    if (total > 0)
     {
-        fprintf(stderr, "input has %llu unexpected %s codes:\n", total, in_seq_type_name);
-        for (unsigned i = 0; i < 32; i++)
+        unsigned long long seq_total = 0;
+        for (unsigned i = 0; i < 257; i++) { seq_total += n_unexpected_seq_characters[i]; }
+        if (seq_total > 0)
         {
-            if (n_unexpected_charactes[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_charactes[i]); }
+            fprintf(stderr, "input has %llu unexpected %s codes:\n", seq_total, in_seq_type_name);
+            for (unsigned i = 0; i < 32; i++)
+            {
+                if (n_unexpected_seq_characters[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_seq_characters[i]); }
+            }
+            for (unsigned i = 32; i < 127; i++)
+            {
+                if (n_unexpected_seq_characters[i] != 0) { fprintf(stderr, "    '%c': %llu\n", (unsigned char)i, n_unexpected_seq_characters[i]); }
+            }
+            for (unsigned i = 127; i < 256; i++)
+            {
+                if (n_unexpected_seq_characters[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_seq_characters[i]); }
+            }
+            if (n_unexpected_seq_characters[256] != 0) { fprintf(stderr, "    EOF: %llu\n", n_unexpected_seq_characters[256]); }
         }
-        for (unsigned i = 32; i < 127; i++)
+    }
+
+    if (in_format_from_input == in_format_fastq)
+    {
+        unsigned long long qual_total = 0;
+        for (unsigned i = 0; i < 257; i++) { qual_total += n_unexpected_qual_characters[i]; }
+        if (qual_total > 0)
         {
-            if (n_unexpected_charactes[i] != 0) { fprintf(stderr, "    '%c': %llu\n", (unsigned char)i, n_unexpected_charactes[i]); }
+            fprintf(stderr, "input has %llu unexpected quality codes:\n", qual_total);
+            for (unsigned i = 0; i < 32; i++)
+            {
+                if (n_unexpected_qual_characters[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_qual_characters[i]); }
+            }
+            for (unsigned i = 32; i < 127; i++)
+            {
+                if (n_unexpected_qual_characters[i] != 0) { fprintf(stderr, "    '%c': %llu\n", (unsigned char)i, n_unexpected_qual_characters[i]); }
+            }
+            for (unsigned i = 127; i < 256; i++)
+            {
+                if (n_unexpected_qual_characters[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_qual_characters[i]); }
+            }
+            if (n_unexpected_qual_characters[256] != 0) { fprintf(stderr, "    EOF: %llu\n", n_unexpected_qual_characters[256]); }
         }
-        for (unsigned i = 127; i < 256; i++)
-        {
-            if (n_unexpected_charactes[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_charactes[i]); }
-        }
-        if (n_unexpected_charactes[256] != 0) { fprintf(stderr, "    EOF: %llu\n", n_unexpected_charactes[256]); }
     }
 }
 
@@ -62,7 +87,18 @@ static void unexpected_input_char(unsigned c)
         fprintf(stderr, "Error: Unexpected %s code '%c'\n", in_seq_type_name, (unsigned char)c);
         exit(1);
     }
-    else { n_unexpected_charactes[c]++; }
+    else { n_unexpected_seq_characters[c]++; }
+}
+
+
+static void unexpected_quality_char(unsigned c)
+{
+    if (abort_on_unexpected_code)
+    {
+        fprintf(stderr, "Error: Unexpected quality code '%c'\n", (unsigned char)c);
+        exit(1);
+    }
+    else { n_unexpected_qual_characters[c]++; }
 }
 
 
@@ -88,7 +124,31 @@ static inline unsigned in_get_char(void)
 }
 
 
-static inline unsigned getuntil(const bool *delim_arr, string_t *str)
+static inline unsigned in_skip_until(const bool *delim_arr)
+{
+    unsigned c = INEOF;
+    for (;;)
+    {
+        if (in_begin >= in_end)
+        {
+            refill_in_buffer();
+            if (in_end == 0) { break; }
+        }
+
+        size_t i;
+        for (i = in_begin; i < in_end; i++)
+        {
+            if (delim_arr[in_buffer[i]]) { c = in_buffer[i]; break; }
+        }
+
+        in_begin = i + 1;
+        if (c != INEOF) { break; }
+    }
+    return c;
+}
+
+
+static inline unsigned in_get_until(const bool *delim_arr, string_t *str)
 {
     unsigned c = INEOF;
     for (;;)
@@ -149,13 +209,13 @@ static inline unsigned get_fasta_seq(void)
     seq.length = 0;
 
     // At this point the '>' was already read, so we immediately proceed to read the name.
-    if ( (c = getuntil(is_space_arr, &name)) == INEOF) { comment.data[0] = '\0'; return INEOF; } // No need to 0-terminate sequence.
+    if ( (c = in_get_until(is_space_arr, &name)) == INEOF) { comment.data[0] = '\0'; return INEOF; } // No need to 0-terminate sequence.
 
     if (is_eol_arr[c]) { comment.data[0] = '\0'; }
-    else if (getuntil(is_eol_arr, &comment) == INEOF) { return INEOF; }
+    else if (in_get_until(is_eol_arr, &comment) == INEOF) { return INEOF; }
 
     size_t old_len = seq.length;
-    while ( (c = getuntil(is_unexpected_arr, &seq)) != INEOF)
+    while ( (c = in_get_until(is_unexpected_arr, &seq)) != INEOF)
     {
         if (is_eol_arr[c])
         {
@@ -180,7 +240,7 @@ static inline unsigned get_fasta_seq(void)
         else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
     }
 
-    // If the last line is the longest, and has no end-of-line, handle it correctly.
+    // If the last line is the longest, and has no end-of-line character, handle it correctly.
     if (c == INEOF)
     {
         if (seq.length - old_len > longest_line_length) { longest_line_length = seq.length - old_len; }
@@ -242,24 +302,43 @@ static inline unsigned get_fastq_seq(void)
     seq.length = 0;
     qual.length = 0;
 
-    if ( (c = getuntil(is_space_arr, &name)) == INEOF) { comment.data[0] = '\0'; return INEOF; }
+    if ( (c = in_get_until(is_space_arr, &name)) == INEOF) { comment.data[0] = '\0'; return INEOF; }
 
     if (is_eol_arr[c]) { comment.data[0] = '\0'; }
-    else if (getuntil(is_eol_arr, &comment) == INEOF) { return INEOF; }
+    else if (in_get_until(is_eol_arr, &comment) == INEOF) { return INEOF; }
 
-    size_t old_len = seq.length;
-    while ( (c = getuntil(is_space_or_plus_arr, &seq)) != INEOF)
+    while ( (c = in_get_until(is_unexpected_arr, &seq)) != INEOF)
     {
-        if (is_eol_arr[c])
-        {
-            if (seq.length - old_len > longest_line_length) { longest_line_length = seq.length - old_len; }
-            old_len = seq.length;
-        }
-        else if (c == '+') { break; }
+        if (is_eol_arr[c]) { break; }
+        else if (is_space_arr[c]) {}
+        else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
     }
+    if (seq.length > longest_line_length) { longest_line_length = seq.length; }
+    if (c == INEOF) { fprintf(stderr, "Error: truncated FASTQ input: last sequence has no quality\n"); exit(1); }
 
-    while ( (c = getuntil(is_space_arr, &qual)) != INEOF && qual.length < seq.length) {}
-    if (qual.length != seq.length) { fprintf(stderr, "Error: quality of sequence %llu doesn't match sequence length\n", n_sequences + 1); }
+    do { c = in_get_char(); } while (is_eol_arr[c]);
+    if (c != '+') { fprintf(stderr, "Error: truncated FASTQ input: last sequence has no quality\n"); exit(1); }
+
+    c = in_skip_until(is_eol_arr);
+    if (!is_eol_arr[c]) { fprintf(stderr, "Error: truncated FASTQ input: last sequence has no quality\n"); exit(1); }
+
+    do { c = in_get_char(); } while (is_eol_arr[c]);
+    if (c == INEOF) { fprintf(stderr, "Error: truncated FASTQ input: last sequence has no quality\n"); exit(1); }
+    qual.length = 1;
+    qual.data[0] = (unsigned char)c;
+
+    while ( (c = in_get_until(is_unexpected_qual_arr, &qual)) != INEOF)
+    {
+        if (is_eol_arr[c]) { break; }
+        else if (is_space_arr[c]) {}
+        else { unexpected_quality_char(c); str_append_char(&qual, '!'); }  // Unknown character can only mean poor quality.
+    }
+    if (qual.length != seq.length)
+    {
+        fprintf(stderr, "Error: quality length of sequence %llu (%lu) doesn't match sequence length (%lu)\n", n_sequences + 1, qual.length, seq.length);
+        fprintf(stderr, "First quality char: '%c'\n", qual.data[0]);
+        exit(1);
+    }
 
     return c;
 }
