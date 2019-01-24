@@ -28,12 +28,8 @@
 #include "platform.h"
 #include "tables.c"
 
-// Magic number, 3 bytes
-// Format version, 1 byte
-// Sequence type, 1 byte
-// Flags, 1 byte
-// Name separator, 1 byte
-static unsigned char naf_header_start[8] = "\x01\xF9\xEC\x02\x00\x00\x20";
+
+static unsigned char naf_magic_number[4] = "\x01\xF9\xEC";
 
 static bool verbose = false;
 static bool keep_temp_files = false;
@@ -469,28 +465,24 @@ int main(int argc, char **argv)
         is_unexpected_arr = is_unexpected_dna_arr;
         in_seq_type_name = "DNA";
         unexpected_char_replacement = 'N';
-        naf_header_start[4] = 0;
     }
     if (in_seq_type == seq_type_rna)
     {
         is_unexpected_arr = is_unexpected_rna_arr;
         in_seq_type_name = "RNA";
         unexpected_char_replacement = 'N';
-        naf_header_start[4] = 1;
     }
     else if (in_seq_type == seq_type_protein)
     {
         is_unexpected_arr = is_unexpected_protein_arr;
         in_seq_type_name = "protein";
         unexpected_char_replacement = 'X';
-        naf_header_start[4] = 2;
     }
     else if (in_seq_type == seq_type_text)
     {
         is_unexpected_arr = is_unexpected_text_arr;
         in_seq_type_name = "text";
         unexpected_char_replacement = '?';
-        naf_header_start[4] = 3;
     }
 
     detect_temp_directory();
@@ -572,17 +564,22 @@ int main(int argc, char **argv)
     close_input_file();
     close_temp_files();
 
+    fwrite_or_die(naf_magic_number, 1, 3, OUT);
 
-    naf_header_start[5] = (unsigned char)( (extended_format << 7) |
-                                           (store_title     << 6) |
-                                           (store_ids       << 5) |
-                                           (store_comm      << 4) |
-                                           (store_len       << 3) |
-                                           (store_mask      << 2) |
-                                           (store_seq       << 1) |
-                                            store_qual              );
+    // In case of DNA input, write NAFv1 format.
+    // Otherwise write NAFv2 where we can store sequence type.
+    if (in_seq_type == seq_type_dna) { fputc_or_die(1, OUT); }
+    else { fputc_or_die(2, OUT); fputc_or_die(in_seq_type, OUT); }
 
-    fwrite_or_die(naf_header_start, 1, 7, OUT);
+    fputc_or_die( (unsigned char)( (extended_format << 7) |
+                                   (store_title     << 6) |
+                                   (store_ids       << 5) |
+                                   (store_comm      << 4) |
+                                   (store_len       << 3) |
+                                   (store_mask      << 2) |
+                                   (store_seq       << 1) |
+                                    store_qual              ), OUT);
+    fputc_or_die(' ', OUT);
 
     unsigned long long out_line_length = line_length_is_specified ? requested_line_length : longest_line_length;
     if (verbose) { fprintf(stderr, "Output line length: %llu\n", out_line_length); }

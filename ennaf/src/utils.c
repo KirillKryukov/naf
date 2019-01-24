@@ -82,6 +82,15 @@ static void fwrite_or_die(const void *ptr, size_t element_size, size_t n_element
 #define fwrite dont_use_fwrite
 
 
+static void fputc_or_die(int c, FILE *F)
+{
+    assert(F != NULL);
+
+    if (fputc(c,F) != c) { fprintf(stderr, "Error writing to file\n"); exit(1); }
+}
+#define fputc dont_use_fputc
+
+
 static void fclose_or_die(FILE *F)
 {
     assert(F != NULL);
