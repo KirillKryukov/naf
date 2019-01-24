@@ -146,6 +146,9 @@ static bool abort_on_unexpected_code = false;
 static size_t out_buffer_size = 0;
 static void *out_buffer = NULL;
 
+static bool created_output_file = false;
+static bool success = false;
+
 #include "utils.c"
 #include "files.c"
 #include "encoders.c"
@@ -170,7 +173,6 @@ static void done(void)
     FREE(length_units);
     FREE(mask_units);
 
-    FREE(out_file_path_auto);
     close_output_file();
     close_input_file();
     close_temp_files();
@@ -185,6 +187,12 @@ static void done(void)
         if (store_qual && qual_path != NULL) { remove_temp_file(qual_path); }
     }
 
+    if (!success && created_output_file)
+    {
+        if (remove(out_file_path) != 0) { fprintf(stderr, "Can't remove incomplete output file \"%s\"\n", out_file_path); }
+    }
+
+    FREE(out_file_path_auto);
     FREE(temp_prefix);
     FREE(ids_path);
     FREE(comm_path);
@@ -623,6 +631,7 @@ int main(int argc, char **argv)
     report_unexpected_input_char_stats();
 
     if (verbose) { fprintf(stderr, "Processed %llu sequences\n", n_sequences); }
+    success = true;
 
     return 0;
 }

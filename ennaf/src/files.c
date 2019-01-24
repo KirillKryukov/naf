@@ -29,6 +29,7 @@ static void open_output_file(void)
     {
         OUT = fopen(out_file_path, "wb");
         if (OUT == NULL) { fprintf(stderr, "Can't create output file\n"); exit(1); }
+        created_output_file = true;
     }
     else
     {
