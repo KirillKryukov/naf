@@ -449,6 +449,9 @@ int main(int argc, char **argv)
         exit(0);
     }
 
+    if (in_seq_type_expected == seq_type_rna) { is_unexpected_arr = is_unexpected_rna_arr; }
+    //else if (in_seq_type_expected == seq_type_protein) { is_unexpected_arr = is_unexpected_protein_arr; }
+
     detect_temp_directory();
     detect_input_format_from_input_file_extension();
 

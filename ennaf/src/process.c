@@ -14,6 +14,8 @@
 #endif
 #endif
 
+#define INEOF 256
+
 
 typedef struct
 {
@@ -29,9 +31,9 @@ static string_t seq     = { 0, 0, NULL };
 static string_t qual    = { 0, 0, NULL };
 
 
-static void unexpected_input_char(int c)
+static void unexpected_input_char(unsigned c)
 {
-    fprintf(stderr, "Unexpected nucleotide code: \"%c\"\n", c);
+    fprintf(stderr, "Unexpected nucleotide code: \"%c\"\n", (unsigned char)c);
 }
 
 
@@ -46,20 +48,20 @@ static inline void refill_in_buffer(void)
 
 
 __attribute__((always_inline))
-static inline int in_get_char(void)
+static inline unsigned in_get_char(void)
 {
     if (in_begin >= in_end)
     {
         refill_in_buffer();
-        if (in_end == 0) { return -1; }
+        if (in_end == 0) { return INEOF; }
     }
     return in_buffer[in_begin++];
 }
 
 
-static inline int getuntil(const bool *delim_arr, string_t *str)
+static inline unsigned getuntil(const bool *delim_arr, string_t *str)
 {
-    int c = -1;
+    unsigned c = INEOF;
     for (;;)
     {
         if (in_begin >= in_end)
@@ -85,7 +87,7 @@ static inline int getuntil(const bool *delim_arr, string_t *str)
         str->length += (i - in_begin);
         in_begin = i + 1;
 
-        if (c >= 0) { break; }
+        if (c != INEOF) { break; }
     }
 
     str->data[str->length] = '\0';
@@ -109,22 +111,22 @@ static inline void str_append_char(string_t *str, unsigned char c)
 
 
 __attribute__((always_inline))
-static inline int get_fasta_seq(void)
+static inline unsigned get_fasta_seq(void)
 {
-    int c;
+    unsigned c;
 
     name.length = 0;
     comment.length = 0;
     seq.length = 0;
 
     // At this point the '>' was already read, so we immediately proceed to read the name.
-    if ( (c = getuntil(is_space_arr, &name)) == -1) { comment.data[0] = '\0'; return -1; } // No need to 0-terminate sequence.
+    if ( (c = getuntil(is_space_arr, &name)) == INEOF) { comment.data[0] = '\0'; return INEOF; } // No need to 0-terminate sequence.
 
     if (is_eol_arr[c]) { comment.data[0] = '\0'; }
-    else if (getuntil(is_eol_arr, &comment) == -1) { return -1; }
+    else if (getuntil(is_eol_arr, &comment) == INEOF) { return INEOF; }
 
     size_t old_len = seq.length;
-    while ( (c = getuntil(is_unexpected_arr, &seq)) != -1)
+    while ( (c = getuntil(is_unexpected_arr, &seq)) != INEOF)
     {
         if (is_eol_arr[c])
         {
@@ -132,12 +134,12 @@ static inline int get_fasta_seq(void)
             old_len = seq.length;
 
             c = in_get_char();
-            if (c == '>' || c == -1) { break; }
+            if (c == '>' || c == INEOF) { break; }
             else if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
             else if (is_eol_arr[c])
             {
-                while (c != -1 && is_eol_arr[c]) { c = in_get_char(); }
-                if (c == '>' || c == -1) { break; }
+                while (c != INEOF && is_eol_arr[c]) { c = in_get_char(); }
+                if (c == '>' || c == INEOF) { break; }
                 else if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
                 else if (is_space_arr[c]) {}
                 else { unexpected_input_char(c); str_append_char(&seq, 'N'); }
@@ -157,7 +159,7 @@ static void process_fasta(void)
 {
     for (;;)
     {
-        int c = get_fasta_seq();
+        unsigned c = get_fasta_seq();
 
         if (store_ids)
         {
@@ -189,28 +191,28 @@ static void process_fasta(void)
 
         n_sequences++;
 
-        if (c == -1) { return; }
+        if (c == INEOF) { return; }
     }
 }
 
 
 __attribute__((always_inline))
-static inline int get_fastq_seq(void)
+static inline unsigned get_fastq_seq(void)
 {
-    int c;
+    unsigned c;
 
     name.length = 0;
     comment.length = 0;
     seq.length = 0;
     qual.length = 0;
 
-    if ( (c = getuntil(is_space_arr, &name)) == -1) { comment.data[0] = '\0'; return -1; }
+    if ( (c = getuntil(is_space_arr, &name)) == INEOF) { comment.data[0] = '\0'; return INEOF; }
 
     if (is_eol_arr[c]) { comment.data[0] = '\0'; }
-    else if (getuntil(is_eol_arr, &comment) == -1) { return -1; }
+    else if (getuntil(is_eol_arr, &comment) == INEOF) { return INEOF; }
 
     size_t old_len = seq.length;
-    while ( (c = getuntil(is_space_or_plus_arr, &seq)) != -1)
+    while ( (c = getuntil(is_space_or_plus_arr, &seq)) != INEOF)
     {
         if (is_eol_arr[c])
         {
@@ -220,7 +222,7 @@ static inline int get_fastq_seq(void)
         else if (c == '+') { break; }
     }
 
-    while ( (c = getuntil(is_space_arr, &qual)) != -1 && qual.length < seq.length) {}
+    while ( (c = getuntil(is_space_arr, &qual)) != INEOF && qual.length < seq.length) {}
     if (qual.length != seq.length) { fprintf(stderr, "Error: quality of sequence %llu doesn't match sequence length\n", n_sequences + 1); }
 
     return c;
@@ -231,7 +233,7 @@ static void process_fastq(void)
 {
     for (;;)
     {
-        int c = get_fastq_seq();
+        unsigned c = get_fastq_seq();
 
         if (store_ids)
         {
@@ -269,7 +271,7 @@ static void process_fastq(void)
 
         n_sequences++;
 
-        while ((c = in_get_char()) != -1 && c != '@') {}
+        while ((c = in_get_char()) != INEOF && c != '@') {}
         if (c != '@') { return; }
     }
 }
@@ -279,17 +281,17 @@ static void confirm_input_format(void)
 {
     assert(in_format_from_input == in_format_unknown);
 
-    int last_c = '\n';
-    int c;
+    unsigned last_c = '\n';
+    unsigned c;
 
-    while ((c = in_get_char()) != -1 && is_space_arr[c]) { last_c = c; }
-    if (c == -1) { return; }
+    while ((c = in_get_char()) != INEOF && is_space_arr[c]) { last_c = c; }
+    if (c == INEOF) { return; }
 
     if (c == '>' && is_eol_arr[last_c]) { in_format_from_input = in_format_fasta; }
     else if (c == '@' && is_eol_arr[last_c]) { in_format_from_input = in_format_fastq; }
     else
     {
-        if (c == '>' || c == '@') { fprintf(stderr, "Invalid input: First '%c' is not at the beginning of the line\n", c); }
+        if (c == '>' || c == '@') { fprintf(stderr, "Invalid input: First '%c' is not at the beginning of the line\n", (unsigned char)c); }
         else { fputs("Input data is in unknown format: first non-space character is neither '>' nor '@'\n", stderr); }
         exit(1);
     }
