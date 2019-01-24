@@ -180,6 +180,12 @@ static inline unsigned get_fasta_seq(void)
         else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
     }
 
+    // If the last line is the longest, and has no end-of-line, handle it correctly.
+    if (c == INEOF)
+    {
+        if (seq.length - old_len > longest_line_length) { longest_line_length = seq.length - old_len; }
+    }
+
     return c;
 }
 
