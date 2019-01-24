@@ -124,7 +124,7 @@ static inline int get_fasta_seq(void)
     else if (getuntil(is_eol_arr, &comment) == -1) { return -1; }
 
     size_t old_len = seq.length;
-    while ( (c = getuntil(is_non_nucleotide_arr, &seq)) != -1)
+    while ( (c = getuntil(is_unexpected_arr, &seq)) != -1)
     {
         if (is_eol_arr[c])
         {
@@ -133,12 +133,12 @@ static inline int get_fasta_seq(void)
 
             c = in_get_char();
             if (c == '>' || c == -1) { break; }
-            else if (!is_non_nucleotide_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
+            else if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
             else if (is_eol_arr[c])
             {
                 while (c != -1 && is_eol_arr[c]) { c = in_get_char(); }
                 if (c == '>' || c == -1) { break; }
-                else if (!is_non_nucleotide_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
+                else if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
                 else if (is_space_arr[c]) {}
                 else { unexpected_input_char(c); str_append_char(&seq, 'N'); }
             }
@@ -146,11 +146,7 @@ static inline int get_fasta_seq(void)
             else { unexpected_input_char(c); str_append_char(&seq, 'N'); }
         }
         else if (is_space_arr[c]) {}
-        else
-        {
-            unexpected_input_char(c);
-            str_append_char(&seq, 'N');
-        }
+        else { unexpected_input_char(c); str_append_char(&seq, 'N'); }
     }
 
     return c;

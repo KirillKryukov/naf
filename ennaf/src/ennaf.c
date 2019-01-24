@@ -8,7 +8,7 @@
  */
 
 #define VERSION "1.0.1"
-#define DATE "2019-01-19"
+#define DATE "2019-01-24"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -26,7 +26,6 @@
 #include <zstd.h>
 
 #include "platform.h"
-#include "utils.c"
 
 
 static unsigned char naf_header_start[7] = "\x01\xF9\xEC\x01\x00\x20";
@@ -70,6 +69,9 @@ enum { in_format_unknown, in_format_fasta, in_format_fastq };
 static int in_format_from_command_line = in_format_unknown;
 static int in_format_from_input = in_format_unknown;
 static int in_format_from_extension = in_format_unknown;
+
+enum { seq_type_dna, seq_type_rna, seq_type_protein, seq_type_text };
+static int in_seq_type_expected = seq_type_dna;
 
 static bool extended_format = false;
 static bool store_title = false;
@@ -134,7 +136,20 @@ static unsigned long long n_sequences = 0ull;
 static bool have_input_stat = false;
 static struct stat input_stat;
 
+static bool is_eol_arr[256];
+static bool is_space_arr[256];
+static bool is_space_or_plus_arr[256];
 
+static unsigned char nuc_code[256];
+static bool is_unexpected_arr[256];
+
+static size_t out_buffer_size = 0;
+static void *out_buffer = NULL;
+
+static unsigned long long n_unexpected_charactes[256];
+
+
+#include "utils.c"
 #include "files.c"
 #include "encoders.c"
 #include "process.c"
@@ -343,6 +358,11 @@ static void show_help(void)
         "  --title TITLE      - Store TITLE as dataset title\n"
         "  --fasta            - Input is in FASTA format\n"
         "  --fastq            - Input is in FASTQ format\n"
+        "  --dna              - Input sequence is DNA (default)\n"
+        "  --rna              - Input sequence is RNA\n"
+        "  --protein          - Input sequence is protein\n"
+        "  --text             - Input sequence is unrestricted text\n"
+        "  --strict           - Fail on unexpected input characters\n"
         "  --line-length N    - Override line length to N\n"
         "  --verbose          - Verbose mode\n"
         "  --keep-temp-files  - Keep temporary files\n"
@@ -383,6 +403,10 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--no-mask")) { store_mask = false; continue; }
                 if (!strcmp(argv[i], "--fasta")) { set_input_format_from_command_line("fasta"); continue; }
                 if (!strcmp(argv[i], "--fastq")) { set_input_format_from_command_line("fastq"); continue; }
+                if (!strcmp(argv[i], "--dna")) { in_seq_type_expected = seq_type_dna; continue; }
+                if (!strcmp(argv[i], "--rna")) { in_seq_type_expected = seq_type_rna; continue; }
+                if (!strcmp(argv[i], "--protein")) { in_seq_type_expected = seq_type_protein; continue; }
+                if (!strcmp(argv[i], "--text")) { in_seq_type_expected = seq_type_text; continue; }
             }
 
             if (i < argc - 1)

@@ -4,17 +4,6 @@
  * See README.md and LICENSE files of this repository
  */
 
-static bool is_eol_arr[256];
-static bool is_space_arr[256];
-//static bool is_space_or_gt_arr[256];
-static bool is_space_or_plus_arr[256];
-
-static unsigned char nuc_code[256];
-static bool is_non_nucleotide_arr[256];
-
-static size_t out_buffer_size = 0;
-static void *out_buffer = NULL;
-
 
 static void init_utils(void)
 {
@@ -22,7 +11,6 @@ static void init_utils(void)
 
     memset(is_eol_arr, 0, sizeof(is_eol_arr));
     memset(is_space_arr, 0, sizeof(is_space_arr));
-    //memset(is_space_or_gt_arr, 0, sizeof(is_space_or_gt_arr));
     memset(is_space_or_plus_arr, 0, sizeof(is_space_or_plus_arr));
 
     is_eol_arr['\n'] = true;
@@ -35,14 +23,6 @@ static void init_utils(void)
     is_space_arr['\f'] = true;
     is_space_arr['\r'] = true;
     is_space_arr[' '] = true;
-
-    /*is_space_or_gt_arr['\t'] = true;
-    is_space_or_gt_arr['\n'] = true;
-    is_space_or_gt_arr['\v'] = true;
-    is_space_or_gt_arr['\f'] = true;
-    is_space_or_gt_arr['\r'] = true;
-    is_space_or_gt_arr[' '] = true;
-    is_space_or_gt_arr['>'] = true;*/
 
     is_space_or_plus_arr['\t'] = true;
     is_space_or_plus_arr['\n'] = true;
@@ -72,25 +52,26 @@ static void init_utils(void)
     nuc_code['N'] = 15; nuc_code['n'] = 15;
     nuc_code['-'] = 0;
 
-    memset(is_non_nucleotide_arr, true, sizeof(is_non_nucleotide_arr));
+    memset(is_unexpected_arr, true, sizeof(is_unexpected_arr));
 
-    is_non_nucleotide_arr['A'] = false; is_non_nucleotide_arr['a'] = false;
-    is_non_nucleotide_arr['C'] = false; is_non_nucleotide_arr['c'] = false;
-    is_non_nucleotide_arr['G'] = false; is_non_nucleotide_arr['g'] = false;
-    is_non_nucleotide_arr['T'] = false; is_non_nucleotide_arr['t'] = false;
-    is_non_nucleotide_arr['U'] = false; is_non_nucleotide_arr['u'] = false;
-    is_non_nucleotide_arr['R'] = false; is_non_nucleotide_arr['r'] = false;
-    is_non_nucleotide_arr['Y'] = false; is_non_nucleotide_arr['y'] = false;
-    is_non_nucleotide_arr['S'] = false; is_non_nucleotide_arr['s'] = false;
-    is_non_nucleotide_arr['W'] = false; is_non_nucleotide_arr['w'] = false;
-    is_non_nucleotide_arr['K'] = false; is_non_nucleotide_arr['k'] = false;
-    is_non_nucleotide_arr['M'] = false; is_non_nucleotide_arr['m'] = false;
-    is_non_nucleotide_arr['B'] = false; is_non_nucleotide_arr['b'] = false;
-    is_non_nucleotide_arr['D'] = false; is_non_nucleotide_arr['d'] = false;
-    is_non_nucleotide_arr['H'] = false; is_non_nucleotide_arr['h'] = false;
-    is_non_nucleotide_arr['V'] = false; is_non_nucleotide_arr['v'] = false;
-    is_non_nucleotide_arr['N'] = false; is_non_nucleotide_arr['n'] = false;
-    is_non_nucleotide_arr['-'] = false;
+    is_unexpected_arr['A'] = false; is_unexpected_arr['a'] = false;
+    is_unexpected_arr['C'] = false; is_unexpected_arr['c'] = false;
+    is_unexpected_arr['G'] = false; is_unexpected_arr['g'] = false;
+    is_unexpected_arr['T'] = false; is_unexpected_arr['t'] = false;
+    is_unexpected_arr['R'] = false; is_unexpected_arr['r'] = false;
+    is_unexpected_arr['Y'] = false; is_unexpected_arr['y'] = false;
+    is_unexpected_arr['S'] = false; is_unexpected_arr['s'] = false;
+    is_unexpected_arr['W'] = false; is_unexpected_arr['w'] = false;
+    is_unexpected_arr['K'] = false; is_unexpected_arr['k'] = false;
+    is_unexpected_arr['M'] = false; is_unexpected_arr['m'] = false;
+    is_unexpected_arr['B'] = false; is_unexpected_arr['b'] = false;
+    is_unexpected_arr['D'] = false; is_unexpected_arr['d'] = false;
+    is_unexpected_arr['H'] = false; is_unexpected_arr['h'] = false;
+    is_unexpected_arr['V'] = false; is_unexpected_arr['v'] = false;
+    is_unexpected_arr['N'] = false; is_unexpected_arr['n'] = false;
+    is_unexpected_arr['-'] = false;
+
+    memset(n_unexpected_charactes, 0, sizeof(n_unexpected_charactes));
 
     out_buffer_size = ZSTD_CStreamOutSize();
     out_buffer = malloc(out_buffer_size);
