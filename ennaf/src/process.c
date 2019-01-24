@@ -37,7 +37,16 @@ static void report_unexpected_input_char_stats(void)
     for (unsigned i = 0; i < 257; i++) { total += n_unexpected_charactes[i]; }
     if (total > 0)
     {
-        fprintf(stderr, "input has %llu unexpected %s codes\n", total, in_seq_type_name);
+        fprintf(stderr, "input has %llu unexpected %s codes:\n", total, in_seq_type_name);
+        for (unsigned i = 0; i < 32; i++)
+        {
+            if (n_unexpected_charactes[i]) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_charactes[i]); }
+        }
+        for (unsigned i = 32; i < 256; i++)
+        {
+            if (n_unexpected_charactes[i]) { fprintf(stderr, "    '%c': %llu\n", (unsigned char)i, n_unexpected_charactes[i]); }
+        }
+        if (n_unexpected_charactes[256]) { fprintf(stderr, "    EOF: %llu\n", n_unexpected_charactes[256]); }
     }
 }
 
@@ -158,13 +167,13 @@ static inline unsigned get_fasta_seq(void)
                 if (c == '>' || c == INEOF) { break; }
                 else if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
                 else if (is_space_arr[c]) {}
-                else { unexpected_input_char(c); str_append_char(&seq, 'N'); }
+                else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
             }
             else if (is_space_arr[c]) {}
-            else { unexpected_input_char(c); str_append_char(&seq, 'N'); }
+            else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
         }
         else if (is_space_arr[c]) {}
-        else { unexpected_input_char(c); str_append_char(&seq, 'N'); }
+        else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
     }
 
     return c;
@@ -202,7 +211,8 @@ static void process_fasta(void)
         if (store_seq)
         {
             seq_size_original += seq.length;
-            encode_dna(seq.data, seq.length);
+            if (in_seq_type < seq_type_protein) { encode_dna(seq.data, seq.length); }
+            else { seq_size_compressed += write_to_cstream(seq_cstream, SEQ, seq.data, seq.length); }
         }
 
         n_sequences++;

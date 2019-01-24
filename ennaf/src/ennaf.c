@@ -71,8 +71,9 @@ static int in_format_from_input = in_format_unknown;
 static int in_format_from_extension = in_format_unknown;
 
 enum { seq_type_dna, seq_type_rna, seq_type_protein, seq_type_text };
-static int in_seq_type_expected = seq_type_dna;
+static int in_seq_type = seq_type_dna;
 static const char *in_seq_type_name = "DNA";
+static unsigned char unexpected_char_replacement = 'N';
 
 static bool extended_format = false;
 static bool store_title = false;
@@ -408,10 +409,10 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--no-mask")) { store_mask = false; continue; }
                 if (!strcmp(argv[i], "--fasta")) { set_input_format_from_command_line("fasta"); continue; }
                 if (!strcmp(argv[i], "--fastq")) { set_input_format_from_command_line("fastq"); continue; }
-                if (!strcmp(argv[i], "--dna")) { in_seq_type_expected = seq_type_dna; continue; }
-                if (!strcmp(argv[i], "--rna")) { in_seq_type_expected = seq_type_rna; continue; }
-                if (!strcmp(argv[i], "--protein")) { in_seq_type_expected = seq_type_protein; continue; }
-                if (!strcmp(argv[i], "--text")) { in_seq_type_expected = seq_type_text; continue; }
+                if (!strcmp(argv[i], "--dna")) { in_seq_type = seq_type_dna; continue; }
+                if (!strcmp(argv[i], "--rna")) { in_seq_type = seq_type_rna; continue; }
+                if (!strcmp(argv[i], "--protein")) { in_seq_type = seq_type_protein; continue; }
+                if (!strcmp(argv[i], "--text")) { in_seq_type = seq_type_text; continue; }
                 if (!strcmp(argv[i], "--strict")) { abort_on_unexpected_code = true; continue; }
             }
 
@@ -458,20 +459,29 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-    if (in_seq_type_expected == seq_type_dna)
+    if (in_seq_type == seq_type_dna)
     {
         is_unexpected_arr = is_unexpected_dna_arr;
         in_seq_type_name = "DNA";
+        unexpected_char_replacement = 'N';
     }
-    if (in_seq_type_expected == seq_type_rna)
+    if (in_seq_type == seq_type_rna)
     {
         is_unexpected_arr = is_unexpected_rna_arr;
         in_seq_type_name = "RNA";
+        unexpected_char_replacement = 'N';
     }
-    else if (in_seq_type_expected == seq_type_protein)
+    else if (in_seq_type == seq_type_protein)
     {
         is_unexpected_arr = is_unexpected_protein_arr;
         in_seq_type_name = "protein";
+        unexpected_char_replacement = 'X';
+    }
+    else if (in_seq_type == seq_type_text)
+    {
+        is_unexpected_arr = is_unexpected_text_arr;
+        in_seq_type_name = "text";
+        unexpected_char_replacement = '?';
     }
 
     detect_temp_directory();
