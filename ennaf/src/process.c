@@ -31,52 +31,25 @@ static string_t seq     = { 0, 0, NULL };
 static string_t qual    = { 0, 0, NULL };
 
 
+static void report_unexpected_char_stats(unsigned long long *n, const char *seq_type_name)
+{
+    unsigned long long total = 0;
+    for (unsigned i = 0; i < 257; i++) { total += n[i]; }
+    if (total > 0)
+    {
+        fprintf(stderr, "input has %llu unexpected %s codes:\n", total, seq_type_name);
+        for (unsigned i = 0; i < 32; i++) { if (n[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n[i]); } }
+        for (unsigned i = 32; i < 127; i++) { if (n[i] != 0) { fprintf(stderr, "    '%c': %llu\n", (unsigned char)i, n[i]); } }
+        for (unsigned i = 127; i < 256; i++) { if (n[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n[i]); } }
+        if (n[256] != 0) { fprintf(stderr, "    EOF: %llu\n", n[256]); }
+    }
+}
+
+
 static void report_unexpected_input_char_stats(void)
 {
-    {
-        unsigned long long seq_total = 0;
-        for (unsigned i = 0; i < 257; i++) { seq_total += n_unexpected_seq_characters[i]; }
-        if (seq_total > 0)
-        {
-            fprintf(stderr, "input has %llu unexpected %s codes:\n", seq_total, in_seq_type_name);
-            for (unsigned i = 0; i < 32; i++)
-            {
-                if (n_unexpected_seq_characters[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_seq_characters[i]); }
-            }
-            for (unsigned i = 32; i < 127; i++)
-            {
-                if (n_unexpected_seq_characters[i] != 0) { fprintf(stderr, "    '%c': %llu\n", (unsigned char)i, n_unexpected_seq_characters[i]); }
-            }
-            for (unsigned i = 127; i < 256; i++)
-            {
-                if (n_unexpected_seq_characters[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_seq_characters[i]); }
-            }
-            if (n_unexpected_seq_characters[256] != 0) { fprintf(stderr, "    EOF: %llu\n", n_unexpected_seq_characters[256]); }
-        }
-    }
-
-    if (in_format_from_input == in_format_fastq)
-    {
-        unsigned long long qual_total = 0;
-        for (unsigned i = 0; i < 257; i++) { qual_total += n_unexpected_qual_characters[i]; }
-        if (qual_total > 0)
-        {
-            fprintf(stderr, "input has %llu unexpected quality codes:\n", qual_total);
-            for (unsigned i = 0; i < 32; i++)
-            {
-                if (n_unexpected_qual_characters[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_qual_characters[i]); }
-            }
-            for (unsigned i = 32; i < 127; i++)
-            {
-                if (n_unexpected_qual_characters[i] != 0) { fprintf(stderr, "    '%c': %llu\n", (unsigned char)i, n_unexpected_qual_characters[i]); }
-            }
-            for (unsigned i = 127; i < 256; i++)
-            {
-                if (n_unexpected_qual_characters[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n_unexpected_qual_characters[i]); }
-            }
-            if (n_unexpected_qual_characters[256] != 0) { fprintf(stderr, "    EOF: %llu\n", n_unexpected_qual_characters[256]); }
-        }
-    }
+    report_unexpected_char_stats(n_unexpected_seq_characters, in_seq_type_name);
+    report_unexpected_char_stats(n_unexpected_qual_characters, "quality");
 }
 
 
