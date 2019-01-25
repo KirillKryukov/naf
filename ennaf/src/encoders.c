@@ -155,17 +155,17 @@ static void extract_mask(const unsigned char *seq, size_t len)
 
 
 /*
- * Copies the content of a file into output stream.
+ * Copies the content of an already open file into output stream.
  * Starts from "start", copies exactly "expected_size" bytes.
  */
-static void copy_file_to_out(char* from_path, long start, unsigned long long data_size)
+static void copy_file_to_out(FILE* FROM, char *from_path, long start, unsigned long long data_size)
 {
+    assert(FROM != NULL);
     assert(from_path != NULL);
     assert(file_copy_buffer != NULL);
     assert(OUT != NULL);
 
-    FILE *FROM = fopen(from_path, "rb");
-    if (FROM == NULL) { fprintf(stderr, "Can't open \"%s\"\n", from_path); exit(1); }
+    fflush_or_die(FROM);
 
     if (fseek(FROM, start, SEEK_SET) != 0) { fprintf(stderr, "Can't seek to data start in \"%s\"\n", from_path); exit(1); }
 
@@ -177,6 +177,4 @@ static void copy_file_to_out(char* from_path, long start, unsigned long long dat
         fwrite_or_die(file_copy_buffer, 1, to_read, OUT);
         remaining -= to_read;
     }
-
-    fclose(FROM);
 }

@@ -308,7 +308,8 @@ static inline unsigned get_fastq_seq(void)
     }
     if (qual.length != seq.length)
     {
-        fprintf(stderr, "Error: quality length of sequence %llu (%lu) doesn't match sequence length (%lu)\n", n_sequences + 1, qual.length, seq.length);
+        fprintf(stderr, "Error: quality length of sequence %llu (%llu) doesn't match sequence length (%llu)\n",
+                        n_sequences + 1, (unsigned long long)qual.length, (unsigned long long)seq.length);
         exit(1);
     }
 

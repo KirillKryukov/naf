@@ -558,7 +558,6 @@ int main(int argc, char **argv)
     if (store_qual) { qual_size_compressed += flush_cstream(qual_cstream, QUAL); }
 
     close_input_file();
-    close_temp_files();
 
     fwrite_or_die(naf_magic_number, 1, 3, OUT);
 
@@ -594,7 +593,7 @@ int main(int argc, char **argv)
         assert(ids_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, ids_size_original);
         write_variable_length_encoded_number(OUT, ids_size_compressed - 4);
-        copy_file_to_out(ids_path, 4, ids_size_compressed - 4);
+        copy_file_to_out(IDS, ids_path, 4, ids_size_compressed - 4);
     }
 
     if (store_comm)
@@ -602,7 +601,7 @@ int main(int argc, char **argv)
         assert(comm_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, comm_size_original);
         write_variable_length_encoded_number(OUT, comm_size_compressed - 4);
-        copy_file_to_out(comm_path, 4, comm_size_compressed - 4);
+        copy_file_to_out(COMM, comm_path, 4, comm_size_compressed - 4);
     }
 
     if (store_len)
@@ -610,7 +609,7 @@ int main(int argc, char **argv)
         assert(len_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, sizeof(unsigned int) * n_length_units_stored);
         write_variable_length_encoded_number(OUT, len_size_compressed - 4);
-        copy_file_to_out(len_path, 4, len_size_compressed - 4);
+        copy_file_to_out(LEN, len_path, 4, len_size_compressed - 4);
     }
 
     if (store_mask)
@@ -618,7 +617,7 @@ int main(int argc, char **argv)
         assert(mask_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, n_mask_units_stored);
         write_variable_length_encoded_number(OUT, mask_size_compressed - 4);
-        copy_file_to_out(mask_path, 4, mask_size_compressed - 4);
+        copy_file_to_out(MASK, mask_path, 4, mask_size_compressed - 4);
     }
 
     if (store_seq)
@@ -626,7 +625,7 @@ int main(int argc, char **argv)
         assert(seq_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, seq_size_original);
         write_variable_length_encoded_number(OUT, seq_size_compressed - 4);
-        copy_file_to_out(seq_path, 4, seq_size_compressed - 4);
+        copy_file_to_out(SEQ, seq_path, 4, seq_size_compressed - 4);
     }
 
     if (store_qual)
@@ -634,9 +633,10 @@ int main(int argc, char **argv)
         assert(qual_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, qual_size_original);
         write_variable_length_encoded_number(OUT, qual_size_compressed - 4);
-        copy_file_to_out(qual_path, 4, qual_size_compressed - 4);
+        copy_file_to_out(QUAL, qual_path, 4, qual_size_compressed - 4);
     }
 
+    close_temp_files();
     if (in_file_path != NULL && out_file_path != NULL && have_input_stat) { close_output_file_and_set_stat(); }
     else { close_output_file(); }
 

@@ -73,7 +73,7 @@ static FILE* create_temp_file(char *path, const char *purpose)
     assert(path != NULL);
     assert(purpose != NULL);
 
-    FILE *F = fopen(path, "wb");
+    FILE *F = fopen(path, "wb+");
     if (!F) { fprintf(stderr, "Can't create temporary %s file \"%s\"\n", purpose, path); exit(1); }
     return F;
 }
