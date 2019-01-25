@@ -566,14 +566,14 @@ int main(int argc, char **argv)
     if (in_seq_type == seq_type_dna) { fputc_or_die(1, OUT); }
     else { fputc_or_die(2, OUT); fputc_or_die(in_seq_type, OUT); }
 
-    fputc_or_die( (unsigned char)( (extended_format << 7) |
-                                   (store_title     << 6) |
-                                   (store_ids       << 5) |
-                                   (store_comm      << 4) |
-                                   (store_len       << 3) |
-                                   (store_mask      << 2) |
-                                   (store_seq       << 1) |
-                                    store_qual              ), OUT);
+    fputc_or_die( (extended_format << 7) |
+                  (store_title     << 6) |
+                  (store_ids       << 5) |
+                  (store_comm      << 4) |
+                  (store_len       << 3) |
+                  (store_mask      << 2) |
+                  (store_seq       << 1) |
+                   store_qual              , OUT);
     fputc_or_die(' ', OUT);
 
     unsigned long long out_line_length = line_length_is_specified ? requested_line_length : longest_line_length;
