@@ -64,11 +64,11 @@ static void unexpected_input_char(unsigned c, unsigned char *seq_name)
 }
 
 
-static void unexpected_quality_char(unsigned c)
+static void unexpected_quality_char(unsigned c, unsigned char *seq_name)
 {
     if (abort_on_unexpected_code)
     {
-        fprintf(stderr, "Error: Unexpected quality code '%c'\n", (unsigned char)c);
+        fprintf(stderr, "Error: Unexpected quality code '%c' in sequence \"%s\"\n", (unsigned char)c, seq_name);
         exit(1);
     }
     else { n_unexpected_qual_characters[c]++; }
@@ -304,12 +304,11 @@ static inline unsigned get_fastq_seq(void)
     {
         if (is_eol_arr[c]) { break; }
         else if (is_space_arr[c]) {}
-        else { unexpected_quality_char(c); str_append_char(&qual, '!'); }  // Unknown character can only mean poor quality.
+        else { unexpected_quality_char(c, name.data); str_append_char(&qual, '!'); }  // Unknown character can only mean poor quality.
     }
     if (qual.length != seq.length)
     {
         fprintf(stderr, "Error: quality length of sequence %llu (%lu) doesn't match sequence length (%lu)\n", n_sequences + 1, qual.length, seq.length);
-        fprintf(stderr, "First quality char: '%c'\n", qual.data[0]);
         exit(1);
     }
 
