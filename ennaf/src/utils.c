@@ -50,20 +50,20 @@ static void fputc_or_die(int c, FILE *F)
 #define fputc dont_use_fputc
 
 
-static void fclose_or_die(FILE *F)
-{
-    assert(F != NULL);
-
-    int error = fclose(F);
-    if (error != 0) { fprintf(stderr, "Error: Can't write to file. Disk full?\n"); exit(1); }
-}
-
-
 static void fflush_or_die(FILE *F)
 {
     assert(F != NULL);
 
     int error = fflush(F);
+    if (error != 0) { fprintf(stderr, "Error: Can't write to file. Disk full?\n"); exit(1); }
+}
+
+
+static void fclose_or_die(FILE *F)
+{
+    assert(F != NULL);
+
+    int error = fclose(F);
     if (error != 0) { fprintf(stderr, "Error: Can't write to file. Disk full?\n"); exit(1); }
 }
 

@@ -154,6 +154,7 @@ static bool success = false;
 
 
 #include "utils.c"
+#include "files.c"
 #include "input.c"
 #include "output.c"
 #include "output-fastq.c"
@@ -167,7 +168,8 @@ static void done(void)
 {
     if (IN != NULL && IN != stdin) { fclose(IN); IN = NULL; }
 
-    if (OUT != NULL) { fclose_or_die(OUT); OUT = NULL; }
+    close_input_file();
+    close_output_file();
 
     FREE(ids);
     FREE(ids_buffer);
@@ -372,17 +374,7 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-    if (in_file_path != NULL)
-    {
-        IN = fopen(in_file_path, "rb");
-        if (IN == NULL) { fprintf(stderr, "Can't open input file\n"); exit(1); }
-    }
-    else
-    {
-        if (!freopen(NULL, "rb", stdin)) { fprintf(stderr, "Can't read input in binary mode\n"); exit(1); }
-        IN = stdin;
-    }
-
+    open_input_file();
     read_header();
 
     if (out_type == UNDECIDED)
@@ -406,44 +398,7 @@ int main(int argc, char **argv)
     }
 
 
-
-    if (!force_stdout && out_file_path == NULL && in_file_path != NULL && isatty(fileno(stdout)))
-    {
-        size_t len = strlen(in_file_path);
-        if (len > 4 && strcmp(in_file_path + len - 4, ".naf") == 0 &&
-            in_file_path[len - 5] != '/' && in_file_path[len - 5] != '\\')
-        {
-            out_file_path_auto = (char*)malloc(len - 3);
-            memcpy(out_file_path_auto, in_file_path, len - 4);
-            out_file_path_auto[len - 4] = 0;
-            out_file_path = out_file_path_auto;
-        }
-    }
-
-    if (out_file_path != NULL && !force_stdout)
-    {
-        OUT = fopen(out_file_path, "wb");
-        if (OUT == NULL) { fprintf(stderr, "Can't create output file\n"); exit(1); }
-        created_output_file = true;
-    }
-    else
-    {
-        OUT = stdout;
-    }
-
-    if (out_type == FOUR_BIT && force_stdout)
-    {
-        if (!freopen(NULL, "wb", stdout)) { fprintf(stderr, "Can't set output stream to binary mode\n"); exit(1); }
-    }
-
-    if ( (out_type == IDS || out_type == NAMES || out_type == LENGTHS || out_type == MASK || out_type == FOUR_BIT ||
-          out_type == DNA || out_type == MASKED_DNA || out_type == UNMASKED_DNA || out_type == SEQ ||
-          out_type == FASTA || out_type == MASKED_FASTA || out_type == UNMASKED_FASTA || out_type == FASTQ) &&
-         !force_stdout && isatty(fileno(OUT)) )
-    {
-        fprintf(stderr, "Please specify output file or add -c to force writing to console\n");
-        exit(1);
-    }
+    open_output_file();
 
     if (in_file_path != NULL && out_file_path != NULL)
     {
@@ -499,6 +454,10 @@ int main(int argc, char **argv)
             }
         }
     }
+
+    close_input_file();
+    if (out_file_path != NULL && have_input_stat) { close_output_file_and_set_stat(); }
+    else { close_output_file(); }
 
     success = true;
     return 0;

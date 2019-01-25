@@ -634,7 +634,7 @@ int main(int argc, char **argv)
     }
 
     close_temp_files();
-    if (in_file_path != NULL && out_file_path != NULL && have_input_stat) { close_output_file_and_set_stat(); }
+    if (out_file_path != NULL && have_input_stat) { close_output_file_and_set_stat(); }
     else { close_output_file(); }
 
     report_unexpected_input_char_stats();

@@ -6,17 +6,18 @@
 
 static void open_input_file(void)
 {
+    assert(IN == NULL);
     assert(in_buffer == NULL);
 
-    if (in_file_path != NULL)
-    {
-        IN = fopen(in_file_path, "rb");
-        if (IN == NULL) { fprintf(stderr, "Can't open input file\n"); exit(1); }
-    }
-    else
+    if (in_file_path == NULL)
     {
         if (!freopen(NULL, "rb", stdin)) { fprintf(stderr, "Can't read input in binary mode\n"); exit(1); }
         IN = stdin;
+    }
+    else
+    {
+        IN = fopen(in_file_path, "rb");
+        if (IN == NULL) { fprintf(stderr, "Can't open input file\n"); exit(1); }
     }
 
     in_buffer = (unsigned char *) malloc(in_buffer_size);
@@ -25,6 +26,8 @@ static void open_input_file(void)
 
 static void open_output_file(void)
 {
+    assert(OUT == NULL);
+
     if (out_file_path != NULL && !force_stdout)
     {
         OUT = fopen(out_file_path, "wb");
