@@ -167,7 +167,7 @@ static void copy_file_to_out(FILE* FROM, char *from_path, long start, unsigned l
 
     fflush_or_die(FROM);
 
-    if (fseek(FROM, start, SEEK_SET) != 0) { fprintf(stderr, "Can't seek to data start in \"%s\"\n", from_path); exit(1); }
+    if (fseek(FROM, start, SEEK_SET) != 0) { die("Can't seek to data start in \"%s\"\n", from_path); }
 
     unsigned long long remaining = data_size;
     while (remaining > 0)

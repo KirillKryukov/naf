@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdarg.h>
 #include <time.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -185,7 +186,7 @@ static void done(void)
 
     if (!success && created_output_file)
     {
-        if (remove(out_file_path) != 0) { fprintf(stderr, "Can't remove incomplete output file \"%s\"\n", out_file_path); }
+        if (remove(out_file_path) != 0) { err("Can't remove incomplete output file \"%s\"\n", out_file_path); }
     }
 
     FREE(out_file_path_auto);
@@ -203,8 +204,8 @@ static void set_input_file_path(char *new_path)
 {
     assert(new_path != NULL);
 
-    if (in_file_path != NULL) { fputs("Can compress only one file at a time\n", stderr); exit(1); }
-    if (*new_path == '\0') { fputs("Error: empty input file name\n", stderr); exit(1); }
+    if (in_file_path != NULL) { die("Can compress only one file at a time\n"); }
+    if (*new_path == '\0') { die("Empty input file name\n"); }
     in_file_path = new_path;
 }
 
@@ -213,8 +214,8 @@ static void set_output_file_path(char *new_path)
 {
     assert(new_path != NULL);
 
-    if (out_file_path != NULL) { fprintf(stderr, "Error: double --out parameter\n"); exit(1); }
-    if (*new_path == '\0') { fprintf(stderr, "Error: empty --out parameter\n"); exit(1); }
+    if (out_file_path != NULL) { die("Error: double --out parameter\n"); }
+    if (*new_path == '\0') { die("Error: empty --out parameter\n"); }
     out_file_path = new_path;
 }
 
@@ -223,8 +224,8 @@ static void set_temp_dir(char *new_temp_dir)
 {
     assert(new_temp_dir != NULL);
 
-    if (temp_dir != NULL) { fprintf(stderr, "Error: double --temp-dir parameter\n"); exit(1); }
-    if (*new_temp_dir == '\0') { fprintf(stderr, "Error: empty --temp-dir parameter\n"); exit(1); }
+    if (temp_dir != NULL) { die("Error: double --temp-dir parameter\n"); }
+    if (*new_temp_dir == '\0') { die("Error: empty --temp-dir parameter\n"); }
     temp_dir = new_temp_dir;
 }
 
@@ -233,9 +234,9 @@ static void set_dataset_name(char *new_name)
 {
     assert(new_name != NULL);
 
-    if (dataset_name != NULL) { fprintf(stderr, "Error: double --name parameter\n"); exit(1); }
-    if (*new_name == '\0') { fprintf(stderr, "Error: empty --name parameter\n"); exit(1); }
-    if (string_has_characters_unsafe_in_file_names(new_name)) { fprintf(stderr, "Error: --name \"%s\" - contains characters unsafe in file names\n", new_name); exit(1); }
+    if (dataset_name != NULL) { die("Error: double --name parameter\n"); }
+    if (*new_name == '\0') { die("Error: empty --name parameter\n"); }
+    if (string_has_characters_unsafe_in_file_names(new_name)) { die("Error: --name \"%s\" - contains characters unsafe in file names\n", new_name); }
     dataset_name = new_name;
 }
 
@@ -244,8 +245,8 @@ static void set_dataset_title(char *new_title)
 {
     assert(new_title != NULL);
 
-    if (dataset_title != NULL) { fprintf(stderr, "Error: double --title parameter\n"); exit(1); }
-    if (*new_title == '\0') { fprintf(stderr, "Error: empty --title parameter\n"); exit(1); }
+    if (dataset_title != NULL) { die("Error: double --title parameter\n"); }
+    if (*new_title == '\0') { die("Error: empty --title parameter\n"); }
     dataset_title = new_title;
     store_title = 1;
 }
@@ -259,11 +260,7 @@ static void set_compression_level(char *str)
     long a = strtol(str, &end, 10);
     long min_level = ZSTD_minCLevel();
     long max_level = ZSTD_maxCLevel();
-    if (a < min_level || a > max_level || *end != '\0')
-    {
-        fprintf(stderr, "Invalid value of --level, should be from %ld to %ld\n", min_level, max_level);
-        exit(1);
-    }
+    if (a < min_level || a > max_level || *end != '\0') { die("Invalid value of --level, should be from %ld to %ld\n", min_level, max_level); }
     compression_level = (int)a;
 }
 
@@ -274,12 +271,12 @@ static void set_line_length(char *str)
 
     char *end;
     long long a = strtoll(str, &end, 10);
-    if (*end != '\0') { fprintf(stderr, "Can't parse the value of --line-length parameter\n"); exit(1); }
-    if (a < 0ll) { fprintf(stderr, "Error: Negative line length specified\n"); exit(1); }
+    if (*end != '\0') { die("Can't parse the value of --line-length parameter\n"); }
+    if (a < 0ll) { die("Error: Negative line length specified\n"); }
 
     char test_str[21];
     int nc = snprintf(test_str, 21, "%lld", a);
-    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { fprintf(stderr, "Can't parse the value of --line-length parameter\n"); exit(1); }
+    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { die("Can't parse the value of --line-length parameter\n"); }
 
     requested_line_length = (unsigned long long) a;
     line_length_is_specified = true;
@@ -300,9 +297,9 @@ static void set_input_format_from_command_line(const char *new_format)
 {
     assert(new_format != NULL);
 
-    if (in_format_from_command_line != in_format_unknown) { fprintf(stderr, "Error: Input format specified more than once\n"); exit(1); }
+    if (in_format_from_command_line != in_format_unknown) { die("Error: Input format specified more than once\n"); }
     in_format_from_command_line = parse_input_format(new_format);
-    if (in_format_from_command_line == in_format_unknown) { fprintf(stderr, "Unknown input format specified: \"%s\"\n", new_format); exit(1); }
+    if (in_format_from_command_line == in_format_unknown) { die("Unknown input format specified: \"%s\"\n", new_format); }
 }
 
 
@@ -325,21 +322,17 @@ static void detect_temp_directory(void)
     if (temp_dir == NULL) { temp_dir = getenv("TMP"); }
     if (temp_dir == NULL)
     {
-        fprintf(stderr, "Temp directory is not specified\n"
-                "Please either set TMPDIR or TMP environment variable, or add '--temp-dir DIR' to command line.\n");
-        exit(1);
+        die("Temp directory is not specified\n"
+            "Please either set TMPDIR or TMP environment variable, or add '--temp-dir DIR' to command line.\n");
     }
-    if (verbose) { fprintf(stderr, "Using temporary directory \"%s\"\n", temp_dir); }
+    if (verbose) { msg("Using temporary directory \"%s\"\n", temp_dir); }
 }
 
 
 static void show_version(void)
 {
-    fprintf(stderr, "ennaf - NAF compressor, version " VERSION ", " DATE "\nCopyright (c) " COPYRIGHT_YEARS " Kirill Kryukov\n");
-    if (verbose)
-    {
-        fprintf(stderr, "Built with zstd " ZSTD_VERSION_STRING ", using runtime zstd %s\n", ZSTD_versionString());
-    }
+    msg("ennaf - NAF compressor, version " VERSION ", " DATE "\nCopyright (c) " COPYRIGHT_YEARS " Kirill Kryukov\n");
+    if (verbose) { msg("Built with zstd " ZSTD_VERSION_STRING ", using runtime zstd %s\n", ZSTD_versionString()); }
 }
 
 
@@ -348,8 +341,7 @@ static void show_help(void)
     int min_level = ZSTD_minCLevel();
     int max_level = ZSTD_maxCLevel();
 
-    fprintf(stderr,
-        "Usage: ennaf [OPTIONS] [infile]\n"
+    msg("Usage: ennaf [OPTIONS] [infile]\n"
         "Options:\n"
         "  -o FILE            - Write compressed output to FILE\n"
         "  -c                 - Write to standard output\n"
@@ -421,8 +413,7 @@ static void parse_command_line(int argc, char **argv)
             if (!strcmp(argv[i], "-h")) { show_help(); exit(0); }
             if (!strcmp(argv[i], "-V")) { print_version = true; continue; }
 
-            fprintf(stderr, "Unknown or incomplete argument \"%s\"\n", argv[i]);
-            exit(1);
+            die("Unknown or incomplete argument \"%s\"\n", argv[i]);
         }
         set_input_file_path(argv[i]);
     }
@@ -435,8 +426,7 @@ static void parse_command_line(int argc, char **argv)
 
     if (force_stdout && out_file_path != NULL)
     {
-        fprintf(stderr, "Error: -c and -o arguments can't be used together\n");
-        exit(1);
+        die("Error: -c and -o arguments can't be used together\n");
     }
 }
 
@@ -449,7 +439,7 @@ int main(int argc, char **argv)
     parse_command_line(argc, argv);
     if (in_file_path == NULL && isatty(fileno(stdin)))
     {
-        fprintf(stderr, "No input specified, use \"ennaf -h\" for help\n");
+        err("No input specified, use \"ennaf -h\" for help\n");
         exit(0);
     }
 
@@ -487,11 +477,7 @@ int main(int argc, char **argv)
 
     if (!force_stdout && out_file_path == NULL && isatty(fileno(stdout)))
     {
-        if (in_file_path == NULL)
-        {
-            fprintf(stderr, "Error: Output file is not specified\n");
-            exit(1);
-        }
+        if (in_file_path == NULL) { die("Output file is not specified\n"); }
         else
         {
             size_t len = strlen(in_file_path) + 5;
@@ -505,7 +491,7 @@ int main(int argc, char **argv)
     if (in_file_path != NULL && out_file_path != NULL)
     {
         if (fstat(fileno(IN), &input_stat) == 0) { have_input_stat = true; }
-        else { fprintf(stderr, "Can't obtain status of input file\n"); }
+        else { err("Can't obtain status of input file\n"); }
     }
 
     make_temp_files();
@@ -574,7 +560,7 @@ int main(int argc, char **argv)
     fputc_or_die(' ', OUT);
 
     unsigned long long out_line_length = line_length_is_specified ? requested_line_length : longest_line_length;
-    if (verbose) { fprintf(stderr, "Output line length: %llu\n", out_line_length); }
+    if (verbose) { msg("Output line length: %" PRINT_ULL "\n", out_line_length); }
     write_variable_length_encoded_number(OUT, out_line_length);
     write_variable_length_encoded_number(OUT, n_sequences);
 
@@ -639,7 +625,7 @@ int main(int argc, char **argv)
 
     report_unexpected_input_char_stats();
 
-    if (verbose) { fprintf(stderr, "Processed %llu sequences\n", n_sequences); }
+    if (verbose) { msg("Processed %" PRINT_ULL " sequences\n", n_sequences); }
     success = true;
 
     return 0;

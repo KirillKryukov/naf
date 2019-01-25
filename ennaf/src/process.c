@@ -37,11 +37,11 @@ static void report_unexpected_char_stats(unsigned long long *n, const char *seq_
     for (unsigned i = 0; i < 257; i++) { total += n[i]; }
     if (total > 0)
     {
-        fprintf(stderr, "input has %llu unexpected %s codes:\n", total, seq_type_name);
-        for (unsigned i = 0; i < 32; i++) { if (n[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n[i]); } }
-        for (unsigned i = 32; i < 127; i++) { if (n[i] != 0) { fprintf(stderr, "    '%c': %llu\n", (unsigned char)i, n[i]); } }
-        for (unsigned i = 127; i < 256; i++) { if (n[i] != 0) { fprintf(stderr, "    '\\%u': %llu\n", i, n[i]); } }
-        if (n[256] != 0) { fprintf(stderr, "    EOF: %llu\n", n[256]); }
+        msg("input has %" PRINT_ULL " unexpected %s codes:\n", total, seq_type_name);
+        for (unsigned i = 0; i < 32; i++) { if (n[i] != 0) { msg("    '\\%u': %" PRINT_ULL "\n", i, n[i]); } }
+        for (unsigned i = 32; i < 127; i++) { if (n[i] != 0) { msg("    '%c': %" PRINT_ULL "\n", (unsigned char)i, n[i]); } }
+        for (unsigned i = 127; i < 256; i++) { if (n[i] != 0) { msg("    '\\%u': %" PRINT_ULL "\n", i, n[i]); } }
+        if (n[256] != 0) { msg("    EOF: %" PRINT_ULL "\n", n[256]); }
     }
 }
 
@@ -57,8 +57,7 @@ static void unexpected_input_char(unsigned c, unsigned char *seq_name)
 {
     if (abort_on_unexpected_code)
     {
-        fprintf(stderr, "Error: Unexpected %s code '%c' in sequence \"%s\"\n", in_seq_type_name, (unsigned char)c, seq_name);
-        exit(1);
+        die("Error: Unexpected %s code '%c' in sequence \"%s\"\n", in_seq_type_name, (unsigned char)c, seq_name);
     }
     else { n_unexpected_seq_characters[c]++; }
 }
@@ -68,8 +67,7 @@ static void unexpected_quality_char(unsigned c, unsigned char *seq_name)
 {
     if (abort_on_unexpected_code)
     {
-        fprintf(stderr, "Error: Unexpected quality code '%c' in sequence \"%s\"\n", (unsigned char)c, seq_name);
-        exit(1);
+        die("Error: Unexpected quality code '%c' in sequence \"%s\"\n", (unsigned char)c, seq_name);
     }
     else { n_unexpected_qual_characters[c]++; }
 }
@@ -287,16 +285,16 @@ static inline unsigned get_fastq_seq(void)
         else { unexpected_input_char(c, name.data); str_append_char(&seq, unexpected_char_replacement); }
     }
     if (seq.length > longest_line_length) { longest_line_length = seq.length; }
-    if (c == INEOF) { fprintf(stderr, "Error: truncated FASTQ input: last sequence has no quality\n"); exit(1); }
+    if (c == INEOF) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
 
     do { c = in_get_char(); } while (is_eol_arr[c]);
-    if (c != '+') { fprintf(stderr, "Error: truncated FASTQ input: last sequence has no quality\n"); exit(1); }
+    if (c != '+') { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
 
     c = in_skip_until(is_eol_arr);
-    if (!is_eol_arr[c]) { fprintf(stderr, "Error: truncated FASTQ input: last sequence has no quality\n"); exit(1); }
+    if (!is_eol_arr[c]) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
 
     do { c = in_get_char(); } while (is_eol_arr[c]);
-    if (c == INEOF) { fprintf(stderr, "Error: truncated FASTQ input: last sequence has no quality\n"); exit(1); }
+    if (c == INEOF) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
     qual.length = 1;
     qual.data[0] = (unsigned char)c;
 
@@ -308,9 +306,8 @@ static inline unsigned get_fastq_seq(void)
     }
     if (qual.length != seq.length)
     {
-        fprintf(stderr, "Error: quality length of sequence %llu (%llu) doesn't match sequence length (%llu)\n",
-                        n_sequences + 1, (unsigned long long)qual.length, (unsigned long long)seq.length);
-        exit(1);
+        die("Error: quality length of sequence %" PRINT_ULL " (%" PRINT_ULL ") doesn't match sequence length (%" PRINT_ULL ")\n",
+            n_sequences + 1, (unsigned long long)qual.length, (unsigned long long)seq.length);
     }
 
     return c;
@@ -380,29 +377,27 @@ static void confirm_input_format(void)
     else if (c == '@' && is_eol_arr[last_c]) { in_format_from_input = in_format_fastq; }
     else
     {
-        if (c == '>' || c == '@') { fprintf(stderr, "Invalid input: First '%c' is not at the beginning of the line\n", (unsigned char)c); }
-        else { fputs("Input data is in unknown format: first non-space character is neither '>' nor '@'\n", stderr); }
-        exit(1);
+        if (c == '>' || c == '@') { die("Invalid input: First '%c' is not at the beginning of the line\n", (unsigned char)c); }
+        else { die("Input data is in unknown format: first non-space character is neither '>' nor '@'\n"); }
     }
 
     if (in_format_from_command_line != in_format_unknown &&
         in_format_from_command_line != in_format_from_input)
     {
-        fprintf(stderr, "Error: Input data format is different from format specified in the command line\n");
-        exit(1);
+        die("Error: Input data format is different from format specified in the command line\n");
     }    
 
     if (in_format_from_extension != in_format_unknown &&
         in_format_from_extension != in_format_from_input)
     {
-        fprintf(stderr, "Warning: Input file extension does not match its actual format\n");
+        err("Warning: Input file extension does not match its actual format\n");
     }
 
     if (in_format_from_extension != in_format_unknown &&
         in_format_from_command_line != in_format_unknown &&
         in_format_from_extension != in_format_from_command_line)
     {
-        fprintf(stderr, "Warning: Input file extension does not match format specified in the command line\n");
+        err("Warning: Input file extension does not match format specified in the command line\n");
     }
 }
 

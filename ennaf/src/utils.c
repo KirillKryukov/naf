@@ -5,6 +5,40 @@
  */
 
 
+__attribute__ ((format (printf, 1, 2)))
+static void msg(const char *format, ...) 
+{
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+}
+
+
+__attribute__ ((format (printf, 1, 2)))
+static void err(const char *format, ...) 
+{
+    fputs("ennaf: ", stderr);
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+}
+
+
+__attribute__ ((format (printf, 1, 2)))
+__attribute__ ((noreturn))
+static void die(const char *format, ...) 
+{
+    fputs("ennaf: ", stderr);
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+    exit(1);
+}
+
+
 static bool string_has_characters_unsafe_in_file_names(char *str)
 {
     assert(str != NULL);
@@ -24,9 +58,8 @@ static void fread_or_die(void *ptr, size_t element_size, size_t n_elements, FILE
 {
     assert(ptr != NULL);
     assert(F != NULL);
-
     size_t elements_read = fread(ptr, element_size, n_elements, F);
-    if (elements_read != n_elements) { fprintf(stderr, "Error reading from file\n"); exit(1); }
+    if (elements_read != n_elements) { die("Error reading from file\n"); }
 }
 
 
@@ -34,9 +67,8 @@ static void fwrite_or_die(const void *ptr, size_t element_size, size_t n_element
 {
     assert(ptr != NULL);
     assert(F != NULL);
-
     size_t elements_written = fwrite(ptr, element_size, n_elements, F);
-    if (elements_written != n_elements) { fprintf(stderr, "Error writing to file\n"); exit(1); }
+    if (elements_written != n_elements) { die("Error writing to file\n"); }
 }
 #define fwrite dont_use_fwrite
 
@@ -44,8 +76,7 @@ static void fwrite_or_die(const void *ptr, size_t element_size, size_t n_element
 static void fputc_or_die(int c, FILE *F)
 {
     assert(F != NULL);
-
-    if (fputc(c,F) != c) { fprintf(stderr, "Error writing to file\n"); exit(1); }
+    if (fputc(c, F) != c) { die("Error writing to file\n"); }
 }
 #define fputc dont_use_fputc
 
@@ -53,9 +84,8 @@ static void fputc_or_die(int c, FILE *F)
 static void fflush_or_die(FILE *F)
 {
     assert(F != NULL);
-
     int error = fflush(F);
-    if (error != 0) { fprintf(stderr, "Error: Can't write to file. Disk full?\n"); exit(1); }
+    if (error != 0) { die("Error: Can't write to file. Disk full?\n"); }
 }
 
 
@@ -64,7 +94,7 @@ static void fclose_or_die(FILE *F)
     assert(F != NULL);
 
     int error = fclose(F);
-    if (error != 0) { fprintf(stderr, "Error: Can't write to file. Disk full?\n"); exit(1); }
+    if (error != 0) { die("Error: Can't write to file. Disk full?\n"); }
 }
 
 
@@ -74,7 +104,7 @@ static FILE* create_temp_file(char *path, const char *purpose)
     assert(purpose != NULL);
 
     FILE *F = fopen(path, "wb+");
-    if (!F) { fprintf(stderr, "Can't create temporary %s file \"%s\"\n", purpose, path); exit(1); }
+    if (!F) { die("Can't create temporary %s file \"%s\"\n", purpose, path); }
     return F;
 }
 
@@ -82,9 +112,9 @@ static FILE* create_temp_file(char *path, const char *purpose)
 static ZSTD_CStream* create_zstd_cstream(int level)
 {
     ZSTD_CStream *s = ZSTD_createCStream();
-    if (s == NULL) { fprintf(stderr, "ZSTD_createCStream() error\n"); exit(1); }
+    if (s == NULL) { die("ZSTD_createCStream() error\n"); }
     size_t const initResult = ZSTD_initCStream(s, level);
-    if (ZSTD_isError(initResult)) { fprintf(stderr, "ZSTD_initCStream() error: %s\n", ZSTD_getErrorName(initResult)); exit(1); }
+    if (ZSTD_isError(initResult)) { die("ZSTD_initCStream() error: %s\n", ZSTD_getErrorName(initResult)); }
     return s;
 }
 
@@ -106,7 +136,7 @@ static size_t write_to_cstream(ZSTD_CStream *s, FILE *F, void *data, size_t size
     {
         ZSTD_outBuffer output = { out_buffer, out_buffer_size, 0 };
         size_t toRead = ZSTD_compressStream(s, &output, &input);
-        if (ZSTD_isError(toRead)) { fprintf(stderr, "ZSTD_compressStream() error: %s\n", ZSTD_getErrorName(toRead)); exit(1); }
+        if (ZSTD_isError(toRead)) { die("ZSTD_compressStream() error: %s\n", ZSTD_getErrorName(toRead)); }
         fwrite_or_die(out_buffer, 1, output.pos, F);
         bytes_written += output.pos;
     }
@@ -126,7 +156,7 @@ static size_t flush_cstream(ZSTD_CStream *s, FILE *F)
 
     ZSTD_outBuffer output = { out_buffer, out_buffer_size, 0 };
     size_t const remainingToFlush = ZSTD_endStream(s, &output);
-    if (remainingToFlush) { fprintf(stderr, "Can't end zstd stream"); exit(1); }
+    if (remainingToFlush) { die("Can't end zstd stream"); }
     fwrite_or_die(out_buffer, 1, output.pos, F);
     return output.pos;
 }

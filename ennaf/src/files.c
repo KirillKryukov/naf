@@ -11,13 +11,13 @@ static void open_input_file(void)
 
     if (in_file_path == NULL)
     {
-        if (!freopen(NULL, "rb", stdin)) { fprintf(stderr, "Can't read input in binary mode\n"); exit(1); }
+        if (!freopen(NULL, "rb", stdin)) { die("Can't read input in binary mode\n"); }
         IN = stdin;
     }
     else
     {
         IN = fopen(in_file_path, "rb");
-        if (IN == NULL) { fprintf(stderr, "Can't open input file\n"); exit(1); }
+        if (IN == NULL) { die("Can't open input file\n"); }
     }
 
     in_buffer = (unsigned char *) malloc(in_buffer_size);
@@ -31,12 +31,12 @@ static void open_output_file(void)
     if (out_file_path != NULL && !force_stdout)
     {
         OUT = fopen(out_file_path, "wb");
-        if (OUT == NULL) { fprintf(stderr, "Can't create output file\n"); exit(1); }
+        if (OUT == NULL) { die("Can't create output file\n"); }
         created_output_file = true;
     }
     else
     {
-        if (!freopen(NULL, "wb", stdout)) { fprintf(stderr, "Can't set output stream to binary mode\n"); exit(1); }
+        if (!freopen(NULL, "wb", stdout)) { die("Can't set output stream to binary mode\n"); }
         OUT = stdout;
     }
 }
@@ -47,7 +47,7 @@ static void remove_temp_file(char * const path)
     assert(path != NULL);
 
     if (access(path, F_OK) != 0) { return; }
-    if (remove(path) != 0) { fprintf(stderr, "Error removing temporary file \"%s\"\n", path); }
+    if (remove(path) != 0) { err("Error removing temporary file \"%s\"\n", path); }
 }
 
 
@@ -99,7 +99,7 @@ static void make_temp_files(void)
         temp_prefix_length = strlen(temp_prefix);
     }
 
-    if (verbose) { fprintf(stderr, "Temp file prefix: \"%s\"\n", temp_prefix); }
+    if (verbose) { msg("Temp file prefix: \"%s\"\n", temp_prefix); }
 
     temp_path_length = strlen(temp_dir) + temp_prefix_length + 11;
 
@@ -119,12 +119,12 @@ static void make_temp_files(void)
 
     if (verbose)
     {
-        if (store_ids ) { fprintf(stderr, "Temp ids file     : \"%s\"\n", ids_path ); }
-        if (store_comm) { fprintf(stderr, "Temp names file   : \"%s\"\n", comm_path); }
-        if (store_len ) { fprintf(stderr, "Temp lengths file : \"%s\"\n", len_path ); }
-        if (store_mask) { fprintf(stderr, "Temp mask file    : \"%s\"\n", mask_path); }
-        if (store_seq ) { fprintf(stderr, "Temp sequence file: \"%s\"\n", seq_path ); }
-        if (store_qual) { fprintf(stderr, "Temp quality file : \"%s\"\n", qual_path); }
+        if (store_ids ) { msg("Temp ids file     : \"%s\"\n", ids_path ); }
+        if (store_comm) { msg("Temp names file   : \"%s\"\n", comm_path); }
+        if (store_len ) { msg("Temp lengths file : \"%s\"\n", len_path ); }
+        if (store_mask) { msg("Temp mask file    : \"%s\"\n", mask_path); }
+        if (store_seq ) { msg("Temp sequence file: \"%s\"\n", seq_path ); }
+        if (store_qual) { msg("Temp quality file : \"%s\"\n", qual_path); }
     }
 
     if (store_ids ) { IDS  = create_temp_file(ids_path , "ids"     ); }
@@ -149,10 +149,10 @@ static void close_output_file_and_set_stat(void)
     fflush_or_die(OUT);
 
 #ifdef HAVE_CHMOD
-    if (fchmod(fileno(OUT), input_stat.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO)) != 0) { fprintf(stderr, "Can't transfer permissions from input to output file\n"); }
+    if (fchmod(fileno(OUT), input_stat.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO)) != 0) { err("Can't transfer permissions from input to output file\n"); }
 #endif
 #ifdef HAVE_CHOWN
-    if (fchown(fileno(OUT), input_stat.st_uid, input_stat.st_gid) != 0) { fprintf(stderr, "Can't transfer ownership from input to output file\n"); }
+    if (fchown(fileno(OUT), input_stat.st_uid, input_stat.st_gid) != 0) { err("Can't transfer ownership from input to output file\n"); }
 #endif
 
 #if defined(HAVE_FUTIMENS)
@@ -161,7 +161,7 @@ static void close_output_file_and_set_stat(void)
     input_timestamp[1].tv_sec = M_TIME_SEC(input_stat);
     input_timestamp[0].tv_nsec = A_TIME_NSEC(input_stat);
     input_timestamp[1].tv_nsec = M_TIME_NSEC(input_stat);
-    if (futimens(fileno(OUT), input_timestamp) != 0) { fprintf(stderr, "Can't transfer timestamp from input to output file\n"); }
+    if (futimens(fileno(OUT), input_timestamp) != 0) { err("Can't transfer timestamp from input to output file\n"); }
     //if (verbose) { fprintf(stderr, "Changed output timestamp using futimens()\n"); }
 #elif defined(HAVE_FUTIMES)
     struct timeval input_timestamp[2];
@@ -169,7 +169,7 @@ static void close_output_file_and_set_stat(void)
     input_timestamp[1].tv_sec = M_TIME_SEC(input_stat);
     input_timestamp[0].tv_usec = A_TIME_NSEC(input_stat) / 1000;
     input_timestamp[1].tv_usec = M_TIME_NSEC(input_stat) / 1000;
-    if (futimes(fileno(OUT), input_timestamp) != 0) { fprintf(stderr, "Can't transfer timestamp from input to output file\n"); }
+    if (futimes(fileno(OUT), input_timestamp) != 0) { err("Can't transfer timestamp from input to output file\n"); }
     //if (verbose) { fprintf(stderr, "Changed output timestamp using futimes()\n"); }
 #elif defined(HAVE_UTIME)
 #endif
@@ -183,7 +183,7 @@ static void close_output_file_and_set_stat(void)
     struct utimbuf input_timestamp;
     input_timestamp.actime = A_TIME_SEC(input_stat);
     input_timestamp.modtime = M_TIME_SEC(input_stat);
-    if (utime(out_file_path, &input_timestamp) != 0) { fprintf(stderr, "Can't transfer timestamp from input to output file\n"); }
+    if (utime(out_file_path, &input_timestamp) != 0) { err("Can't transfer timestamp from input to output file\n"); }
     //if (verbose) { fprintf(stderr, "Changed output timestamp using utime()\n"); }
 #endif
 }
