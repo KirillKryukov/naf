@@ -17,9 +17,16 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/stat.h>
+
+#define ZSTD_STATIC_LINKING_ONLY
 #include <zstd.h>
 
-#include "utils.c"
+#include "platform.h"
+
+
+static unsigned char code_to_nuc[16] = {'-','T','G','K','C','Y','S','B','A','W','R','D','M','H','V','N'};
+static unsigned short codes_to_nucs[256];
 
 typedef enum { UNDECIDED, FORMAT_NAME, PART_LIST, PART_SIZES, NUMBER_OF_SEQUENCES,
                TITLE, IDS, NAMES, LENGTHS, TOTAL_LENGTH, MASK, TOTAL_MASK_LENGTH,
@@ -41,6 +48,14 @@ static bool use_mask = true;
 
 static char *in_file_path = NULL;
 static FILE *IN = NULL;
+static struct stat input_stat;
+static bool have_input_stat = false;
+
+static char *out_file_path = NULL;
+static char *out_file_path_auto = NULL;
+static FILE *OUT = NULL;
+static bool force_stdout = false;
+static bool created_output_file = false;
 
 static unsigned char format_version = 1;
 static unsigned char name_separator = ' ';
@@ -135,7 +150,10 @@ static unsigned long long cur_line_n_bp_remaining = 0;
 static bool line_length_is_specified = false;
 static unsigned long long requested_line_length = 0ull;
 
+static bool success = false;
 
+
+#include "utils.c"
 #include "input.c"
 #include "output.c"
 #include "output-fastq.c"
@@ -148,6 +166,8 @@ do { if ((p) != NULL) { free(p); (p) = NULL; } } while (0)
 static void done(void)
 {
     if (IN != NULL && IN != stdin) { fclose(IN); IN = NULL; }
+
+    if (OUT != NULL) { fclose_or_die(OUT); OUT = NULL; }
 
     FREE(ids);
     FREE(ids_buffer);
@@ -174,6 +194,13 @@ static void done(void)
 
     FREE(dna_buffer);
     FREE(quality_buffer);
+
+    if (!success && created_output_file)
+    {
+        if (remove(out_file_path) != 0) { fprintf(stderr, "Can't remove incomplete output file \"%s\"\n", out_file_path); }
+    }
+
+    FREE(out_file_path_auto);
 }
 
 
@@ -191,6 +218,16 @@ static void set_input_file_path(char *new_path)
     if (in_file_path != NULL) { fprintf(stderr, "Error: Can process only one file at a time\n"); exit(1); }
     if (*new_path == '\0') { fprintf(stderr, "Error: empty input path specified\n"); exit(1); }
     in_file_path = new_path;
+}
+
+
+static void set_output_file_path(char *new_path)
+{
+    assert(new_path != NULL);
+
+    if (out_file_path != NULL) { fprintf(stderr, "Error: double --out parameter\n"); exit(1); }
+    if (*new_path == '\0') { fprintf(stderr, "Error: empty --out parameter\n"); exit(1); }
+    out_file_path = new_path;
 }
 
 
@@ -227,25 +264,27 @@ static void show_help(void)
     fprintf(stderr,
         "Usage: unnaf [OUTPUT-TYPE] [file.naf]\n"
         "Options for selecting output type:\n"
-        "  --format       - File format version\n"
-        "  --part-list    - List of parts\n"
-        "  --sizes        - Part sizes\n"
-        "  --number       - Number of sequences\n"
-        "  --title        - Dataset title\n"
-        "  --ids          - Sequence ids (accession numbers)\n"
-        "  --names        - Full sequence names (including ids)\n"
-        "  --lengths      - Sequence lengths\n"
-        "  --total-length - Sum of sequence lengths\n"
-        "  --mask         - Masked region lengths\n"
-        "  --4bit         - 4bit-encoded nucleotide sequence (binary data)\n"
-        "  --seq          - Continuous concatenated sequence\n"
-        "  --fasta        - FASTA-formatted sequences\n"
-        "  --fastq        - FASTQ-formatted sequences\n"
+        "  --format        - File format version\n"
+        "  --part-list     - List of parts\n"
+        "  --sizes         - Part sizes\n"
+        "  --number        - Number of sequences\n"
+        "  --title         - Dataset title\n"
+        "  --ids           - Sequence ids (accession numbers)\n"
+        "  --names         - Full sequence names (including ids)\n"
+        "  --lengths       - Sequence lengths\n"
+        "  --total-length  - Sum of sequence lengths\n"
+        "  --mask          - Masked region lengths\n"
+        "  --4bit          - 4bit-encoded nucleotide sequence (binary data)\n"
+        "  --seq           - Continuous concatenated sequence\n"
+        "  --fasta         - FASTA-formatted sequences\n"
+        "  --fastq         - FASTQ-formatted sequences\n"
         "Other options:\n"
+        "  -o FILE         - Decompress into FILE\n"
+        "  -c              - Write to standard output\n"
         "  --line-length N - Use lines of width N for FASTA output\n"
-        "  --no-mask      - Ignore mask\n"
-        "  -h, --help     - Show help\n"
-        "  -V, --version  - Show version\n"
+        "  --no-mask       - Ignore mask\n"
+        "  -h, --help      - Show help\n"
+        "  -V, --version   - Show version\n"
     );
 }
 
@@ -291,6 +330,13 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--masked-fasta"     )) { set_out_type(MASKED_FASTA); continue; }   // Instead use "--fasta"
                 if (!strcmp(argv[i], "--unmasked-fasta"   )) { set_out_type(UNMASKED_FASTA); continue; } // Instead use "--fasta --no-mask"
             }
+
+            if (i < argc - 1)
+            {
+                if (!strcmp(argv[i], "-o")) { i++; set_output_file_path(argv[i]); continue; }
+            }
+
+            if (!strcmp(argv[i], "-c")) { force_stdout = true; continue; }
             if (!strcmp(argv[i], "-h")) { show_help(); exit(0); }
             if (!strcmp(argv[i], "-V")) { print_version = true; continue; }
 
@@ -304,6 +350,12 @@ static void parse_command_line(int argc, char **argv)
     {
         show_version();
         exit(0);
+    }
+
+    if (force_stdout && out_file_path != NULL)
+    {
+        fprintf(stderr, "Error: -c and -o arguments can't be used together\n");
+        exit(1);
     }
 }
 
@@ -331,16 +383,14 @@ int main(int argc, char **argv)
         IN = stdin;
     }
 
-    if (out_type == FOUR_BIT && isatty(fileno(stdout)))
-    {
-        fprintf(stderr, "Won't write binary data to terminal\n");
-        exit(1);
-    }
-
     read_header();
 
+    if (out_type == UNDECIDED)
+    {
+        out_type = has_quality ? FASTQ : MASKED_FASTA;
+    }
     if (!has_quality && out_type == FASTQ)
-    { 
+    {
         fprintf(stderr, "Error: FASTQ output requested, but input has no qualities\n");
         exit(1);
     }
@@ -355,55 +405,101 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    if (out_type == UNDECIDED)
+
+
+    if (!force_stdout && out_file_path == NULL && in_file_path != NULL && isatty(fileno(stdout)))
     {
-        out_type = has_quality ? FASTQ : MASKED_FASTA;
+        size_t len = strlen(in_file_path);
+        if (len > 4 && strcmp(in_file_path + len - 4, ".naf") == 0 &&
+            in_file_path[len - 5] != '/' && in_file_path[len - 5] != '\\')
+        {
+            out_file_path_auto = (char*)malloc(len - 3);
+            memcpy(out_file_path_auto, in_file_path, len - 4);
+            out_file_path_auto[len - 4] = 0;
+            out_file_path = out_file_path_auto;
+        }
     }
 
-    if (out_type == FORMAT_NAME) { printf("NAF v.%d\n", format_version); exit(0); }
-    if (out_type == PART_LIST) { print_list_of_parts_and_exit(); }
+    if (out_file_path != NULL && !force_stdout)
+    {
+        OUT = fopen(out_file_path, "wb");
+        if (OUT == NULL) { fprintf(stderr, "Can't create output file\n"); exit(1); }
+        created_output_file = true;
+    }
+    else
+    {
+        OUT = stdout;
+    }
 
-    max_line_length = read_number(IN);
-    if (line_length_is_specified) { max_line_length = requested_line_length; }
+    if (out_type == FOUR_BIT && force_stdout)
+    {
+        if (!freopen(NULL, "wb", stdout)) { fprintf(stderr, "Can't set output stream to binary mode\n"); exit(1); }
+    }
 
-    N = read_number(IN);
-    if (out_type == NUMBER_OF_SEQUENCES) { printf("%llu\n", N); exit(0); }
-    if (!N) { exit(0); }
+    if ( (out_type == IDS || out_type == NAMES || out_type == LENGTHS || out_type == MASK || out_type == FOUR_BIT ||
+          out_type == DNA || out_type == MASKED_DNA || out_type == UNMASKED_DNA || out_type == SEQ ||
+          out_type == FASTA || out_type == MASKED_FASTA || out_type == UNMASKED_FASTA || out_type == FASTQ) &&
+         !force_stdout && isatty(fileno(OUT)) )
+    {
+        fprintf(stderr, "Please specify output file or add -c to force writing to console\n");
+        exit(1);
+    }
 
-    if (out_type == PART_SIZES) { print_part_sizes_and_exit(); }
-    if (out_type == TITLE) { print_title_and_exit(); }
+    if (in_file_path != NULL && out_file_path != NULL)
+    {
+        if (fstat(fileno(IN), &input_stat) == 0) { have_input_stat = true; }
+        else { fprintf(stderr, "Can't obtain status of input file\n"); }
+    }
 
-    skip_title();
 
-    if (out_type == IDS) { print_ids_and_exit(); }
-    if (out_type == NAMES) { print_names_and_exit(); }
-    if (out_type == LENGTHS) { print_lengths_and_exit(); }
-    if (out_type == TOTAL_LENGTH) { print_total_length_and_exit(); }
-    if (out_type == MASK) { print_mask_and_exit(); }
-    if (out_type == TOTAL_MASK_LENGTH) { print_total_mask_length_and_exit(); }
-    if (out_type == FOUR_BIT) { print_4bit_and_exit(); }
 
-    dna_buffer_flush_size = ZSTD_DStreamOutSize() * 2;
-    dna_buffer_size = dna_buffer_flush_size * 2 + 10;
-    dna_buffer = (unsigned char *)malloc(dna_buffer_size);
-    if (!dna_buffer) { fprintf(stderr, "Can't allocate %zu bytes for dna buffer\n", dna_buffer_size); exit(1); }
 
-    out_print_buffer_size = dna_buffer_size * 2;
-    out_print_buffer = (unsigned char *)malloc(out_print_buffer_size);
-    if (!out_print_buffer) { fprintf(stderr, "Can't allocate %zu bytes for dna buffer\n", out_print_buffer_size); exit(1); }
+    if (out_type == FORMAT_NAME) { fprintf(OUT, "NAF v.%d\n", format_version); }
+    else if (out_type == PART_LIST) { print_list_of_parts(); }
+    else
+    {
+        max_line_length = read_number(IN);
+        if (line_length_is_specified) { max_line_length = requested_line_length; }
+        N = read_number(IN);
 
-    fprintf(stderr, "Sequence type: %s\n", in_seq_type_name);
+        if (out_type == NUMBER_OF_SEQUENCES) { fprintf(OUT, "%llu\n", N); }
+        else if (out_type == PART_SIZES) { print_part_sizes(); }
+        else if (out_type == TITLE) { print_title(); }
+        else if (N != 0)
+        {
+            skip_title();
 
-    if (out_type == DNA) { print_dna_and_exit(use_mask && has_mask); }
-    if (out_type == SEQ) { print_dna_and_exit(use_mask && has_mask); }
-    if (out_type == MASKED_DNA) { print_dna_and_exit(use_mask && has_mask); }
-    if (out_type == UNMASKED_DNA) { print_dna_and_exit(0); }
+            if (out_type == IDS) { print_ids(); }
+            else if (out_type == NAMES) { print_names(); }
+            else if (out_type == LENGTHS) { print_lengths(); }
+            else if (out_type == TOTAL_LENGTH) { print_total_length(); }
+            else if (out_type == MASK) { print_mask(); }
+            else if (out_type == TOTAL_MASK_LENGTH) { print_total_mask_length(); }
+            else if (out_type == FOUR_BIT) { print_4bit(); }
+            else
+            {
+                dna_buffer_flush_size = ZSTD_DStreamOutSize() * 2;
+                dna_buffer_size = dna_buffer_flush_size * 2 + 10;
+                dna_buffer = (unsigned char *)malloc(dna_buffer_size);
+                if (!dna_buffer) { fprintf(stderr, "Can't allocate %zu bytes for dna buffer\n", dna_buffer_size); exit(1); }
 
-    if (out_type == FASTA) { print_fasta_and_exit(use_mask && has_mask); }
-    if (out_type == MASKED_FASTA) { print_fasta_and_exit(use_mask && has_mask); }
-    if (out_type == UNMASKED_FASTA) { print_fasta_and_exit(0); }
+                out_print_buffer_size = dna_buffer_size * 2;
+                out_print_buffer = (unsigned char *)malloc(out_print_buffer_size);
+                if (!out_print_buffer) { fprintf(stderr, "Can't allocate %zu bytes for dna buffer\n", out_print_buffer_size); exit(1); }
 
-    if (out_type == FASTQ) { print_fastq_and_exit(0); }
+                if (out_type == DNA) { print_dna(use_mask && has_mask); }
+                else if (out_type == SEQ) { print_dna(use_mask && has_mask); }
+                else if (out_type == MASKED_DNA) { print_dna(use_mask && has_mask); }
+                else if (out_type == UNMASKED_DNA) { print_dna(0); }
+                else if (out_type == FASTA) { print_fasta(use_mask && has_mask); }
+                else if (out_type == MASKED_FASTA) { print_fasta(use_mask && has_mask); }
+                else if (out_type == UNMASKED_FASTA) { print_fasta(0); }
+                else if (out_type == FASTQ) { print_fastq(0); }
+                else { fputs("Unknown output requested\n", stderr); }
+            }
+        }
+    }
 
+    success = true;
     return 0;
 }

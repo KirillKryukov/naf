@@ -2,9 +2,6 @@
  * NAF compressor
  * Copyright (c) 2018-2019 Kirill Kryukov
  * See README.md and LICENSE files of this repository
- *
- * Limitations:
- *   - Does not allow specifying name separator, always uses space.
  */
 
 #define VERSION "1.1.0"
@@ -36,6 +33,8 @@ static bool keep_temp_files = false;
 
 static char *in_file_path = NULL;
 static FILE *IN = NULL;
+static struct stat input_stat;
+static bool have_input_stat = false;
 
 static char *out_file_path = NULL;
 static char *out_file_path_auto = NULL;
@@ -137,9 +136,6 @@ static size_t in_end = 0;
 
 static unsigned long long n_sequences = 0ull;
 
-static bool have_input_stat = false;
-static struct stat input_stat;
-
 static const bool *is_unexpected_arr = is_unexpected_dna_arr;
 static bool abort_on_unexpected_code = false;
 
@@ -147,6 +143,7 @@ static size_t out_buffer_size = 0;
 static void *out_buffer = NULL;
 
 static bool success = false;
+
 
 #include "utils.c"
 #include "files.c"
@@ -206,7 +203,7 @@ static void set_input_file_path(char *new_path)
 {
     assert(new_path != NULL);
 
-    if (in_file_path != NULL) { fputs("Can process only one file at a time\n", stderr); exit(1); }
+    if (in_file_path != NULL) { fputs("Can compress only one file at a time\n", stderr); exit(1); }
     if (*new_path == '\0') { fputs("Error: empty input file name\n", stderr); exit(1); }
     in_file_path = new_path;
 }

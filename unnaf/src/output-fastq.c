@@ -14,7 +14,7 @@ static void print_dna_from_memory_4bit(unsigned int len)
         unsigned int n_bp_to_print = remaining_bp;
         if (n_bp_to_print > dna_buffer_remaining) { n_bp_to_print = dna_buffer_remaining; }
 
-        fwrite(dna_buffer + dna_buffer_printing_pos, 1, n_bp_to_print, stdout);
+        fwrite(dna_buffer + dna_buffer_printing_pos, 1, n_bp_to_print, OUT);
         dna_buffer_printing_pos += n_bp_to_print;
         dna_buffer_remaining -= n_bp_to_print;
         remaining_bp -= n_bp_to_print;
@@ -32,7 +32,7 @@ static void print_dna_from_memory(unsigned int len)
         unsigned int n_bp_to_print = remaining_bp;
         if (n_bp_to_print > dna_buffer_remaining) { n_bp_to_print = dna_buffer_remaining; }
 
-        fwrite(dna_buffer + dna_buffer_printing_pos, 1, n_bp_to_print, stdout);
+        fwrite(dna_buffer + dna_buffer_printing_pos, 1, n_bp_to_print, OUT);
         dna_buffer_printing_pos += n_bp_to_print;
         dna_buffer_remaining -= n_bp_to_print;
         remaining_bp -= n_bp_to_print;
@@ -49,7 +49,7 @@ static void print_next_sequence_from_memory_4bit(void)
     }
     print_dna_from_memory_4bit(lengths_buffer[cur_seq_len_index]);
     cur_seq_len_index++;
-    fputc('\n', stdout);
+    fputc('\n', OUT);
 }
 
 
@@ -62,7 +62,7 @@ static void print_next_sequence_from_memory(void)
     }
     print_dna_from_memory(lengths_buffer[cur_seq_len_index]);
     cur_seq_len_index++;
-    fputc('\n', stdout);
+    fputc('\n', OUT);
 }
 
 
@@ -76,7 +76,7 @@ static void print_quality_from_file(unsigned int len)
         unsigned int n_bp_to_print = remaining_bp;
         if (n_bp_to_print > quality_buffer_remaining) { n_bp_to_print = quality_buffer_remaining; }
 
-        fwrite(quality_buffer + quality_buffer_printing_pos, 1, n_bp_to_print, stdout);
+        fwrite(quality_buffer + quality_buffer_printing_pos, 1, n_bp_to_print, OUT);
         quality_buffer_printing_pos += n_bp_to_print;
         quality_buffer_remaining -= n_bp_to_print;
         remaining_bp -= n_bp_to_print;
@@ -93,12 +93,11 @@ static void print_next_quality_from_file(void)
     }
     print_quality_from_file(lengths_buffer[cur_qual_len_index]);
     cur_qual_len_index++;
-    fputc('\n', stdout);
+    fputc('\n', OUT);
 }
 
 
-__attribute__ ((noreturn))
-static void print_fastq_and_exit(int masking)
+static void print_fastq(int masking)
 {
     if (has_data)
     {
@@ -133,7 +132,7 @@ static void print_fastq_and_exit(int masking)
             {
                 print_fastq_name(ri);
                 print_next_sequence_from_memory_4bit();
-                fputs("+\n", stdout);
+                fputs("+\n", OUT);
                 print_next_quality_from_file();
             }
         }
@@ -143,11 +142,9 @@ static void print_fastq_and_exit(int masking)
             {
                 print_fastq_name(ri);
                 print_next_sequence_from_memory();
-                fputs("+\n", stdout);
+                fputs("+\n", OUT);
                 print_next_quality_from_file();
             }
         }
     }
-
-    exit(0);
 }

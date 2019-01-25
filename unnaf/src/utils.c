@@ -4,9 +4,6 @@
  * See README.md and LICENSE files of this repository
  */
 
-static unsigned char code_to_nuc[16] = {'-','T','G','K','C','Y','S','B','A','W','R','D','M','H','V','N'};
-static unsigned short codes_to_nucs[256];
-
 
 __attribute__ ((noreturn))
 static inline void incomplete(void)
@@ -35,6 +32,15 @@ static unsigned char fgetc_or_incomplete(FILE *F)
     int c = fgetc(F);
     if (c == EOF) { incomplete(); }
     return (unsigned char)c;
+}
+
+
+static void fclose_or_die(FILE *F)
+{
+    assert(F != NULL);
+
+    int error = fclose(F);
+    if (error != 0) { fprintf(stderr, "Error: Can't write to file. Disk full?\n"); exit(1); }
 }
 
 
