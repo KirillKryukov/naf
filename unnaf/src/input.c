@@ -30,17 +30,45 @@ static void skip_ahead(unsigned long long bytes)
 
 static void read_header(void)
 {
-    if (fread(&header, 1, 6, IN) != 6) { incomplete(); }
-    if (header[0] != 0x01 || header[1] != 0xF9 || header[2] != 0xEC) { fprintf(stderr, "Error: Not a NAF format\n"); exit(1); }
-    if (header[3] != 0x01) { fprintf(stderr, "Error: Unknown version of NAF format\n"); exit(1); }
+    unsigned char first_bytes[3];
+    if (fread(&first_bytes, 1, 3, IN) != 3) { incomplete(); }
+    if (first_bytes[0] != 0x01 || first_bytes[1] != 0xF9 || first_bytes[2] != 0xEC) { fprintf(stderr, "Error: Not a NAF format\n"); exit(1); }
 
-    has_title   = (header[4] >> 6) & 1;
-    has_ids     = (header[4] >> 5) & 1;
-    has_names   = (header[4] >> 4) & 1;
-    has_lengths = (header[4] >> 3) & 1;
-    has_mask    = (header[4] >> 2) & 1;
-    has_data    = (header[4] >> 1) & 1;
-    has_quality =  header[4]       & 1;
+    format_version = fgetc_or_incomplete(IN);
+    if (format_version > 2) { fprintf(stderr, "Error: Unknown version (%d) of NAF format\n", format_version); exit(1); }
+
+    if (format_version > 1)
+    {
+        unsigned char t = fgetc_or_incomplete(IN);
+        if (t == 1)
+        {
+            in_seq_type = seq_type_rna;
+            in_seq_type_name = "RNA";
+        }
+        else if (t == 2)
+        {
+            in_seq_type = seq_type_protein;
+            in_seq_type_name = "protein";
+        }
+        else if (t == 3)
+        {
+            in_seq_type = seq_type_text;
+            in_seq_type_name = "text";
+        }
+        else { fprintf(stderr, "Error: Unknown sequence type (%d) recorded in NAF file\n", t); exit(1); }
+    }
+
+    unsigned char flags = fgetc_or_incomplete(IN);
+
+    has_title   = (flags >> 6) & 1;
+    has_ids     = (flags >> 5) & 1;
+    has_names   = (flags >> 4) & 1;
+    has_lengths = (flags >> 3) & 1;
+    has_mask    = (flags >> 2) & 1;
+    has_data    = (flags >> 1) & 1;
+    has_quality =  flags       & 1;
+
+    name_separator = fgetc_or_incomplete(IN);
 }
 
 

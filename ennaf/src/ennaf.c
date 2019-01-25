@@ -8,7 +8,7 @@
  */
 
 #define VERSION "1.1.0"
-#define DATE "2019-01-24"
+#define DATE "2019-01-25"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -29,7 +29,7 @@
 #include "tables.c"
 
 
-static unsigned char naf_magic_number[4] = "\x01\xF9\xEC";
+static const unsigned char naf_magic_number[4] = "\x01\xF9\xEC";
 
 static bool verbose = false;
 static bool keep_temp_files = false;
@@ -41,6 +41,7 @@ static char *out_file_path = NULL;
 static char *out_file_path_auto = NULL;
 static FILE *OUT = NULL;
 static bool force_stdout = false;
+static bool created_output_file = false;
 
 static int compression_level = 1;
 
@@ -145,7 +146,6 @@ static bool abort_on_unexpected_code = false;
 static size_t out_buffer_size = 0;
 static void *out_buffer = NULL;
 
-static bool created_output_file = false;
 static bool success = false;
 
 #include "utils.c"

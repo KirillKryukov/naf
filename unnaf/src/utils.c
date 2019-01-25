@@ -28,6 +28,16 @@ static void init_tables(void)
 }
 
 
+static unsigned char fgetc_or_incomplete(FILE *F)
+{
+    assert(F != NULL);
+
+    int c = fgetc(F);
+    if (c == EOF) { incomplete(); }
+    return (unsigned char)c;
+}
+
+
 /*
  * Reads a number in variable length encoding.
  */

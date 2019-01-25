@@ -135,11 +135,9 @@ static void make_temp_files(void)
 
 static void close_output_file(void)
 {
-    if (OUT != NULL && OUT != stdout)
-    {
-        fclose_or_die(OUT);
-        OUT = NULL;
-    }
+    if (OUT == NULL) { return; }
+    fclose_or_die(OUT);
+    OUT = NULL;
 }
 
 

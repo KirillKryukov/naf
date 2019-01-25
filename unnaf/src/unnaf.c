@@ -5,7 +5,7 @@
  */
 
 #define VERSION "1.0.0"
-#define DATE "2019-01-17"
+#define DATE "2019-01-25"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -25,11 +25,16 @@ typedef enum { UNDECIDED, FORMAT_NAME, PART_LIST, PART_SIZES, NUMBER_OF_SEQUENCE
                TITLE, IDS, NAMES, LENGTHS, TOTAL_LENGTH, MASK, TOTAL_MASK_LENGTH,
                FOUR_BIT,
                DNA, MASKED_DNA, UNMASKED_DNA,
+               SEQ,
                FASTA, MASKED_FASTA, UNMASKED_FASTA,
                FASTQ
              } OUTPUT_TYPE;
 
 static OUTPUT_TYPE out_type = UNDECIDED;
+
+enum { seq_type_dna, seq_type_rna, seq_type_protein, seq_type_text };
+static int in_seq_type = seq_type_dna;
+static const char *in_seq_type_name = "DNA";
 
 static bool verbose = false;
 static bool use_mask = true;
@@ -37,7 +42,9 @@ static bool use_mask = true;
 static char *in_file_path = NULL;
 static FILE *IN = NULL;
 
-static unsigned char header[6];
+static unsigned char format_version = 1;
+static unsigned char name_separator = ' ';
+
 static int has_title = 0;
 static int has_ids = 0;
 static int has_names = 0;
@@ -230,8 +237,8 @@ static void show_help(void)
         "  --lengths      - Sequence lengths\n"
         "  --total-length - Sum of sequence lengths\n"
         "  --mask         - Masked region lengths\n"
-        "  --4bit         - 4bit-encoded DNA (binary data)\n"
-        "  --dna          - Continuous DNA sequence\n"
+        "  --4bit         - 4bit-encoded nucleotide sequence (binary data)\n"
+        "  --seq          - Continuous concatenated sequence\n"
         "  --fasta        - FASTA-formatted sequences\n"
         "  --fastq        - FASTQ-formatted sequences\n"
         "Other options:\n"
@@ -269,7 +276,7 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--mask"             )) { set_out_type(MASK               ); continue; }
                 if (!strcmp(argv[i], "--total-mask-length")) { set_out_type(TOTAL_MASK_LENGTH  ); continue; }
                 if (!strcmp(argv[i], "--4bit"             )) { set_out_type(FOUR_BIT           ); continue; }
-                if (!strcmp(argv[i], "--dna"              )) { set_out_type(DNA                ); continue; }
+                if (!strcmp(argv[i], "--seq"              )) { set_out_type(SEQ                ); continue; }
                 if (!strcmp(argv[i], "--fasta"            )) { set_out_type(FASTA              ); continue; }
                 if (!strcmp(argv[i], "--fastq"            )) { set_out_type(FASTQ              ); continue; }
                 if (!strcmp(argv[i], "--no-mask")) { use_mask = false; continue; }
@@ -278,6 +285,7 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
 
                 // Deprecated undocumented options.
+                if (!strcmp(argv[i], "--dna"              )) { set_out_type(DNA                ); continue; }
                 if (!strcmp(argv[i], "--masked-dna"       )) { set_out_type(MASKED_DNA); continue; }     // Instead use "--dna"
                 if (!strcmp(argv[i], "--unmasked-dna"     )) { set_out_type(UNMASKED_DNA); continue; }   // Instead use "--dna --no-mask"
                 if (!strcmp(argv[i], "--masked-fasta"     )) { set_out_type(MASKED_FASTA); continue; }   // Instead use "--fasta"
@@ -336,13 +344,23 @@ int main(int argc, char **argv)
         fprintf(stderr, "Error: FASTQ output requested, but input has no qualities\n");
         exit(1);
     }
+    if ((out_type == DNA || out_type == MASKED_DNA || out_type == UNMASKED_DNA) && (in_seq_type != seq_type_dna))
+    {
+        fprintf(stderr, "Input has not DNA, but %s data\n", in_seq_type_name);
+        exit(1);
+    }
+    if (out_type == FOUR_BIT && in_seq_type >= seq_type_protein)
+    {
+        fprintf(stderr, "Input has no 4-bit encoded data, but %s sequences\n", in_seq_type_name);
+        exit(1);
+    }
 
     if (out_type == UNDECIDED)
     {
         out_type = has_quality ? FASTQ : MASKED_FASTA;
     }
 
-    if (out_type == FORMAT_NAME) { printf("NAF v.%d\n", header[3]); exit(0); }
+    if (out_type == FORMAT_NAME) { printf("NAF v.%d\n", format_version); exit(0); }
     if (out_type == PART_LIST) { print_list_of_parts_and_exit(); }
 
     max_line_length = read_number(IN);
@@ -375,6 +393,7 @@ int main(int argc, char **argv)
     if (!out_print_buffer) { fprintf(stderr, "Can't allocate %zu bytes for dna buffer\n", out_print_buffer_size); exit(1); }
 
     if (out_type == DNA) { print_dna_and_exit(use_mask && has_mask); }
+    if (out_type == SEQ) { print_dna_and_exit(use_mask && has_mask); }
     if (out_type == MASKED_DNA) { print_dna_and_exit(use_mask && has_mask); }
     if (out_type == UNMASKED_DNA) { print_dna_and_exit(0); }
 
