@@ -4,6 +4,24 @@
  * See README.md and LICENSE files of this repository
  */
 
+static void print_dna_from_memory_4bit(unsigned int len)
+{
+    unsigned int remaining_bp = len;
+    while (remaining_bp > 0)
+    {
+        if (dna_buffer_remaining == 0) { refill_dna_buffer_from_memory_4bit(); }
+
+        unsigned int n_bp_to_print = remaining_bp;
+        if (n_bp_to_print > dna_buffer_remaining) { n_bp_to_print = dna_buffer_remaining; }
+
+        fwrite(dna_buffer + dna_buffer_printing_pos, 1, n_bp_to_print, stdout);
+        dna_buffer_printing_pos += n_bp_to_print;
+        dna_buffer_remaining -= n_bp_to_print;
+        remaining_bp -= n_bp_to_print;
+    }
+}
+
+
 static void print_dna_from_memory(unsigned int len)
 {
     unsigned int remaining_bp = len;
@@ -19,6 +37,19 @@ static void print_dna_from_memory(unsigned int len)
         dna_buffer_remaining -= n_bp_to_print;
         remaining_bp -= n_bp_to_print;
     }
+}
+
+
+static void print_next_sequence_from_memory_4bit(void)
+{
+    while (lengths_buffer[cur_seq_len_index] == 4294967295u)
+    {
+        print_dna_from_memory_4bit(lengths_buffer[cur_seq_len_index]);
+        cur_seq_len_index++;
+    }
+    print_dna_from_memory_4bit(lengths_buffer[cur_seq_len_index]);
+    cur_seq_len_index++;
+    fputc('\n', stdout);
 }
 
 
@@ -96,12 +127,25 @@ static void print_fastq_and_exit(int masking)
 
         initialize_quality_file_decompression();
 
-        for (unsigned long long ri = 0; ri < N; ri++)
+        if (in_seq_type < seq_type_protein)
         {
-            print_fastq_name(ri);
-            print_next_sequence_from_memory();
-            fputs("+\n", stdout);
-            print_next_quality_from_file();
+            for (unsigned long long ri = 0; ri < N; ri++)
+            {
+                print_fastq_name(ri);
+                print_next_sequence_from_memory_4bit();
+                fputs("+\n", stdout);
+                print_next_quality_from_file();
+            }
+        }
+        else
+        {
+            for (unsigned long long ri = 0; ri < N; ri++)
+            {
+                print_fastq_name(ri);
+                print_next_sequence_from_memory();
+                fputs("+\n", stdout);
+                print_next_quality_from_file();
+            }
         }
     }
 

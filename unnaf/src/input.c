@@ -362,7 +362,7 @@ static inline size_t read_next_chunk(void* buffer, size_t size)
 }
 
 
-static void refill_dna_buffer_from_memory(void)
+static void refill_dna_buffer_from_memory_4bit(void)
 {
     dna_buffer_filling_pos = 0;
 
@@ -379,13 +379,39 @@ static void refill_dna_buffer_from_memory(void)
 
         ZSTD_outBuffer out = { mem_out_buffer, mem_out_buffer_size, 0 };
         memory_bytes_to_read = ZSTD_decompressStream(memory_decompression_stream, &out, &zstd_mem_in_buffer);
-        if (ZSTD_isError(memory_bytes_to_read)) { fprintf(stderr, "Can't decompress DNA from memory: %s\n", ZSTD_getErrorName(memory_bytes_to_read)); exit(1); }
+        if (ZSTD_isError(memory_bytes_to_read)) { fprintf(stderr, "Can't decompress sequence from memory: %s\n", ZSTD_getErrorName(memory_bytes_to_read)); exit(1); }
 
         for (size_t i = 0; i < out.pos; i++)
         {
             dna_buffer[dna_buffer_filling_pos++] = code_to_nuc[mem_out_buffer[i] & 15];
             dna_buffer[dna_buffer_filling_pos++] = code_to_nuc[mem_out_buffer[i] >> 4];
         }
+    }
+
+    dna_buffer_remaining = dna_buffer_filling_pos;
+    dna_buffer_printing_pos = 0;
+}
+
+
+static void refill_dna_buffer_from_memory(void)
+{
+    dna_buffer_filling_pos = 0;
+
+    while ( dna_buffer_filling_pos < dna_buffer_flush_size &&
+            (compressed_seq_pos < compressed_seq_size || zstd_mem_in_buffer.pos < zstd_mem_in_buffer.size) )
+    {
+        if (zstd_mem_in_buffer.pos >= zstd_mem_in_buffer.size)
+        {
+            zstd_mem_in_buffer.src = compressed_seq_buffer + compressed_seq_pos;
+            zstd_mem_in_buffer.size = memory_bytes_to_read;
+            zstd_mem_in_buffer.pos = 0;
+            compressed_seq_pos += memory_bytes_to_read;
+        }
+
+        ZSTD_outBuffer out = { dna_buffer + dna_buffer_filling_pos, dna_buffer_size - dna_buffer_filling_pos, 0 };
+        memory_bytes_to_read = ZSTD_decompressStream(memory_decompression_stream, &out, &zstd_mem_in_buffer);
+        if (ZSTD_isError(memory_bytes_to_read)) { fprintf(stderr, "Can't decompress sequence from memory: %s\n", ZSTD_getErrorName(memory_bytes_to_read)); exit(1); }
+        dna_buffer_filling_pos += (unsigned)out.pos;
     }
 
     dna_buffer_remaining = dna_buffer_filling_pos;

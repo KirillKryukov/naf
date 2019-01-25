@@ -285,9 +285,9 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
 
                 // Deprecated undocumented options.
-                if (!strcmp(argv[i], "--dna"              )) { set_out_type(DNA                ); continue; }
-                if (!strcmp(argv[i], "--masked-dna"       )) { set_out_type(MASKED_DNA); continue; }     // Instead use "--dna"
-                if (!strcmp(argv[i], "--unmasked-dna"     )) { set_out_type(UNMASKED_DNA); continue; }   // Instead use "--dna --no-mask"
+                if (!strcmp(argv[i], "--dna"              )) { set_out_type(DNA); continue; }            // Instead use "--seq"
+                if (!strcmp(argv[i], "--masked-dna"       )) { set_out_type(MASKED_DNA); continue; }     // Instead use "--seq"
+                if (!strcmp(argv[i], "--unmasked-dna"     )) { set_out_type(UNMASKED_DNA); continue; }   // Instead use "--seq --no-mask"
                 if (!strcmp(argv[i], "--masked-fasta"     )) { set_out_type(MASKED_FASTA); continue; }   // Instead use "--fasta"
                 if (!strcmp(argv[i], "--unmasked-fasta"   )) { set_out_type(UNMASKED_FASTA); continue; } // Instead use "--fasta --no-mask"
             }
@@ -391,6 +391,8 @@ int main(int argc, char **argv)
     out_print_buffer_size = dna_buffer_size * 2;
     out_print_buffer = (unsigned char *)malloc(out_print_buffer_size);
     if (!out_print_buffer) { fprintf(stderr, "Can't allocate %zu bytes for dna buffer\n", out_print_buffer_size); exit(1); }
+
+    fprintf(stderr, "Sequence type: %s\n", in_seq_type_name);
 
     if (out_type == DNA) { print_dna_and_exit(use_mask && has_mask); }
     if (out_type == SEQ) { print_dna_and_exit(use_mask && has_mask); }

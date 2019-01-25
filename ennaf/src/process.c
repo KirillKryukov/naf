@@ -348,7 +348,8 @@ static void process_fastq(void)
         if (store_seq)
         {
             seq_size_original += seq.length;
-            encode_dna(seq.data, seq.length);
+            if (in_seq_type < seq_type_protein) { encode_dna(seq.data, seq.length); }
+            else { seq_size_compressed += write_to_cstream(seq_cstream, SEQ, seq.data, seq.length); }
         }
 
         if (store_qual)
