@@ -80,11 +80,11 @@ static void report_unexpected_input_char_stats(void)
 }
 
 
-static void unexpected_input_char(unsigned c)
+static void unexpected_input_char(unsigned c, unsigned char *seq_name)
 {
     if (abort_on_unexpected_code)
     {
-        fprintf(stderr, "Error: Unexpected %s code '%c'\n", in_seq_type_name, (unsigned char)c);
+        fprintf(stderr, "Error: Unexpected %s code '%c' in sequence \"%s\"\n", in_seq_type_name, (unsigned char)c, seq_name);
         exit(1);
     }
     else { n_unexpected_seq_characters[c]++; }
@@ -231,13 +231,13 @@ static inline unsigned get_fasta_seq(void)
                 if (c == '>' || c == INEOF) { break; }
                 else if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
                 else if (is_space_arr[c]) {}
-                else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
+                else { unexpected_input_char(c, name.data); str_append_char(&seq, unexpected_char_replacement); }
             }
             else if (is_space_arr[c]) {}
-            else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
+            else { unexpected_input_char(c, name.data); str_append_char(&seq, unexpected_char_replacement); }
         }
         else if (is_space_arr[c]) {}
-        else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
+        else { unexpected_input_char(c, name.data); str_append_char(&seq, unexpected_char_replacement); }
     }
 
     // If the last line is the longest, and has no end-of-line character, handle it correctly.
@@ -311,7 +311,7 @@ static inline unsigned get_fastq_seq(void)
     {
         if (is_eol_arr[c]) { break; }
         else if (is_space_arr[c]) {}
-        else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
+        else { unexpected_input_char(c, name.data); str_append_char(&seq, unexpected_char_replacement); }
     }
     if (seq.length > longest_line_length) { longest_line_length = seq.length; }
     if (c == INEOF) { fprintf(stderr, "Error: truncated FASTQ input: last sequence has no quality\n"); exit(1); }
