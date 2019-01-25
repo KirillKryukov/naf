@@ -407,9 +407,10 @@ int main(int argc, char **argv)
     }
 
 
-
-
-    if (out_type == FORMAT_NAME) { fprintf(OUT, "NAF v.%d\n", format_version); }
+    if (out_type == FORMAT_NAME)
+    {
+        fprintf(OUT, "%s sequences%s in NAF format version %d\n", in_seq_type_name, has_quality ? " with qualities" : "", format_version);
+    }
     else if (out_type == PART_LIST) { print_list_of_parts(); }
     else
     {

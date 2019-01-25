@@ -27,7 +27,11 @@ static void open_output_file(void)
     assert(OUT == NULL);
     assert(out_type != UNDECIDED);
 
-    if (in_file_path != NULL && !force_stdout && out_file_path == NULL && isatty(fileno(stdout)))
+    bool is_large_output = (out_type == IDS || out_type == NAMES || out_type == LENGTHS || out_type == MASK || out_type == FOUR_BIT ||
+                            out_type == DNA || out_type == MASKED_DNA || out_type == UNMASKED_DNA || out_type == SEQ ||
+                            out_type == FASTA || out_type == MASKED_FASTA || out_type == UNMASKED_FASTA || out_type == FASTQ);
+
+    if (is_large_output && !force_stdout && in_file_path != NULL && out_file_path == NULL && isatty(fileno(stdout)))
     {
         size_t len = strlen(in_file_path);
         if (len > 4 && strcmp(in_file_path + len - 4, ".naf") == 0 &&
@@ -56,10 +60,7 @@ static void open_output_file(void)
         if (!freopen(NULL, "wb", stdout)) { fprintf(stderr, "Can't set output stream to binary mode\n"); exit(1); }
     }
 
-    if ( (out_type == IDS || out_type == NAMES || out_type == LENGTHS || out_type == MASK || out_type == FOUR_BIT ||
-          out_type == DNA || out_type == MASKED_DNA || out_type == UNMASKED_DNA || out_type == SEQ ||
-          out_type == FASTA || out_type == MASKED_FASTA || out_type == UNMASKED_FASTA || out_type == FASTQ) &&
-         !force_stdout && isatty(fileno(OUT)) )
+    if (is_large_output && !force_stdout && isatty(fileno(OUT)))
     {
         fprintf(stderr, "Please specify output file or add -c to force writing to console\n");
         exit(1);

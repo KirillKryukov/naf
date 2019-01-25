@@ -4,6 +4,7 @@
  * See README.md and LICENSE files of this repository
  */
 
+
 static void print_list_of_parts(void)
 {
     int printed = 0;
