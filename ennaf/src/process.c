@@ -84,9 +84,9 @@ static void report_unexpected_char_stats(unsigned long long *n, const char *seq_
     if (total > 0)
     {
         msg("input has %" PRINT_ULL " unexpected %s codes:\n", total, seq_type_name);
-        for (unsigned i = 0; i < 32; i++) { if (n[i] != 0) { msg("    '\\%u': %" PRINT_ULL "\n", i, n[i]); } }
+        for (unsigned i = 0; i < 32; i++) { if (n[i] != 0) { msg("    '\\x%02X': %" PRINT_ULL "\n", i, n[i]); } }
         for (unsigned i = 32; i < 127; i++) { if (n[i] != 0) { msg("    '%c': %" PRINT_ULL "\n", (unsigned char)i, n[i]); } }
-        for (unsigned i = 127; i < 256; i++) { if (n[i] != 0) { msg("    '\\%u': %" PRINT_ULL "\n", i, n[i]); } }
+        for (unsigned i = 127; i < 256; i++) { if (n[i] != 0) { msg("    '\\x%02X': %" PRINT_ULL "\n", i, n[i]); } }
         if (n[256] != 0) { msg("    EOF: %" PRINT_ULL "\n", n[256]); }
     }
 }
