@@ -40,6 +40,31 @@ If both variables are not defined, the compressor exits without writing anything
 
 **--fastq** - Proceed only if input is in FASTQ format.
 
+**--dna** - Input contains DNA sequences (default).
+Valid sequences can include: ACGT, RYSWKMBDHV, N, '-'.
+
+**--rna** - Input contains RNA sequences.
+Valid sequences can include: ACGU, RYSWKMBDHV, N, '-'.
+
+**--protein** - Input has protein sequences.
+Recognized amino acid codes:
+'ARNDCQEGHILKMFPSTWYV' (standard 20 amino acids),
+'U' (selenocysteine), 'O' (pyrrolysine),
+'J' (leucine or isoleucine, 'L' or 'I'),
+'B' (aspartic acid or asparagine, 'D' or 'N'),
+'Z' (glutamic acid or glutamine, 'E' or 'Q'),
+'X' (any amino acid),
+'\*' (stop codon),
+and '-' (gap).
+I.e., entire Latin alphabet, asterisk and dash.
+
+**--text** - Input has text sequences.
+Each sequence can include any printable single byte characters, which means characters in code ranges: 32..126 and 128..254.
+
+**--strict** - Fail on encountering any non-standard sequence characters.
+Without `--strict` , the compressor will simply replace any unknown characters with the default substitution character:
+'N' for DNA/RNA, 'X' for protein, '?' for text.
+
 **--line-length N** - Store line length N in the output NAF file.
 If omitted, stores the maximum sequence line length from the input.
 

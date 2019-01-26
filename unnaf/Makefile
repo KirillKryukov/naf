@@ -3,7 +3,7 @@
 
 TARGET = unnaf
 
-CC = cc
+CC = gcc
 CFLAGS = -std=gnu99 -Wall -Wextra -O3 -march=native -ffast-math -s
 LDFLAGS ?= -l:libzstd.a
 

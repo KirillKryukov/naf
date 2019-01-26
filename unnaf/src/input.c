@@ -160,7 +160,7 @@ static void load_ids(void)
     for (unsigned long long i = 1; i < N; i++)
     {
         char *ep = strchr(ids[i-1], 0);
-        if (ep >= ids_buffer + ids_size - 1) { die("Currupted ids - can't read id %" PRINT_ULL, i); }
+        if (ep >= ids_buffer + ids_size - 1) { die("Currupted ids - can't read id %" PRINT_ULL "\n", i); }
         ids[i] = ep + 1;
     }
 }
@@ -188,7 +188,7 @@ static void load_names(void)
     for (unsigned long long i = 1; i < N; i++)
     {
         char *ep = strchr(names[i-1], 0);
-        if (ep >= names_buffer + names_size - 1) { die("Currupted names - can't read name %" PRINT_ULL, i); }
+        if (ep >= names_buffer + names_size - 1) { die("Currupted names - can't read name %" PRINT_ULL "\n", i); }
         names[i] = ep + 1;
     }
 }
