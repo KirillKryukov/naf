@@ -162,7 +162,7 @@ static void close_output_file_and_set_stat(void)
     input_timestamp[0].tv_nsec = A_TIME_NSEC(input_stat);
     input_timestamp[1].tv_nsec = M_TIME_NSEC(input_stat);
     if (futimens(fileno(OUT), input_timestamp) != 0) { err("Can't transfer timestamp from input to output file\n"); }
-    //if (verbose) { fprintf(stderr, "Changed output timestamp using futimens()\n"); }
+    //if (verbose) { msg("Changed output timestamp using futimens()\n"); }
 #elif defined(HAVE_FUTIMES)
     struct timeval input_timestamp[2];
     input_timestamp[0].tv_sec = A_TIME_SEC(input_stat);
@@ -170,7 +170,7 @@ static void close_output_file_and_set_stat(void)
     input_timestamp[0].tv_usec = A_TIME_NSEC(input_stat) / 1000;
     input_timestamp[1].tv_usec = M_TIME_NSEC(input_stat) / 1000;
     if (futimes(fileno(OUT), input_timestamp) != 0) { err("Can't transfer timestamp from input to output file\n"); }
-    //if (verbose) { fprintf(stderr, "Changed output timestamp using futimes()\n"); }
+    //if (verbose) { msg("Changed output timestamp using futimes()\n"); }
 #elif defined(HAVE_UTIME)
 #endif
 
@@ -184,6 +184,6 @@ static void close_output_file_and_set_stat(void)
     input_timestamp.actime = A_TIME_SEC(input_stat);
     input_timestamp.modtime = M_TIME_SEC(input_stat);
     if (utime(out_file_path, &input_timestamp) != 0) { err("Can't transfer timestamp from input to output file\n"); }
-    //if (verbose) { fprintf(stderr, "Changed output timestamp using utime()\n"); }
+    //if (verbose) { msg("Changed output timestamp using utime()\n"); }
 #endif
 }

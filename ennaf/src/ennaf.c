@@ -5,7 +5,7 @@
  */
 
 #define VERSION "1.1.0"
-#define DATE "2019-01-25"
+#define DATE "2019-01-26"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG

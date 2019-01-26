@@ -5,11 +5,47 @@
  */
 
 
+__attribute__ ((format (printf, 1, 2)))
+static void msg(const char *format, ...) 
+{
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+}
+
+
+__attribute__ ((cold))
+__attribute__ ((format (printf, 1, 2)))
+static void err(const char *format, ...) 
+{
+    fputs("ennaf: ", stderr);
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+}
+
+
+__attribute__ ((cold))
+__attribute__ ((format (printf, 1, 2)))
+__attribute__ ((noreturn))
+static void die(const char *format, ...) 
+{
+    fputs("ennaf: ", stderr);
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+    exit(1);
+}
+
+
+__attribute__ ((cold))
 __attribute__ ((noreturn))
 static inline void incomplete(void)
 {
-    fprintf(stderr, "Incomplete or truncated input\n");
-    exit(1);
+    die("Incomplete or truncated input\n");
 }
 
 
@@ -40,7 +76,7 @@ static void fflush_or_die(FILE *F)
     assert(F != NULL);
 
     int error = fflush(F);
-    if (error != 0) { fprintf(stderr, "Error: Can't write to file. Disk full?\n"); exit(1); }
+    if (error != 0) { die("Error: Can't write to file. Disk full?\n"); }
 }
 
 
@@ -49,7 +85,7 @@ static void fclose_or_die(FILE *F)
     assert(F != NULL);
 
     int error = fclose(F);
-    if (error != 0) { fprintf(stderr, "Error: Can't write to file. Disk full?\n"); exit(1); }
+    if (error != 0) { die("Error: Can't write to file. Disk full?\n"); }
 }
 
 
@@ -67,7 +103,7 @@ static unsigned long long read_number(FILE *F)
 
     if (!fread(&c, 1, 1, F)) { incomplete(); }
 
-    if (c == 128) { fputs("Invalid input: error parsing variable length encoded number\n", stderr); exit(1); }
+    if (c == 128) { die("Invalid input: error parsing variable length encoded number\n"); }
 
     while (c & 128)
     {

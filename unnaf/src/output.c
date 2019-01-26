@@ -285,7 +285,7 @@ static void print_4bit(void)
             {
                 ZSTD_outBuffer out = { out_buffer, out_buffer_size, 0 };
                 bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &in);
-                if (ZSTD_isError(bytes_to_read)) { fprintf(stderr, "Can't decompress: %s\n", ZSTD_getErrorName(bytes_to_read)); exit(1); }
+                if (ZSTD_isError(bytes_to_read)) { die("Can't decompress: %s\n", ZSTD_getErrorName(bytes_to_read)); }
                 fwrite(out_buffer, 1, out.pos, OUT);
             }
         }
@@ -463,7 +463,7 @@ static void print_dna(int masking)
                 {
                     ZSTD_outBuffer out = { out_buffer, out_buffer_size, 0 };
                     bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &in);
-                    if (ZSTD_isError(bytes_to_read)) { fprintf(stderr, "Can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); exit(1); }
+                    if (ZSTD_isError(bytes_to_read)) { die("Can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); }
                     write_4bit_as_dna((unsigned char *)out_buffer, out.pos, masking);
                 }
             }
@@ -477,7 +477,7 @@ static void print_dna(int masking)
                 {
                     ZSTD_outBuffer out = { dna_buffer, dna_buffer_size, 0 };
                     bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &in);
-                    if (ZSTD_isError(bytes_to_read)) { fprintf(stderr, "Can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); exit(1); }
+                    if (ZSTD_isError(bytes_to_read)) { die("Can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); }
                     dna_buffer_pos = (unsigned)out.pos;
                     print_dna_buffer(masking);
                 }
@@ -520,7 +520,7 @@ static void print_fasta(int masking)
                 {
                     ZSTD_outBuffer out = { out_buffer, out_buffer_size, 0 };
                     bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &in);
-                    if (ZSTD_isError(bytes_to_read)) { fprintf(stderr, "Can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); exit(1); }
+                    if (ZSTD_isError(bytes_to_read)) { die("Can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); }
                     write_4bit_as_fasta((unsigned char *)out_buffer, out.pos, masking);
                 }
             }
@@ -534,7 +534,7 @@ static void print_fasta(int masking)
                 {
                     ZSTD_outBuffer out = { dna_buffer, dna_buffer_size, 0 };
                     bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &in);
-                    if (ZSTD_isError(bytes_to_read)) { fprintf(stderr, "Can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); exit(1); }
+                    if (ZSTD_isError(bytes_to_read)) { die("Can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); }
                     dna_buffer_pos = (unsigned)out.pos;
                     print_dna_buffer_as_fasta(masking);
                 }

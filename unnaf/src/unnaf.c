@@ -4,8 +4,8 @@
  * See README.md and LICENSE files of this repository
  */
 
-#define VERSION "1.0.0"
-#define DATE "2019-01-25"
+#define VERSION "1.1.0"
+#define DATE "2019-01-26"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
@@ -199,7 +200,7 @@ static void done(void)
 
     if (!success && created_output_file)
     {
-        if (remove(out_file_path) != 0) { fprintf(stderr, "Can't remove incomplete output file \"%s\"\n", out_file_path); }
+        if (remove(out_file_path) != 0) { err("Can't remove incomplete output file \"%s\"\n", out_file_path); }
     }
 
     FREE(out_file_path_auto);
@@ -208,7 +209,7 @@ static void done(void)
 
 static void set_out_type(OUTPUT_TYPE new_type)
 {
-    if (out_type != UNDECIDED) { fprintf(stderr, "Error: Only one output type should be specified\n"); exit(1); }
+    if (out_type != UNDECIDED) { die("Error: Only one output type should be specified\n"); }
     out_type = new_type;
 }
 
@@ -217,8 +218,8 @@ static void set_input_file_path(char *new_path)
 {
     assert(new_path != NULL);
 
-    if (in_file_path != NULL) { fprintf(stderr, "Error: Can process only one file at a time\n"); exit(1); }
-    if (*new_path == '\0') { fprintf(stderr, "Error: empty input path specified\n"); exit(1); }
+    if (in_file_path != NULL) { die("Error: Can process only one file at a time\n"); }
+    if (*new_path == '\0') { die("Error: empty input path specified\n"); }
     in_file_path = new_path;
 }
 
@@ -227,8 +228,8 @@ static void set_output_file_path(char *new_path)
 {
     assert(new_path != NULL);
 
-    if (out_file_path != NULL) { fprintf(stderr, "Error: double --out parameter\n"); exit(1); }
-    if (*new_path == '\0') { fprintf(stderr, "Error: empty --out parameter\n"); exit(1); }
+    if (out_file_path != NULL) { die("Error: double --out parameter\n"); }
+    if (*new_path == '\0') { die("Error: empty --out parameter\n"); }
     out_file_path = new_path;
 }
 
@@ -239,12 +240,12 @@ static void set_line_length(char *str)
 
     char *end;
     long long a = strtoll(str, &end, 10);
-    if (*end != '\0') { fprintf(stderr, "Can't parse the value of --line-length parameter\n"); exit(1); }
-    if (a < 0ll) { fprintf(stderr, "Error: Negative line length specified\n"); exit(1); }
+    if (*end != '\0') { die("Can't parse the value of --line-length parameter\n"); }
+    if (a < 0ll) { die("Error: Negative line length specified\n"); }
 
     char test_str[21];
     int nc = snprintf(test_str, 21, "%lld", a);
-    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { fprintf(stderr, "Can't parse the value of --line-length parameter\n"); exit(1); }
+    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { die("Can't parse the value of --line-length parameter\n"); }
 
     requested_line_length = (unsigned long long) a;
     line_length_is_specified = true;
@@ -253,18 +254,14 @@ static void set_line_length(char *str)
 
 static void show_version(void)
 {
-    fputs("unnaf - NAF decompressor, version " VERSION ", " DATE "\nCopyright (c) " COPYRIGHT_YEARS " Kirill Kryukov\n", stderr);
-    if (verbose)
-    {
-        fprintf(stderr, "Built with zstd " ZSTD_VERSION_STRING ", using runtime zstd %s\n", ZSTD_versionString());
-    }
+    msg("unnaf - NAF decompressor, version " VERSION ", " DATE "\nCopyright (c) " COPYRIGHT_YEARS " Kirill Kryukov\n");
+    if (verbose) { msg("Built with zstd " ZSTD_VERSION_STRING ", using runtime zstd %s\n", ZSTD_versionString()); }
 }
 
 
 static void show_help(void)
 {
-    fprintf(stderr,
-        "Usage: unnaf [OUTPUT-TYPE] [file.naf]\n"
+    msg("Usage: unnaf [OUTPUT-TYPE] [file.naf]\n"
         "Options for selecting output type:\n"
         "  --format        - File format version\n"
         "  --part-list     - List of parts\n"
@@ -342,8 +339,7 @@ static void parse_command_line(int argc, char **argv)
             if (!strcmp(argv[i], "-h")) { show_help(); exit(0); }
             if (!strcmp(argv[i], "-V")) { print_version = true; continue; }
 
-            fprintf(stderr, "Unknown or incomplete argument \"%s\"\n", argv[i]);
-            exit(1);
+            die("Unknown or incomplete argument \"%s\"\n", argv[i]);
         }
         set_input_file_path(argv[i]);
     }
@@ -356,8 +352,7 @@ static void parse_command_line(int argc, char **argv)
 
     if (force_stdout && out_file_path != NULL)
     {
-        fprintf(stderr, "Error: -c and -o arguments can't be used together\n");
-        exit(1);
+        die("Error: -c and -o arguments can't be used together\n");
     }
 }
 
@@ -370,7 +365,7 @@ int main(int argc, char **argv)
     parse_command_line(argc, argv);
     if (in_file_path == NULL && isatty(fileno(stdin)))
     {
-        fprintf(stderr, "No input specified, use \"unnaf -h\" for help\n");
+        err("No input specified, use \"unnaf -h\" for help\n");
         exit(0);
     }
 
@@ -383,18 +378,15 @@ int main(int argc, char **argv)
     }
     if (!has_quality && out_type == FASTQ)
     {
-        fprintf(stderr, "Error: FASTQ output requested, but input has no qualities\n");
-        exit(1);
+        die("Error: FASTQ output requested, but input has no qualities\n");
     }
     if ((out_type == DNA || out_type == MASKED_DNA || out_type == UNMASKED_DNA) && (in_seq_type != seq_type_dna))
     {
-        fprintf(stderr, "Input has not DNA, but %s data\n", in_seq_type_name);
-        exit(1);
+        die("Input has not DNA, but %s data\n", in_seq_type_name);
     }
     if (out_type == FOUR_BIT && in_seq_type >= seq_type_protein)
     {
-        fprintf(stderr, "Input has no 4-bit encoded data, but %s sequences\n", in_seq_type_name);
-        exit(1);
+        die("Input has no 4-bit encoded data, but %s sequences\n", in_seq_type_name);
     }
 
 
@@ -403,7 +395,7 @@ int main(int argc, char **argv)
     if (in_file_path != NULL && out_file_path != NULL)
     {
         if (fstat(fileno(IN), &input_stat) == 0) { have_input_stat = true; }
-        else { fprintf(stderr, "Can't obtain status of input file\n"); }
+        else { err("Can't obtain status of input file\n"); }
     }
 
 
@@ -437,11 +429,11 @@ int main(int argc, char **argv)
                 dna_buffer_flush_size = ZSTD_DStreamOutSize() * 2;
                 dna_buffer_size = dna_buffer_flush_size * 2 + 10;
                 dna_buffer = (unsigned char *)malloc(dna_buffer_size);
-                if (!dna_buffer) { fprintf(stderr, "Can't allocate %zu bytes for dna buffer\n", dna_buffer_size); exit(1); }
+                if (!dna_buffer) { die("Can't allocate %zu bytes for dna buffer\n", dna_buffer_size); }
 
                 out_print_buffer_size = dna_buffer_size * 2;
                 out_print_buffer = (unsigned char *)malloc(out_print_buffer_size);
-                if (!out_print_buffer) { fprintf(stderr, "Can't allocate %zu bytes for dna buffer\n", out_print_buffer_size); exit(1); }
+                if (!out_print_buffer) { die("Can't allocate %zu bytes for dna buffer\n", out_print_buffer_size); }
 
                 if (out_type == DNA) { print_dna(use_mask && has_mask); }
                 else if (out_type == SEQ) { print_dna(use_mask && has_mask); }
@@ -451,7 +443,7 @@ int main(int argc, char **argv)
                 else if (out_type == MASKED_FASTA) { print_fasta(use_mask && has_mask); }
                 else if (out_type == UNMASKED_FASTA) { print_fasta(0); }
                 else if (out_type == FASTQ) { print_fastq(0); }
-                else { fputs("Unknown output requested\n", stderr); }
+                else { die("Unknown output requested\n"); }
             }
         }
     }
