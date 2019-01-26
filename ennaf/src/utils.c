@@ -15,6 +15,7 @@ static void msg(const char *format, ...)
 }
 
 
+__attribute__ ((cold))
 __attribute__ ((format (printf, 1, 2)))
 static void err(const char *format, ...) 
 {
@@ -26,6 +27,7 @@ static void err(const char *format, ...)
 }
 
 
+__attribute__ ((cold))
 __attribute__ ((format (printf, 1, 2)))
 __attribute__ ((noreturn))
 static void die(const char *format, ...) 
@@ -70,7 +72,6 @@ static void fwrite_or_die(const void *ptr, size_t element_size, size_t n_element
     size_t elements_written = fwrite(ptr, element_size, n_elements, F);
     if (elements_written != n_elements) { die("Error writing to file\n"); }
 }
-#define fwrite dont_use_fwrite
 
 
 static void fputc_or_die(int c, FILE *F)
@@ -78,7 +79,6 @@ static void fputc_or_die(int c, FILE *F)
     assert(F != NULL);
     if (fputc(c, F) != c) { die("Error writing to file\n"); }
 }
-#define fputc dont_use_fputc
 
 
 static void fflush_or_die(FILE *F)

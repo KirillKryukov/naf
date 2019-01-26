@@ -6,29 +6,75 @@
  * The FASTA/Q parser was originally based on Heng Li's kseq.h.
  */
 
-#ifndef round_up_to_power_of_two
-#if __x86_64__
-#define round_up_to_power_of_two(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, (x)|=(x)>>32, ++(x))
-#else
-#define round_up_to_power_of_two(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, ++(x))
-#endif
-#endif
-
 #define INEOF 256
+
+#define STR_ALLOCATED 131072
+
+
+static void name_writer(unsigned char *str, size_t size)
+{
+    ids_size_original += size;
+    ids_size_compressed += write_to_cstream(ids_cstream, IDS, str, size);
+}
+
+
+static void comm_writer(unsigned char *str, size_t size)
+{
+    comm_size_original += size;
+    comm_size_compressed += write_to_cstream(comm_cstream, COMM, str, size);
+}
+
+
+static void seq_writer_masked_4bit(unsigned char *str, size_t size)
+{
+    extract_mask(str, size);
+    seq_size_original += size;
+    encode_dna(str, size);
+}
+
+
+static void seq_writer_nonmasked_4bit(unsigned char *str, size_t size)
+{
+    seq_size_original += size;
+    encode_dna(str, size);
+}
+
+
+static void seq_writer_masked_text(unsigned char *str, size_t size)
+{
+    extract_mask(str, size);
+    seq_size_original += size;
+    seq_size_compressed += write_to_cstream(seq_cstream, SEQ, str, size);
+}
+
+
+static void seq_writer_nonmasked_text(unsigned char *str, size_t size)
+{
+    seq_size_original += size;
+    seq_size_compressed += write_to_cstream(seq_cstream, SEQ, str, size);
+}
+
+
+static void qual_writer(unsigned char *str, size_t size)
+{
+    qual_size_original += size;
+    qual_size_compressed += write_to_cstream(qual_cstream, QUAL, str, size);
+}
 
 
 typedef struct
 {
-    size_t length, allocated;
+    size_t length;
     unsigned char *data;
+    void (*writer)(unsigned char *, size_t);
 }
 string_t;
 
 
-static string_t name    = { 0, 0, NULL };
-static string_t comment = { 0, 0, NULL };
-static string_t seq     = { 0, 0, NULL };
-static string_t qual    = { 0, 0, NULL };
+static string_t name    = { 0, NULL, &name_writer };
+static string_t comment = { 0, NULL, &comm_writer };
+static string_t seq     = { 0, NULL, NULL };
+static string_t qual    = { 0, NULL, &qual_writer };
 
 
 static void report_unexpected_char_stats(unsigned long long *n, const char *seq_type_name)
@@ -53,21 +99,21 @@ static void report_unexpected_input_char_stats(void)
 }
 
 
-static void unexpected_input_char(unsigned c, unsigned char *seq_name)
+static void unexpected_input_char(unsigned c)
 {
     if (abort_on_unexpected_code)
     {
-        die("Error: Unexpected %s code '%c' in sequence \"%s\"\n", in_seq_type_name, (unsigned char)c, seq_name);
+        die("Error: Unexpected %s code '%c' in sequence %" PRINT_ULL "\n", in_seq_type_name, (unsigned char)c, n_sequences + 1);
     }
     else { n_unexpected_seq_characters[c]++; }
 }
 
 
-static void unexpected_quality_char(unsigned c, unsigned char *seq_name)
+static void unexpected_quality_char(unsigned c)
 {
     if (abort_on_unexpected_code)
     {
-        die("Error: Unexpected quality code '%c' in sequence \"%s\"\n", (unsigned char)c, seq_name);
+        die("Error: Unexpected quality code '%c' in sequence %" PRINT_ULL "\n", (unsigned char)c, n_sequences + 1);
     }
     else { n_unexpected_qual_characters[c]++; }
 }
@@ -97,7 +143,7 @@ static inline unsigned in_get_char(void)
 
 static inline unsigned in_skip_until(const bool *delim_arr)
 {
-    unsigned c = INEOF;
+    unsigned d = INEOF;
     for (;;)
     {
         if (in_begin >= in_end)
@@ -109,19 +155,26 @@ static inline unsigned in_skip_until(const bool *delim_arr)
         size_t i;
         for (i = in_begin; i < in_end; i++)
         {
-            if (delim_arr[in_buffer[i]]) { c = in_buffer[i]; break; }
+            if (delim_arr[in_buffer[i]]) { d = in_buffer[i]; break; }
         }
 
         in_begin = i + 1;
-        if (c != INEOF) { break; }
+        if (d != INEOF) { break; }
     }
-    return c;
+    return d;
 }
 
 
+/*
+ * Reads input until a delimiter character is found (any matching 'delim_arr').
+ * Stores text until delimiter into 'str' (not including delimiter).
+ * Returns delimiter, or INEOF at end of input.
+ * Does NOT zero-terminate the text stored in 'str'.
+ * Whenever 'str' fills, writes it out.
+ */
 static inline unsigned in_get_until(const bool *delim_arr, string_t *str)
 {
-    unsigned c = INEOF;
+    unsigned d = INEOF;
     for (;;)
     {
         if (in_begin >= in_end)
@@ -133,233 +186,163 @@ static inline unsigned in_get_until(const bool *delim_arr, string_t *str)
         size_t i;
         for (i = in_begin; i < in_end; i++)
         {
-            if (delim_arr[in_buffer[i]]) { c = in_buffer[i]; break; }
+            if (delim_arr[in_buffer[i]]) { d = in_buffer[i]; break; }
         }
 
-        if (str->allocated - str->length < i - in_begin + 1)
+        size_t s = i - in_begin;
+
+        if (str->length + s >= STR_ALLOCATED)
         {
-            str->allocated = str->length + (i - in_begin) + 1;
-            round_up_to_power_of_two(str->allocated);
-            str->data = (unsigned char *)realloc(str->data, str->allocated);
+            size_t s1 = STR_ALLOCATED - str->length;
+            size_t s2 = s - s1;
+            memcpy(str->data + str->length, in_buffer + in_begin, s1);
+            str->writer(str->data, STR_ALLOCATED);
+            memcpy(str->data, in_buffer + in_begin + s1, s2); 
+            str->length = s2;
+        }
+        else
+        {
+            memcpy(str->data + str->length, in_buffer + in_begin, s);
+            str->length += s;
         }
 
-        memcpy(str->data + str->length, in_buffer + in_begin, i - in_begin);
-        str->length += (i - in_begin);
         in_begin = i + 1;
 
-        if (c != INEOF) { break; }
+        if (d != INEOF) { break; }
     }
 
-    str->data[str->length] = '\0';
-    return c;
+    return d;
 }
 
 
 __attribute__((always_inline))
 static inline void str_append_char(string_t *str, unsigned char c)
 {
-    if (str->allocated < str->length + 1)
-    {
-        str->allocated = str->length + 1;
-        round_up_to_power_of_two(str->allocated);
-        str->data = (unsigned char *)realloc(str->data, str->allocated);
-    }
-
     str->data[str->length] = c;
     str->length++;
-}
-
-
-__attribute__((always_inline))
-static inline unsigned get_fasta_seq(void)
-{
-    unsigned c;
-
-    name.length = 0;
-    comment.length = 0;
-    seq.length = 0;
-
-    // At this point the '>' was already read, so we immediately proceed to read the name.
-    if ( (c = in_get_until(is_space_arr, &name)) == INEOF) { comment.data[0] = '\0'; return INEOF; } // No need to 0-terminate sequence.
-
-    if (is_eol_arr[c]) { comment.data[0] = '\0'; }
-    else if (in_get_until(is_eol_arr, &comment) == INEOF) { return INEOF; }
-
-    size_t old_len = seq.length;
-    while ( (c = in_get_until(is_unexpected_arr, &seq)) != INEOF)
+    if (str->length >= STR_ALLOCATED)
     {
-        if (is_eol_arr[c])
-        {
-            if (seq.length - old_len > longest_line_length) { longest_line_length = seq.length - old_len; }
-            old_len = seq.length;
-
-            c = in_get_char();
-            if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
-            else if (c == '>' || c == INEOF) { break; }
-            else if (is_eol_arr[c])
-            {
-                while (c != INEOF && is_eol_arr[c]) { c = in_get_char(); }
-                if (c == '>' || c == INEOF) { break; }
-                else if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
-                else if (is_space_arr[c]) {}
-                else { unexpected_input_char(c, name.data); str_append_char(&seq, unexpected_char_replacement); }
-            }
-            else if (is_space_arr[c]) {}
-            else { unexpected_input_char(c, name.data); str_append_char(&seq, unexpected_char_replacement); }
-        }
-        else if (is_space_arr[c]) {}
-        else { unexpected_input_char(c, name.data); str_append_char(&seq, unexpected_char_replacement); }
+        str->writer(str->data, STR_ALLOCATED);
+        str->length = 0;
     }
-
-    // If the last line is the longest, and has no end-of-line character, handle it correctly.
-    if (c == INEOF)
-    {
-        if (seq.length - old_len > longest_line_length) { longest_line_length = seq.length - old_len; }
-    }
-
-    return c;
 }
 
 
 static void process_fasta(void)
 {
-    for (;;)
-    {
-        unsigned c = get_fasta_seq();
-
-        if (store_ids)
-        {
-            ids_size_original += name.length + 1;
-            ids_size_compressed += write_to_cstream(ids_cstream, IDS, name.data, name.length + 1);
-        }
-
-        if (store_comm)
-        {
-            comm_size_original += comment.length + 1;
-            comm_size_compressed += write_to_cstream(comm_cstream, COMM, comment.data, comment.length + 1);
-        }
-
-        if (store_len)
-        {
-            add_length(seq.length);
-        }
-
-        if (store_mask)
-        {
-            extract_mask(seq.data, seq.length);
-        }
-
-        if (store_seq)
-        {
-            seq_size_original += seq.length;
-            if (in_seq_type < seq_type_protein) { encode_dna(seq.data, seq.length); }
-            else { seq_size_compressed += write_to_cstream(seq_cstream, SEQ, seq.data, seq.length); }
-        }
-
-        n_sequences++;
-
-        if (c == INEOF) { return; }
-    }
-}
-
-
-__attribute__((always_inline))
-static inline unsigned get_fastq_seq(void)
-{
     unsigned c;
+    do {
+        // At this point the '>' was already read, so we immediately proceed to read the name.
+        c = in_get_until(is_space_arr, &name);
+        str_append_char(&name, '\0');
 
-    name.length = 0;
-    comment.length = 0;
-    seq.length = 0;
-    qual.length = 0;
+        // Always write '\0' to comment stream.
+        if (c != INEOF && !is_eol_arr[c]) { c = in_get_until(is_eol_arr, &comment); }
+        str_append_char(&comment, '\0');
 
-    if ( (c = in_get_until(is_space_arr, &name)) == INEOF) { comment.data[0] = '\0'; return INEOF; }
+        unsigned long long old_total_seq_size = seq_size_original + seq.length;
+        if (c != INEOF)
+        {
+            unsigned long long old_len = old_total_seq_size;
+            while ( (c = in_get_until(is_unexpected_arr, &seq)) != INEOF)
+            {
+                if (is_eol_arr[c])
+                {
+                    unsigned long long new_len = seq_size_original + seq.length;
+                    if (new_len - old_len > longest_line_length) { longest_line_length = new_len - old_len; }
+                    old_len = new_len;
 
-    if (is_eol_arr[c]) { comment.data[0] = '\0'; }
-    else if (in_get_until(is_eol_arr, &comment) == INEOF) { return INEOF; }
+                    c = in_get_char();
+                    if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
+                    else if (c == '>' || c == INEOF) { break; }
+                    else if (is_eol_arr[c])
+                    {
+                        while (c != INEOF && is_eol_arr[c]) { c = in_get_char(); }
+                        if (c == '>' || c == INEOF) { break; }
+                        else if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
+                        else if (is_space_arr[c]) {}
+                        else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
+                    }
+                    else if (is_space_arr[c]) {}
+                    else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
+                }
+                else if (is_space_arr[c]) {}
+                else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
+            }
 
-    while ( (c = in_get_until(is_unexpected_arr, &seq)) != INEOF)
-    {
-        if (is_eol_arr[c]) { break; }
-        else if (is_space_arr[c]) {}
-        else { unexpected_input_char(c, name.data); str_append_char(&seq, unexpected_char_replacement); }
+            // If the last line is the longest, and has no end-of-line character, handle it correctly.
+            if (c == INEOF)
+            {
+                unsigned long long new_len = seq_size_original + seq.length;
+                if (new_len - old_len > longest_line_length) { longest_line_length = new_len - old_len; }
+            }
+        }
+
+        add_length(seq_size_original + seq.length - old_total_seq_size);
+        n_sequences++;
     }
-    if (seq.length > longest_line_length) { longest_line_length = seq.length; }
-    if (c == INEOF) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
-
-    do { c = in_get_char(); } while (is_eol_arr[c]);
-    if (c != '+') { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
-
-    c = in_skip_until(is_eol_arr);
-    if (!is_eol_arr[c]) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
-
-    do { c = in_get_char(); } while (is_eol_arr[c]);
-    if (c == INEOF) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
-    qual.length = 1;
-    qual.data[0] = (unsigned char)c;
-
-    while ( (c = in_get_until(is_unexpected_qual_arr, &qual)) != INEOF)
-    {
-        if (is_eol_arr[c]) { break; }
-        else if (is_space_arr[c]) {}
-        else { unexpected_quality_char(c, name.data); str_append_char(&qual, '!'); }  // Unknown character can only mean poor quality.
-    }
-    if (qual.length != seq.length)
-    {
-        die("Error: quality length of sequence %" PRINT_ULL " (%" PRINT_ULL ") doesn't match sequence length (%" PRINT_ULL ")\n",
-            n_sequences + 1, (unsigned long long)qual.length, (unsigned long long)seq.length);
-    }
-
-    return c;
+    while (c != INEOF);
 }
 
 
 static void process_fastq(void)
 {
-    for (;;)
-    {
-        unsigned c = get_fastq_seq();
+    unsigned c;
+    do {
+        c = in_get_until(is_space_arr, &name);
+        str_append_char(&name, '\0');
 
-        if (store_ids)
+        if (c != INEOF && !is_eol_arr[c]) { c = in_get_until(is_eol_arr, &comment); }
+        str_append_char(&comment, '\0');
+
+        unsigned long long read_length = 0;
+        if (c != INEOF)
         {
-            ids_size_original += name.length + 1;
-            ids_size_compressed += write_to_cstream(ids_cstream, IDS, name.data, name.length + 1);
+            unsigned long long old_len = seq_size_original + seq.length;
+            while ( (c = in_get_until(is_unexpected_arr, &seq)) != INEOF)
+            {
+                if (is_eol_arr[c]) { break; }
+                else if (is_space_arr[c]) {}
+                else { unexpected_input_char(c); str_append_char(&seq, unexpected_char_replacement); }
+            }
+            unsigned long long new_len = seq_size_original + seq.length;
+            read_length = new_len - old_len;
+            if (read_length > longest_line_length) { longest_line_length = read_length; }
+
+            if (c == INEOF) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
+
+            do { c = in_get_char(); } while (is_eol_arr[c]);
+            if (c != '+') { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
+
+            c = in_skip_until(is_eol_arr);
+            if (!is_eol_arr[c]) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
+
+            do { c = in_get_char(); } while (is_eol_arr[c]);
+            if (c == INEOF) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
+
+            old_len = qual_size_original + qual.length;
+            str_append_char(&qual, (unsigned char)c);
+            while ( (c = in_get_until(is_unexpected_qual_arr, &qual)) != INEOF)
+            {
+                if (is_eol_arr[c]) { break; }
+                else if (is_space_arr[c]) {}
+                else { unexpected_quality_char(c); str_append_char(&qual, '!'); }  // Unknown character can only mean poor quality.
+            }
+            new_len = qual_size_original + qual.length;
+            unsigned long long qual_length = new_len - old_len;
+            if (qual_length != read_length)
+            {
+                die("Error: quality length of sequence %" PRINT_ULL " (%" PRINT_ULL ") doesn't match sequence length (%" PRINT_ULL ")\n",
+                    n_sequences + 1, qual_length, read_length);
+            }
         }
 
-        if (store_comm)
-        {
-            comm_size_original += comment.length + 1;
-            comm_size_compressed += write_to_cstream(comm_cstream, COMM, comment.data, comment.length + 1);
-        }
-
-        if (store_len)
-        {
-            add_length(seq.length);
-        }
-
-        if (store_mask)
-        {
-            extract_mask(seq.data, seq.length);
-        }
-
-        if (store_seq)
-        {
-            seq_size_original += seq.length;
-            if (in_seq_type < seq_type_protein) { encode_dna(seq.data, seq.length); }
-            else { seq_size_compressed += write_to_cstream(seq_cstream, SEQ, seq.data, seq.length); }
-        }
-
-        if (store_qual)
-        {
-            qual_size_original += qual.length;
-            qual_size_compressed += write_to_cstream(qual_cstream, QUAL, qual.data, qual.length);
-        }
-
+        add_length(read_length);
         n_sequences++;
 
-        while ((c = in_get_char()) != INEOF && c != '@') {}
-        if (c != '@') { return; }
+        do { c = in_get_char(); } while (is_eol_arr[c]);
     }
+    while (c == '@');
 }
 
 
@@ -407,12 +390,12 @@ static void process(void)
     // If input format is unknown at this point, it indicates empty input.
     if (in_format_from_input == in_format_unknown) { return; }
 
-    name.allocated = 256;
-    name.data = (unsigned char *)malloc(name.allocated);
-    comment.allocated = 256;
-    comment.data = (unsigned char *)malloc(comment.allocated);
-    seq.allocated = 256;
-    seq.data = (unsigned char *)malloc(seq.allocated);
+    name.data    = (unsigned char *)malloc(STR_ALLOCATED);
+    comment.data = (unsigned char *)malloc(STR_ALLOCATED);
+    seq.data     = (unsigned char *)malloc(STR_ALLOCATED);
+
+    seq.writer = store_mask ? ((in_seq_type < seq_type_protein) ? &seq_writer_masked_4bit : &seq_writer_masked_text)
+                            : ((in_seq_type < seq_type_protein) ? &seq_writer_nonmasked_4bit : &seq_writer_nonmasked_text);
 
     if (in_format_from_input == in_format_fasta)
     {
@@ -420,9 +403,13 @@ static void process(void)
     }
     else if (in_format_from_input == in_format_fastq)
     {
-        qual.allocated = 256;
-        qual.data = (unsigned char *)malloc(qual.allocated);
+        qual.data = (unsigned char *)malloc(STR_ALLOCATED);
         process_fastq();
+        if (qual.length != 0) { qual.writer(qual.data, qual.length); qual.length = 0; }
     }
     else { assert(0); }
+
+    if (name.length != 0) { name.writer(name.data, name.length); name.length = 0; }
+    if (comment.length != 0) { comment.writer(comment.data, comment.length); comment.length = 0; }
+    if (seq.length != 0) { seq.writer(seq.data, seq.length); seq.length = 0; }
 }
