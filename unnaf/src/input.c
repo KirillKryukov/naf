@@ -35,7 +35,7 @@ static void read_header(void)
     if (first_bytes[0] != 0x01 || first_bytes[1] != 0xF9 || first_bytes[2] != 0xEC) { die("Error: Not a NAF format\n"); }
 
     format_version = fgetc_or_incomplete(IN);
-    if (format_version > 2) { die("Error: Unknown version (%d) of NAF format\n", format_version); }
+    if (format_version < 1 || format_version > 2) { die("Error: Unknown version (%d) of NAF format\n", format_version); }
 
     if (format_version > 1)
     {
@@ -55,7 +55,7 @@ static void read_header(void)
             in_seq_type = seq_type_text;
             in_seq_type_name = "text";
         }
-        else { die("Error: Unknown sequence type (%d) recorded in NAF file\n", t); }
+        else { die("Error: Unknown sequence type (%d) found in NAF file\n", t); }
     }
 
     unsigned char flags = fgetc_or_incomplete(IN);
@@ -69,6 +69,7 @@ static void read_header(void)
     has_quality =  flags       & 1;
 
     name_separator = fgetc_or_incomplete(IN);
+    if (name_separator < 0x20 || name_separator > 0x7E) { die("Unsupported name separator character\n"); }
 }
 
 
