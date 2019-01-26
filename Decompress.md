@@ -50,9 +50,13 @@ Only one of these options should be specified:
 
 **--sizes** - Sizes of sections of NAF file.
 
-**--format** - Version of NAF format of input file.
+**--format** - Sequence type and version of NAF format found in the input.
 
 ## Other options
+
+**-o FILE** - Write output to FILE.
+
+**-c** - Write to standard output.
 
 **--line-length N** - Divide sequences into lines of N bp, ignoring line length stored in the NAF file.
 Effective only for `--fasta` output. Line length of 0 means unlimited lines, i.e., each sequence printed in single line.

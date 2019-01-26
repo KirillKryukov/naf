@@ -61,9 +61,10 @@ I.e., entire Latin alphabet, asterisk and dash.
 **--text** - Input has text sequences.
 Each sequence can include any printable single byte characters, which means characters in code ranges: 32..126 and 128..254.
 
-**--strict** - Fail on encountering any non-standard sequence characters.
-Without `--strict` , the compressor will simply replace any unknown characters with the default substitution character:
-'N' for DNA/RNA, 'X' for protein, '?' for text.
+**--strict** - Fail on encountering any non-standard sequence character.
+The list of standard characters depends on sequence type, selected using `--dna`, `--rna`, `--protein` or `--text` option.
+Without `--strict` , the compressor will simply replace any unknown characters with the default substitution character
+('N' for DNA/RNA, 'X' for protein, '?' for text), and report the total number of occurrences for each unexpected character.
 
 **--line-length N** - Store line length N in the output NAF file.
 If omitted, stores the maximum sequence line length from the input.
