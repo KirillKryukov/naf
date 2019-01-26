@@ -142,11 +142,8 @@ static void load_ids(void)
     unsigned long long ids_size = read_number(IN);
     unsigned long long compressed_ids_size = read_number(IN);
 
-    ids_buffer = (char *)malloc(ids_size);
-    if (!ids_buffer) { die("Can't allocate %" PRINT_ULL " bytes for ids\n", ids_size); }
-    compressed_ids_buffer = (unsigned char *)malloc(compressed_ids_size + 4);
-    if (!compressed_ids_buffer) { die("Can't allocate %" PRINT_ULL " bytes for compressed ids\n", compressed_ids_size + 4); }
-
+    ids_buffer = (char *) malloc_or_die(ids_size);
+    compressed_ids_buffer = (unsigned char *) malloc_or_die(compressed_ids_size + 4);
     put_magic_number(compressed_ids_buffer);
     if (fread(compressed_ids_buffer + 4, 1, compressed_ids_size, IN) != compressed_ids_size) { incomplete(); }
 
@@ -157,9 +154,7 @@ static void load_ids(void)
     free(compressed_ids_buffer);
     compressed_ids_buffer = 0;
 
-    ids = (char **)malloc(sizeof(char *) * N);
-    if (!ids) { die("Can't allocate %" PRINT_ULL " bytes for table of ids\n", N * sizeof(char *)); }
-
+    ids = (char **) malloc_or_die(sizeof(char *) * N);
     ids[0] = ids_buffer;
     for (unsigned long long i = 1; i < N; i++)
     {
@@ -175,11 +170,8 @@ static void load_names(void)
     unsigned long long names_size = read_number(IN);
     unsigned long long compressed_names_size = read_number(IN);
 
-    names_buffer = (char *)malloc(names_size);
-    if (!names_buffer) { die("Can't allocate %" PRINT_ULL " bytes for names\n", names_size); }
-    compressed_names_buffer = (unsigned char *)malloc(compressed_names_size + 4);
-    if (!compressed_names_buffer) { die("Can't allocate %" PRINT_ULL " bytes for compressed names\n", compressed_names_size + 4); }
-
+    names_buffer = (char *) malloc_or_die(names_size);
+    compressed_names_buffer = (unsigned char *) malloc_or_die(compressed_names_size + 4);
     put_magic_number(compressed_names_buffer);
     if (fread(compressed_names_buffer + 4, 1, compressed_names_size, IN) != compressed_names_size) { incomplete(); }
 
@@ -190,9 +182,7 @@ static void load_names(void)
     free(compressed_names_buffer);
     compressed_names_buffer = 0;
 
-    names = (char **)malloc(sizeof(char *) * N);
-    if (!names) { die("Can't allocate %" PRINT_ULL " bytes for table of names\n", N * sizeof(char *)); }
-
+    names = (char **) malloc_or_die(sizeof(char *) * N);
     names[0] = names_buffer;
     for (unsigned long long i = 1; i < N; i++)
     {
@@ -209,11 +199,8 @@ static void load_lengths(void)
     unsigned long long compressed_lengths_size = read_number(IN);
     n_lengths = lengths_size / 4;
 
-    lengths_buffer = (unsigned int *)malloc(lengths_size);
-    if (!lengths_buffer) { die("Can't allocate %" PRINT_ULL " bytes for lengths\n", lengths_size); }
-    compressed_lengths_buffer = (unsigned char *)malloc(compressed_lengths_size + 4);
-    if (!compressed_lengths_buffer) { die("Can't allocate %" PRINT_ULL " bytes for compressed lengths\n", compressed_lengths_size); }
-
+    lengths_buffer = (unsigned int *) malloc_or_die(lengths_size);
+    compressed_lengths_buffer = (unsigned char *) malloc_or_die(compressed_lengths_size + 4);
     put_magic_number(compressed_lengths_buffer);
     if (fread(compressed_lengths_buffer + 4, 1, compressed_lengths_size, IN) != compressed_lengths_size) { incomplete(); }
 
@@ -230,11 +217,8 @@ static void load_mask(void)
     mask_size = read_number(IN);
     unsigned long long compressed_mask_size = read_number(IN);
 
-    mask_buffer = (unsigned char *)malloc(mask_size);
-    if (!mask_buffer) { die("Can't allocate %" PRINT_ULL " bytes for mask\n", mask_size); }
-    compressed_mask_buffer = (unsigned char *)malloc(compressed_mask_size + 4);
-    if (!compressed_mask_buffer) { die("Can't allocate %" PRINT_ULL " bytes for compressed mask\n", compressed_mask_size); }
-
+    mask_buffer = (unsigned char *) malloc_or_die(mask_size);
+    compressed_mask_buffer = (unsigned char *) malloc_or_die(compressed_mask_size + 4);
     put_magic_number(compressed_mask_buffer);
     if (fread(compressed_mask_buffer + 4, 1, compressed_mask_size, IN) != compressed_mask_size) { incomplete(); }
 
@@ -262,9 +246,7 @@ static void load_compressed_sequence(void)
     total_seq_length = read_number(IN);
     compressed_seq_size = read_number(IN);
 
-    compressed_seq_buffer = (unsigned char *)malloc(compressed_seq_size + 4);
-    if (!compressed_seq_buffer) { die("Can't allocate %" PRINT_ULL " bytes for compressed sequence\n", compressed_seq_size); }
-
+    compressed_seq_buffer = (unsigned char *) malloc_or_die(compressed_seq_size + 4);
     put_magic_number(compressed_seq_buffer);
     if (fread(compressed_seq_buffer + 4, 1, compressed_seq_size, IN) != compressed_seq_size) { incomplete(); }
 }
@@ -273,12 +255,10 @@ static void load_compressed_sequence(void)
 static size_t initialize_input_decompression(void)
 {
     in_buffer_size = ZSTD_DStreamInSize();
-    in_buffer = (char *)malloc(in_buffer_size);
-    if (!in_buffer) { die("Can't allocate %" PRINT_SIZE_T " bytes for input buffer\n", in_buffer_size); }
+    in_buffer = (char *) malloc_or_die(in_buffer_size);
 
     out_buffer_size = ZSTD_DStreamOutSize();
-    out_buffer = (char *)malloc(out_buffer_size);
-    if (!out_buffer) { die("Can't allocate %" PRINT_SIZE_T " bytes for input buffer\n", out_buffer_size); }
+    out_buffer = (char *) malloc_or_die(out_buffer_size);
 
     input_decompression_stream = ZSTD_createDStream();
     if (!input_decompression_stream) { die("Can't create input decompression stream\n"); }
@@ -308,8 +288,7 @@ static size_t initialize_input_decompression(void)
 static void initialize_memory_decompression(void)
 {
     mem_out_buffer_size = ZSTD_DStreamOutSize();
-    mem_out_buffer = (unsigned char *)malloc(mem_out_buffer_size);
-    if (!mem_out_buffer) { die("Can't allocate %" PRINT_SIZE_T " bytes for input buffer\n", mem_out_buffer_size); }
+    mem_out_buffer = (unsigned char *) malloc_or_die(mem_out_buffer_size);
 
     memory_decompression_stream = ZSTD_createDStream();
     if (!memory_decompression_stream) { die("Can't create memory decompression stream\n"); }
@@ -322,8 +301,7 @@ static void initialize_memory_decompression(void)
 static void initialize_quality_file_decompression(void)
 {
     in_buffer_size = ZSTD_DStreamInSize();
-    in_buffer = (char *)malloc(in_buffer_size);
-    if (!in_buffer) { die("Can't allocate %" PRINT_SIZE_T " bytes for input buffer\n", in_buffer_size); }
+    in_buffer = (char *) malloc_or_die(in_buffer_size);
 
     input_decompression_stream = ZSTD_createDStream();
     if (!input_decompression_stream) { die("Can't create input decompression stream\n"); }

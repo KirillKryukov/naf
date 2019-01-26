@@ -37,7 +37,7 @@ static void open_output_file(void)
         if (len > 4 && strcmp(in_file_path + len - 4, ".naf") == 0 &&
             in_file_path[len - 5] != '/' && in_file_path[len - 5] != '\\')
         {
-            out_file_path_auto = (char*)malloc(len - 3);
+            out_file_path_auto = (char *) malloc_or_die(len - 3);
             memcpy(out_file_path_auto, in_file_path, len - 4);
             out_file_path_auto[len - 4] = 0;
             out_file_path = out_file_path_auto;

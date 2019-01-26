@@ -20,7 +20,7 @@ static void open_input_file(void)
         if (IN == NULL) { die("Can't open input file\n"); }
     }
 
-    in_buffer = (unsigned char *) malloc(in_buffer_size);
+    in_buffer = (unsigned char *) malloc_or_die(in_buffer_size);
 }
 
 
@@ -77,7 +77,7 @@ static void make_temp_files(void)
     if (dataset_name != NULL)
     {
         temp_prefix_length = strlen(dataset_name);
-        temp_prefix = (char*)malloc(temp_prefix_length + 1);
+        temp_prefix = (char *) malloc_or_die(temp_prefix_length + 1);
         strcpy(temp_prefix, dataset_name);
     }
     else if (in_file_path != NULL)
@@ -86,7 +86,7 @@ static void make_temp_files(void)
         while (in_file_name > in_file_path && *(in_file_name-1) != '/' && *(in_file_name-1) != '\\') { in_file_name--; }
         if (verbose) { fprintf(stderr, "Input file name: %s\n", in_file_name); }
         temp_prefix_length = strlen(in_file_name);
-        temp_prefix = (char*)malloc(temp_prefix_length + 1);
+        temp_prefix = (char *) malloc_or_die(temp_prefix_length + 1);
         strcpy(temp_prefix, in_file_name);
     }
     else
@@ -94,7 +94,7 @@ static void make_temp_files(void)
         long long pid = getpid();  // Some C std libs define pid_t as 'int', some as 'long long'.
         srand((unsigned)time(NULL));
         long r = rand() % 2147483648;
-        temp_prefix = (char*)malloc(32);
+        temp_prefix = (char *) malloc_or_die(32);
         snprintf(temp_prefix, 32, "%lld-%ld", pid, r);
         temp_prefix_length = strlen(temp_prefix);
     }
@@ -103,12 +103,12 @@ static void make_temp_files(void)
 
     temp_path_length = strlen(temp_dir) + temp_prefix_length + 11;
 
-    if (store_ids ) { ids_path  = (char*)malloc(temp_path_length); }
-    if (store_comm) { comm_path = (char*)malloc(temp_path_length); }
-    if (store_len ) { len_path  = (char*)malloc(temp_path_length); }
-    if (store_mask) { mask_path = (char*)malloc(temp_path_length); }
-    if (store_seq ) { seq_path  = (char*)malloc(temp_path_length); }
-    if (store_qual) { qual_path = (char*)malloc(temp_path_length); }
+    if (store_ids ) { ids_path  = (char *) malloc_or_die(temp_path_length); }
+    if (store_comm) { comm_path = (char *) malloc_or_die(temp_path_length); }
+    if (store_len ) { len_path  = (char *) malloc_or_die(temp_path_length); }
+    if (store_mask) { mask_path = (char *) malloc_or_die(temp_path_length); }
+    if (store_seq ) { seq_path  = (char *) malloc_or_die(temp_path_length); }
+    if (store_qual) { qual_path = (char *) malloc_or_die(temp_path_length); }
 
     if (store_ids ) { snprintf(ids_path , temp_path_length, "%s/%s.ids",      temp_dir, temp_prefix); }
     if (store_comm) { snprintf(comm_path, temp_path_length, "%s/%s.comments", temp_dir, temp_prefix); }

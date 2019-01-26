@@ -428,12 +428,9 @@ int main(int argc, char **argv)
             {
                 dna_buffer_flush_size = ZSTD_DStreamOutSize() * 2;
                 dna_buffer_size = dna_buffer_flush_size * 2 + 10;
-                dna_buffer = (unsigned char *)malloc(dna_buffer_size);
-                if (!dna_buffer) { die("Can't allocate %" PRINT_SIZE_T " bytes for dna buffer\n", dna_buffer_size); }
-
+                dna_buffer = (unsigned char *) malloc_or_die(dna_buffer_size);
                 out_print_buffer_size = dna_buffer_size * 2;
-                out_print_buffer = (unsigned char *)malloc(out_print_buffer_size);
-                if (!out_print_buffer) { die("Can't allocate %" PRINT_SIZE_T " bytes for dna buffer\n", out_print_buffer_size); }
+                out_print_buffer = (unsigned char *) malloc_or_die(out_print_buffer_size);
 
                 if (out_type == DNA) { print_dna(use_mask && has_mask); }
                 else if (out_type == SEQ) { print_dna(use_mask && has_mask); }

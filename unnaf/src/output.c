@@ -83,7 +83,7 @@ static void print_title(void)
     if (has_title)
     {
         unsigned long long title_size = read_number(IN);
-        char *title = (char *)malloc(title_size+1);
+        char *title = (char *) malloc_or_die(title_size + 1);
         if (fread(title, 1, title_size, IN) != title_size) { incomplete(); }
         title[title_size] = 0;
         fputs(title, OUT);

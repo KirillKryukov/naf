@@ -481,7 +481,7 @@ int main(int argc, char **argv)
         else
         {
             size_t len = strlen(in_file_path) + 5;
-            out_file_path_auto = (char*)malloc(len);
+            out_file_path_auto = (char *) malloc_or_die(len);
             snprintf(out_file_path_auto, len, "%s.naf", in_file_path);
             out_file_path = out_file_path_auto;
         }

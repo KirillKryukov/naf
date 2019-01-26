@@ -13,16 +13,16 @@ static void init_encoders(void)
     assert(mask_units == NULL);
 
     out_buffer_size = ZSTD_CStreamOutSize();
-    out_buffer = malloc(out_buffer_size);
+    out_buffer = malloc_or_die(out_buffer_size);
 
-    out_4bit_buffer = (unsigned char *) malloc(out_buffer_size);
+    out_4bit_buffer = (unsigned char *) malloc_or_die(out_buffer_size);
     out_4bit_pos = out_4bit_buffer;
 
-    file_copy_buffer = (unsigned char *) malloc(file_copy_buffer_size);
+    file_copy_buffer = (unsigned char *) malloc_or_die(file_copy_buffer_size);
 
-    length_units = (unsigned int *) malloc(sizeof(unsigned int) * length_units_buffer_n_units);
+    length_units = (unsigned int *) malloc_or_die(sizeof(unsigned int) * length_units_buffer_n_units);
 
-    mask_units = (unsigned char *) malloc(mask_units_buffer_size);
+    mask_units = (unsigned char *) malloc_or_die(mask_units_buffer_size);
     mask_units_end = mask_units + mask_units_buffer_size;
     mask_units_pos = mask_units;
 }

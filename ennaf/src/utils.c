@@ -5,6 +5,7 @@
  */
 
 
+__attribute__ ((cold))
 __attribute__ ((format (printf, 1, 2)))
 static void msg(const char *format, ...) 
 {
@@ -38,6 +39,22 @@ static void die(const char *format, ...)
     vfprintf(stderr, format, argptr);
     va_end(argptr);
     exit(1);
+}
+
+
+__attribute__ ((cold))
+__attribute__ ((noreturn))
+static void out_of_memory(const size_t size)
+{
+    die("Can't allocate %" PRINT_SIZE_T " bytes\n", size);
+}
+
+
+static void* malloc_or_die(const size_t size)
+{
+    void *buf = malloc(size);
+    if (buf == NULL) { out_of_memory(size); }
+    return buf;
 }
 
 

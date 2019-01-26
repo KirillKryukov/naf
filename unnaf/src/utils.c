@@ -49,6 +49,22 @@ static inline void incomplete(void)
 }
 
 
+__attribute__ ((cold))
+__attribute__ ((noreturn))
+static void out_of_memory(const size_t size)
+{
+    die("Can't allocate %" PRINT_SIZE_T " bytes\n", size);
+}
+
+
+static void* malloc_or_die(const size_t size)
+{
+    void *buf = malloc(size);
+    if (buf == NULL) { out_of_memory(size); }
+    return buf;
+}
+
+
 static void init_tables(void)
 {
     for (unsigned i = 0; i < 16; i++)

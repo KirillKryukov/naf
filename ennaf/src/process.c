@@ -390,9 +390,9 @@ static void process(void)
     // If input format is unknown at this point, it indicates empty input.
     if (in_format_from_input == in_format_unknown) { return; }
 
-    name.data    = (unsigned char *)malloc(STR_ALLOCATED);
-    comment.data = (unsigned char *)malloc(STR_ALLOCATED);
-    seq.data     = (unsigned char *)malloc(STR_ALLOCATED);
+    name.data    = (unsigned char *) malloc_or_die(STR_ALLOCATED);
+    comment.data = (unsigned char *) malloc_or_die(STR_ALLOCATED);
+    seq.data     = (unsigned char *) malloc_or_die(STR_ALLOCATED);
 
     seq.writer = store_mask ? ((in_seq_type < seq_type_protein) ? &seq_writer_masked_4bit : &seq_writer_masked_text)
                             : ((in_seq_type < seq_type_protein) ? &seq_writer_nonmasked_4bit : &seq_writer_nonmasked_text);
@@ -403,7 +403,7 @@ static void process(void)
     }
     else if (in_format_from_input == in_format_fastq)
     {
-        qual.data = (unsigned char *)malloc(STR_ALLOCATED);
+        qual.data = (unsigned char *) malloc_or_die(STR_ALLOCATED);
         process_fastq();
         if (qual.length != 0) { qual.writer(qual.data, qual.length); qual.length = 0; }
     }
