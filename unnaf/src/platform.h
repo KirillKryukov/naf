@@ -3,6 +3,16 @@
 #define ENNAF_PLATFORM_H
 
 
+#if defined(__MINGW32__) || defined(__MINGW64__) || defined(_WIN32) || defined(_WIN64) || defined(WIN32) || defined(WIN64)
+#define PRINT_ULL "I64u"
+#define PRINT_SIZE_T "Iu"
+#else
+#define PRINT_ULL "llu"
+#define PRINT_SIZE_T "zu"
+#endif
+
+
+
 #if defined(__MINGW32__) || defined(__MINGW64__)
 #define HAVE_NO_CHMOD
 #define HAVE_NO_CHOWN

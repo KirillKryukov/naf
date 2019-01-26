@@ -104,7 +104,7 @@ static void print_fastq(int masking)
         quality_buffer_flush_size = ZSTD_DStreamOutSize();
         quality_buffer_size = quality_buffer_flush_size * 2 + 10;
         quality_buffer = (char *)malloc(quality_buffer_size);
-        if (!quality_buffer) { die("Can't allocate %zu bytes for quality buffer\n", quality_buffer_size); }
+        if (!quality_buffer) { die("Can't allocate %" PRINT_SIZE_T " bytes for quality buffer\n", quality_buffer_size); }
 
         load_ids();
         load_names();
