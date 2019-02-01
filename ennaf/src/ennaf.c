@@ -5,7 +5,7 @@
  */
 
 #define VERSION "1.1.0"
-#define DATE "2019-01-26"
+#define DATE "2019-02-01"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -27,7 +27,7 @@
 #include "tables.c"
 
 
-static const unsigned char naf_magic_number[4] = "\x01\xF9\xEC";
+static const unsigned char naf_magic_number[3] = { 0x01u, 0xF9u, 0xECu };
 
 static bool verbose = false;
 static bool keep_temp_files = false;
@@ -75,7 +75,9 @@ static int in_format_from_extension = in_format_unknown;
 enum { seq_type_dna, seq_type_rna, seq_type_protein, seq_type_text };
 static int in_seq_type = seq_type_dna;
 static const char *in_seq_type_name = "DNA";
-static unsigned char unexpected_char_replacement = 'N';
+static unsigned char unexpected_seq_char_replacement = 'N';
+static const unsigned char unexpected_name_char_replacement = '?';
+static const unsigned char unexpected_qual_char_replacement = '!';  // Unknown character can only mean poor quality.
 
 static bool extended_format = false;
 static bool store_title = false;
@@ -139,6 +141,7 @@ static unsigned long long n_sequences = 0ull;
 
 static const bool *is_unexpected_arr = is_unexpected_dna_arr;
 static bool abort_on_unexpected_code = false;
+static bool assume_well_formed_input = false;
 
 static size_t out_buffer_size = 0;
 static void *out_buffer = NULL;
@@ -355,6 +358,7 @@ static void show_help(void)
         "  --rna              - Input sequence is RNA\n"
         "  --protein          - Input sequence is protein\n"
         "  --text             - Input sequence is unrestricted text\n"
+        "  --well-formed      - Assume well-formed input\n"
         "  --strict           - Fail on unexpected input characters\n"
         "  --line-length N    - Override line length to N\n"
         "  --verbose          - Verbose mode\n"
@@ -400,6 +404,7 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--rna")) { in_seq_type = seq_type_rna; continue; }
                 if (!strcmp(argv[i], "--protein")) { in_seq_type = seq_type_protein; continue; }
                 if (!strcmp(argv[i], "--text")) { in_seq_type = seq_type_text; continue; }
+                if (!strcmp(argv[i], "--well-formed")) { assume_well_formed_input = true; continue; }
                 if (!strcmp(argv[i], "--strict")) { abort_on_unexpected_code = true; continue; }
             }
 
@@ -426,7 +431,12 @@ static void parse_command_line(int argc, char **argv)
 
     if (force_stdout && out_file_path != NULL)
     {
-        die("Error: -c and -o arguments can't be used together\n");
+        die("Error: '-c' and '-o' can't be used together\n");
+    }
+
+    if (assume_well_formed_input && abort_on_unexpected_code)
+    {
+        die("Error: '--well-formed' and '--strict' can't be used together\n");
     }
 }
 
@@ -447,25 +457,25 @@ int main(int argc, char **argv)
     {
         is_unexpected_arr = is_unexpected_dna_arr;
         in_seq_type_name = "DNA";
-        unexpected_char_replacement = 'N';
+        unexpected_seq_char_replacement = 'N';
     }
     if (in_seq_type == seq_type_rna)
     {
         is_unexpected_arr = is_unexpected_rna_arr;
         in_seq_type_name = "RNA";
-        unexpected_char_replacement = 'N';
+        unexpected_seq_char_replacement = 'N';
     }
     else if (in_seq_type == seq_type_protein)
     {
         is_unexpected_arr = is_unexpected_protein_arr;
         in_seq_type_name = "protein";
-        unexpected_char_replacement = 'X';
+        unexpected_seq_char_replacement = 'X';
     }
     else if (in_seq_type == seq_type_text)
     {
         is_unexpected_arr = is_unexpected_text_arr;
         in_seq_type_name = "text";
-        unexpected_char_replacement = '?';
+        unexpected_seq_char_replacement = '?';
     }
 
     detect_temp_directory();
@@ -623,7 +633,7 @@ int main(int argc, char **argv)
     if (out_file_path != NULL && have_input_stat) { close_output_file_and_set_stat(); }
     else { close_output_file(); }
 
-    report_unexpected_input_char_stats();
+    if (!assume_well_formed_input) { report_unexpected_input_char_stats(); }
 
     if (verbose) { msg("Processed %" PRINT_ULL " sequences\n", n_sequences); }
     success = true;
