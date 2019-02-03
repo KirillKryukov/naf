@@ -8,23 +8,7 @@
 #define DATE "2019-01-26"
 #define COPYRIGHT_YEARS "2018-2019"
 
-#define NDEBUG
-
-#include <assert.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <sys/stat.h>
-
-#define ZSTD_STATIC_LINKING_ONLY
-#include <zstd.h>
-
 #include "platform.h"
-
 
 static unsigned char code_to_nuc[16] = {'-','T','G','K','C','Y','S','B','A','W','R','D','M','H','V','N'};
 static unsigned short codes_to_nucs[256];

@@ -6,6 +6,7 @@ export prefix = /usr/local
 .PHONY: default all clean install uninstall
 
 default:
+	$(MAKE) -C zstd/lib libzstd.a
 	$(MAKE) -C ennaf
 	$(MAKE) -C unnaf
 

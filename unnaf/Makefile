@@ -4,8 +4,8 @@
 TARGET = unnaf
 
 CC = gcc
-CFLAGS = -std=gnu99 -Wall -Wextra -O3 -march=native -ffast-math -s
-LDFLAGS ?= -l:libzstd.a
+CFLAGS = -std=gnu99 -Wall -Wextra -O3 -march=native -ffast-math -s -I../zstd/lib
+LDFLAGS = ../zstd/lib/libzstd.a
 
 .PHONY: default all clean install uninstall
 

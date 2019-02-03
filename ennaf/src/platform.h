@@ -3,6 +3,23 @@
 #define ENNAF_PLATFORM_H
 
 
+#define NDEBUG
+
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include <stdarg.h>
+#include <time.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
+#define ZSTD_STATIC_LINKING_ONLY
+#include <zstd.h>
+
+
+
 #if defined(__MINGW32__) || defined(__MINGW64__) || defined(_WIN32) || defined(_WIN64) || defined(WIN32) || defined(WIN64)
 #define PRINT_ULL "I64u"
 #define PRINT_SIZE_T "Iu"
