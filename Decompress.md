@@ -5,6 +5,8 @@
 `unnaf file.naf >file.fa` - Decompress into default format
 (FASTQ if input NAF file contains qualities, FASTA otherwise).
 
+`unnaf file.fa.naf` - Decompress into automatically named 'file.fa' (the .naf file is never deleted).
+
 `unnaf --number file.naf` - Show number of sequences stored in "file.naf".
 
 `unnaf --ids file.naf >ids.txt` - Extract sequence IDs (accession numbers).
@@ -12,13 +14,6 @@
 `unnaf --fasta file.naf >file.fa` - Extract FASTA-formatted sequences (even if "file.naf" has qualities).
 
 `unnaf --fastq file.naf >file.fq` - Decompress into FASTQ format (fails if "file.naf" has no qualities).
-
-## Output stream
-
-unnaf prints all output to standard output stream.
-Take care to not decompress a massive file to your terminal.
-Try to always redirect output to file, or pipe into next command,
-other than for small outputs such as `--number`.
 
 ## Options for specifying output type
 
@@ -28,7 +23,7 @@ Only one of these options should be specified:
 
 **--fastq** - FASTQ format. Will fail if input has no qualities.
 
-**--dna** - All sequences concatenated into one, without names or line breaks.
+**--seq** - All sequences concatenated into one, without names or line breaks.
 
 **--number** - Number of sequences.
 
@@ -45,6 +40,7 @@ Only one of these options should be specified:
 **--mask** - List of mask interval lengths.
 
 **--4bit** - All sequences, concatenated, in 4-bit encoding (binary data).
+(Only works for DNA or RNA sequences).
 
 **--part-list** - List of sections of NAF file.
 

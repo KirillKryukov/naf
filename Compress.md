@@ -59,12 +59,14 @@ and '-' (gap).
 I.e., entire Latin alphabet, asterisk and dash.
 
 **--text** - Input has text sequences.
-Each sequence can include any printable single byte characters, which means characters in code ranges: 32..126 and 128..254.
+Each sequence can include any printable single byte characters, which means characters in code ranges: 33..126 and 128..254.
 
 **--strict** - Fail on encountering any non-standard sequence character.
 The list of standard characters depends on sequence type, selected using `--dna`, `--rna`, `--protein` or `--text` option.
 Without `--strict` , the compressor will simply replace any unknown characters with the default substitution character
 ('N' for DNA/RNA, 'X' for protein, '?' for text), and report the total number of occurrences for each unexpected character.
+
+**--well-formed** - Assume well-formed input.
 
 **--line-length N** - Store line length N in the output NAF file.
 If omitted, stores the maximum sequence line length from the input.
@@ -121,3 +123,48 @@ A mismatching file extension produces a warning, but does not stop the compressi
     * If output is redirected away from console, compressed output is sent to stdout (standard output stream).
     * If stdout is console and input file is specified, output file is automatically named by appending ".naf" to input path.
     * Otherwise an error message is shown.
+
+## What characters are supported in sequences?
+
+Input sequence type can be selected by "--dna", "--rna", "--protein" or "--text" argument.
+If not specified, by default input is assumed to be DNA.
+
+Recognized characters in each sequence type:
+  * DNA: "ACGTacgt" (nucleotide codes), "RYSWKMBDHVNryswkmbdhvn" (ambiguous codes), '-' (gap).
+  * RNA: "ACGUacgu" (nucleotide codes), "RYSWKMBDHVNryswkmbdhvn" (ambiguous codes), '-' (gap).
+  * Protein: 'A' to 'Z' and 'a' to 'z', '\*' (stop codon), '-' (gap).
+  * Text: Characters with codes 33..126 and 128..254 (printable non-space ASCII and extended ASCII).
+
+For DNA/RNA, if '--no-mask' is specified, all lower case characters are stored in upper case.
+
+## What happens to unsupported characters?
+
+Any spaces and tabs found in the input sequences are silently discarded.
+They never appear in decompressed sequences.
+
+As for any other unknown characters:
+If "--strict" is specified, any such character causes compression to fail with error message.
+(No output file is produced).
+
+Without "--strict" the unsupported characters are replaced by:
+  * 'N' for DNA/RNA
+  * 'X' for protein
+  * '?' for text
+
+The compressor also reports the number of each unknown character.
+
+(Note that with '--well-formed' option,
+the input is not verified for spaces or other unknown characters.
+So use it entirely on your own risk).
+
+## What FASTQ variants are supported?
+
+Only single line sequence and quality are supported in FASTQ input.
+
+The compressor ignores the content of the '+' line, and does not verify it for identity with the '@' line.
+In the decompressed FASTQ output, the '+' line is always empty (has nothing except the '+'), regardless of what it contained before compression.
+
+Quality can include characters with codes from 33 to 126 (printable non-space ASCII).
+
+By default DNA sequences are expected,
+however '--rna', '--protein' and '--text' options are available for FASTQ as well.
