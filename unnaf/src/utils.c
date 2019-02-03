@@ -19,7 +19,7 @@ __attribute__ ((cold))
 __attribute__ ((format (printf, 1, 2)))
 static void err(const char *format, ...) 
 {
-    fputs("ennaf: ", stderr);
+    fputs("unnaf: ", stderr);
     va_list argptr;
     va_start(argptr, format);
     vfprintf(stderr, format, argptr);
@@ -32,7 +32,7 @@ __attribute__ ((format (printf, 1, 2)))
 __attribute__ ((noreturn))
 static void die(const char *format, ...) 
 {
-    fputs("ennaf: ", stderr);
+    fputs("unnaf: ", stderr);
     va_list argptr;
     va_start(argptr, format);
     vfprintf(stderr, format, argptr);

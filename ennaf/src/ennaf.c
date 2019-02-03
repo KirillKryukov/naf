@@ -5,7 +5,7 @@
  */
 
 #define VERSION "1.1.0"
-#define DATE "2019-02-01"
+#define DATE "2019-02-03"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #define NDEBUG
@@ -357,7 +357,7 @@ static void show_help(void)
         "  --dna              - Input sequence is DNA (default)\n"
         "  --rna              - Input sequence is RNA\n"
         "  --protein          - Input sequence is protein\n"
-        "  --text             - Input sequence is unrestricted text\n"
+        "  --text             - Input sequence is text\n"
         "  --well-formed      - Assume well-formed input\n"
         "  --strict           - Fail on unexpected input characters\n"
         "  --line-length N    - Override line length to N\n"
@@ -373,6 +373,7 @@ static void show_help(void)
 static void parse_command_line(int argc, char **argv)
 {
     bool print_version = false;
+    bool no_mask = false;
 
     for (int i = 1; i < argc; i++)
     {
@@ -397,7 +398,7 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
                 if (!strcmp(argv[i], "--verbose")) { verbose = true; continue; }
                 if (!strcmp(argv[i], "--keep-temp-files")) { keep_temp_files = true; continue; }
-                if (!strcmp(argv[i], "--no-mask")) { store_mask = false; continue; }
+                if (!strcmp(argv[i], "--no-mask")) { no_mask = true; continue; }
                 if (!strcmp(argv[i], "--fasta")) { set_input_format_from_command_line("fasta"); continue; }
                 if (!strcmp(argv[i], "--fastq")) { set_input_format_from_command_line("fastq"); continue; }
                 if (!strcmp(argv[i], "--dna")) { in_seq_type = seq_type_dna; continue; }
@@ -438,6 +439,12 @@ static void parse_command_line(int argc, char **argv)
     {
         die("Error: '--well-formed' and '--strict' can't be used together\n");
     }
+
+    if (no_mask)
+    {
+        if (in_seq_type < seq_type_protein) { store_mask = false; }
+        else { die("Error: '--no-mask' is supported only for DNA or RNA sequences\n"); }
+    }
 }
 
 
@@ -470,12 +477,14 @@ int main(int argc, char **argv)
         is_unexpected_arr = is_unexpected_protein_arr;
         in_seq_type_name = "protein";
         unexpected_seq_char_replacement = 'X';
+        store_mask = false;
     }
     else if (in_seq_type == seq_type_text)
     {
         is_unexpected_arr = is_unexpected_text_arr;
         in_seq_type_name = "text";
         unexpected_seq_char_replacement = '?';
+        store_mask = false;
     }
 
     detect_temp_directory();

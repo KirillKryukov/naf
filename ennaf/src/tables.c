@@ -10,10 +10,10 @@
 
 /*
  * End-of-line ASCII characters:
- *   0x10 - LF - line feed
- *   0x11 - VT - vertical tab
- *   0x12 - FF - form feed
- *   0x13 - CR - carriage return
+ *   '\x0A' - LF - line feed
+ *   '\x0B' - VT - vertical tab
+ *   '\x0C' - FF - form feed
+ *   '\x0D' - CR - carriage return
  */
 static const bool is_eol_arr[257] = {
     0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -27,12 +27,12 @@ static const bool is_eol_arr[257] = {
 
 /*
  * Space ASCII characters:
- *   0x09 - TAB - horizontal tab
- *   0x10 - LF - line feed
- *   0x11 - VT - vertical tab
- *   0x12 - FF - form feed
- *   0x13 - CR - carriage return
- *   0x20 - space
+ *   '\x09' - TAB - horizontal tab
+ *   '\x0A' - LF - line feed
+ *   '\x0B' - VT - vertical tab
+ *   '\x0C' - FF - form feed
+ *   '\x0D' - CR - carriage return
+ *   '\x20' - space
  */
 static const bool is_space_arr[257] = {
     0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -46,8 +46,8 @@ static const bool is_space_arr[257] = {
 
 /*
  * Well-formed input can have "spaces" of two kinds only:
- *   0x10 - LF - line feed
- *   0x20 - space
+ *   '\x0A' - LF - line feed
+ *   '\x20' - space
  */
 static const bool is_well_formed_space_arr[257] = {
     0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
