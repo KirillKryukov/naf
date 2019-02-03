@@ -28,13 +28,13 @@ Check if the [latest release](https://github.com/KirillKryukov/naf/releases) has
 
 ### Building from latest source
 
-Prerequisites: git (for downloading), zstd, gcc, make.
-E.g., to install on Ubuntu: `sudo apt install git gcc make libzstd-dev`.
+Prerequisites: git (for downloading), gcc, make.
+E.g., to install on Ubuntu: `sudo apt install git gcc make`.
 
 Building and installing:
 
 ```
-git clone https://github.com/KirillKryukov/naf.git
+git clone --recurse-submodules https://github.com/KirillKryukov/naf.git
 cd naf && make && sudo make install
 ```
 
@@ -44,11 +44,7 @@ For a staged install, add "DESTDIR=DIR". E.g., `make DESTDIR=/tmp/stage install`
 
 On Windows it can be installed using [Cygwin](https://www.cygwin.com/),
 and should be also possible with [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
-In Cygwin by default there's no static zstd library, so you have to add `LDFLAGS=-lzstd`. Also drop `sudo`.
-So the command series becomes: `cd naf && make LDFLAGS=-lzstd && make install`
-
-On Mac OS the default install of zstd offers no static library,
-so you have to add `LDFLAGS=-lzstd` to the make command: `cd naf && make LDFLAGS=-lzstd && sudo make install`.
+In Cygwin drop `sudo`: `cd naf && make && make install`
 
 ## Compressing
 
