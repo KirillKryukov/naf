@@ -26,9 +26,9 @@ However, if you decompress it back with _unnaf_, your space is again _un-enough_
 
 Check if the [latest release](https://github.com/KirillKryukov/naf/releases) has a build for your platform.
 
-### Building from latest source
+### Building from source
 
-Prerequisites: git (for downloading), gcc, make.
+Prerequisites: git, gcc, make.
 E.g., to install on Ubuntu: `sudo apt install git gcc make`.
 On Mac OS you may have to install Xcode Command Line Tools.
 
@@ -46,6 +46,15 @@ For a staged install, add "DESTDIR=DIR". E.g., `make DESTDIR=/tmp/stage install`
 On Windows it can be installed using [Cygwin](https://www.cygwin.com/),
 and should be also possible with [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
 In Cygwin drop `sudo`: `cd naf && make && make install`
+
+### Building from latest unreleased source
+
+For testing purpose only:
+```
+git clone --recurse-submodules --branch develop https://github.com/KirillKryukov/naf.git
+cd naf && make && sudo make install
+
+```
 
 ## Compressing
 
