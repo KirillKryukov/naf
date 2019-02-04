@@ -30,6 +30,7 @@ Check if the [latest release](https://github.com/KirillKryukov/naf/releases) has
 
 Prerequisites: git (for downloading), gcc, make.
 E.g., to install on Ubuntu: `sudo apt install git gcc make`.
+On Mac OS you may have to install Xcode Command Line Tools.
 
 Building and installing:
 
@@ -54,7 +55,7 @@ See `ennaf -h` and [Compression Manual](Compress.md) for detailed usage.
 
 ## Decompressing
 
-`unnaf file.naf >file.fasta`
+`unnaf file.naf -o file.fa`
 
 See `unnaf -h` and [Decompression Manual](Decompress.md).
 
