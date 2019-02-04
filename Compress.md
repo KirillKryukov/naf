@@ -168,3 +168,16 @@ Quality can include characters with codes from 33 to 126 (printable non-space AS
 
 By default DNA sequences are expected,
 however '--rna', '--protein' and '--text' options are available for FASTQ as well.
+
+## Preserving non-standard sequence characters
+
+For example, your DNA sequence may use 'Z' for methilated cytosine.
+It will change into 'N' if you compress it as DNA.
+Therefore, please switch to protein mode (`--protein`) to preserve 'Z' and other non-standard codes.
+
+Similarly, if you mix DNA and RNA ('T' and 'U') in a single FASTA file,
+you have to use protein mode.
+
+If your non-standard codes go beyond alphabet and include digits or punctuation
+(such as '.' for identical base with first sequence),
+you have to switch to text mode (`--text`).
