@@ -17,9 +17,21 @@ static void msg(const char *format, ...)
 
 __attribute__ ((cold))
 __attribute__ ((format (printf, 1, 2)))
+static void warn(const char *format, ...) 
+{
+    fputs("unnaf warning: ", stderr);
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+}
+
+
+__attribute__ ((cold))
+__attribute__ ((format (printf, 1, 2)))
 static void err(const char *format, ...) 
 {
-    fputs("unnaf: ", stderr);
+    fputs("unnaf error: ", stderr);
     va_list argptr;
     va_start(argptr, format);
     vfprintf(stderr, format, argptr);
@@ -32,7 +44,7 @@ __attribute__ ((format (printf, 1, 2)))
 __attribute__ ((noreturn))
 static void die(const char *format, ...) 
 {
-    fputs("unnaf: ", stderr);
+    fputs("unnaf error: ", stderr);
     va_list argptr;
     va_start(argptr, format);
     vfprintf(stderr, format, argptr);
@@ -45,7 +57,7 @@ __attribute__ ((cold))
 __attribute__ ((noreturn))
 static inline void incomplete(void)
 {
-    die("Incomplete or truncated input\n");
+    die("incomplete or truncated input\n");
 }
 
 
@@ -53,7 +65,7 @@ __attribute__ ((cold))
 __attribute__ ((noreturn))
 static void out_of_memory(const size_t size)
 {
-    die("Can't allocate %" PRINT_SIZE_T " bytes\n", size);
+    die("can't allocate %" PRINT_SIZE_T " bytes\n", size);
 }
 
 
@@ -92,7 +104,7 @@ static void fflush_or_die(FILE *F)
     assert(F != NULL);
 
     int error = fflush(F);
-    if (error != 0) { die("Error: Can't write to file. Disk full?\n"); }
+    if (error != 0) { die("can't write to file - disk full?\n"); }
 }
 
 
@@ -101,7 +113,7 @@ static void fclose_or_die(FILE *F)
     assert(F != NULL);
 
     int error = fclose(F);
-    if (error != 0) { die("Error: Can't write to file. Disk full?\n"); }
+    if (error != 0) { die("can't close file - disk full?\n"); }
 }
 
 
@@ -112,14 +124,14 @@ static unsigned long long read_number(FILE *F)
 {
     assert(F != NULL);
 
-    static const char *overflow_msg = "Invalid input: overflow reading a variable length encoded number\n";
+    static const char *overflow_msg = "invalid input: overflow reading a variable length encoded number\n";
 
     unsigned long long a = 0;
     unsigned char c;
 
     if (!fread(&c, 1, 1, F)) { incomplete(); }
 
-    if (c == 128) { die("Invalid input: error parsing variable length encoded number\n"); }
+    if (c == 128) { die("invalid input: error parsing variable length encoded number\n"); }
 
     while (c & 128)
     {

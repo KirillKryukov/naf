@@ -106,7 +106,7 @@ static void unexpected_id_char(unsigned c)
 {
     if (abort_on_unexpected_code)
     {
-        die("Error: Unexpected character '%c' in ID of sequence %" PRINT_ULL "\n", (unsigned char)c, n_sequences + 1);
+        die("unexpected character '%c' in ID of sequence %" PRINT_ULL "\n", (unsigned char)c, n_sequences + 1);
     }
     else { n_unexpected_id_characters[c]++; }
 }
@@ -117,7 +117,7 @@ static void unexpected_comment_char(unsigned c)
 {
     if (abort_on_unexpected_code)
     {
-        die("Error: Unexpected character '%c' in comment of sequence %" PRINT_ULL "\n", (unsigned char)c, n_sequences + 1);
+        die("unexpected character '%c' in comment of sequence %" PRINT_ULL "\n", (unsigned char)c, n_sequences + 1);
     }
     else { n_unexpected_comment_characters[c]++; }
 }
@@ -128,7 +128,7 @@ static void unexpected_input_char(unsigned c)
 {
     if (abort_on_unexpected_code)
     {
-        die("Error: Unexpected %s code '%c' in sequence %" PRINT_ULL "\n", in_seq_type_name, (unsigned char)c, n_sequences + 1);
+        die("unexpected %s code '%c' in sequence %" PRINT_ULL "\n", in_seq_type_name, (unsigned char)c, n_sequences + 1);
     }
     else { n_unexpected_seq_characters[c]++; }
 }
@@ -139,7 +139,7 @@ static void unexpected_quality_char(unsigned c)
 {
     if (abort_on_unexpected_code)
     {
-        die("Error: Unexpected quality code '%c' in sequence %" PRINT_ULL "\n", (unsigned char)c, n_sequences + 1);
+        die("unexpected quality code '%c' in sequence %" PRINT_ULL "\n", (unsigned char)c, n_sequences + 1);
     }
     else { n_unexpected_qual_characters[c]++; }
 }
@@ -422,30 +422,30 @@ static void process_well_formed_fastq(void)
         if (c == ' ') { c = in_get_until_specific_char('\n', &comment); }
         str_append_char(&comment, '\0');
 
-        if (c == INEOF) { die("Error: truncated FASTQ input: last sequence has no sequence data\n"); }
+        if (c == INEOF) { die("truncated FASTQ input: last sequence has no sequence data\n"); }
         unsigned long long old_len = seq_size_original + seq.length;
         c = in_get_until_specific_char('\n', &seq);
         unsigned long long read_length = seq_size_original + seq.length - old_len;
         if (read_length > longest_line_length) { longest_line_length = read_length; }
 
-        if (c == INEOF) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
+        if (c == INEOF) { die("truncated FASTQ input: last sequence has no quality\n"); }
         c = in_get_char();
-        if (c != '+') { die("Error: not well-formed FASTQ input\n"); }
+        if (c != '+') { die("not well-formed FASTQ input\n"); }
         c = in_get_char();
-        if (c != '\n') { die("Error: not well-formed FASTQ input\n"); }
+        if (c != '\n') { die("not well-formed FASTQ input\n"); }
 
         old_len = qual_size_original + qual.length;
         c = in_get_until_specific_char('\n', &qual);
         if (qual_size_original + qual.length - old_len != read_length)
         {
-            die("Error: quality length of sequence %" PRINT_ULL " doesn't match sequence length\n", n_sequences + 1);
+            die("quality length of sequence %" PRINT_ULL " doesn't match sequence length\n", n_sequences + 1);
         }
 
         add_length(read_length);
         n_sequences++;
 
         if (c == INEOF) { break; }
-        if (c != '@') { die("Error: not well-formed FASTQ input\n"); }
+        if (c != '@') { die("not well-formed FASTQ input\n"); }
     }
 }
 
@@ -472,7 +472,7 @@ static void process_non_well_formed_fastq(void)
         }
         str_append_char(&comment, '\0');
 
-        if (c == INEOF) { die("Error: truncated FASTQ input: last sequence has no sequence data\n"); }
+        if (c == INEOF) { die("truncated FASTQ input: last sequence has no sequence data\n"); }
         unsigned long long old_len = seq_size_original + seq.length;
         while ( (c = in_get_until(is_unexpected_arr, &seq)) != INEOF)
         {
@@ -483,17 +483,17 @@ static void process_non_well_formed_fastq(void)
         unsigned long long read_length = seq_size_original + seq.length - old_len;
         if (read_length > longest_line_length) { longest_line_length = read_length; }
 
-        if (c == INEOF) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
+        if (c == INEOF) { die("truncated FASTQ input: last sequence has no quality\n"); }
 
         do { c = in_get_char(); } while (is_eol_arr[c]);
-        if (c == INEOF) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
-        if (c != '+') { die("Error: invalid FASTQ input: can't find '+' line of sequence %" PRINT_ULL "\n", n_sequences + 1); }
+        if (c == INEOF) { die("truncated FASTQ input: last sequence has no quality\n"); }
+        if (c != '+') { die("invalid FASTQ input: can't find '+' line of sequence %" PRINT_ULL "\n", n_sequences + 1); }
 
         c = in_skip_until(is_eol_arr);
-        if (c == INEOF) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
+        if (c == INEOF) { die("truncated FASTQ input: last sequence has no quality\n"); }
 
         do { c = in_get_char(); } while (is_eol_arr[c]);
-        if (c == INEOF) { die("Error: truncated FASTQ input: last sequence has no quality\n"); }
+        if (c == INEOF) { die("truncated FASTQ input: last sequence has no quality\n"); }
 
         old_len = qual_size_original + qual.length;
         str_append_char(&qual, (unsigned char)c);
@@ -506,7 +506,7 @@ static void process_non_well_formed_fastq(void)
         unsigned long long qual_length = qual_size_original + qual.length - old_len;
         if (qual_length != read_length)
         {
-            die("Error: quality length of sequence %" PRINT_ULL " (%" PRINT_ULL ") doesn't match sequence length (%" PRINT_ULL ")\n",
+            die("quality length of sequence %" PRINT_ULL " (%" PRINT_ULL ") doesn't match sequence length (%" PRINT_ULL ")\n",
                 n_sequences + 1, qual_length, read_length);
         }
 
@@ -515,7 +515,7 @@ static void process_non_well_formed_fastq(void)
 
         do { c = in_get_char(); } while (is_eol_arr[c]);
         if (c == INEOF) { break; }
-        if (c != '@') { die("Error: invalid FASTQ input: Can't find '@' after sequence %" PRINT_ULL "\n", n_sequences); }
+        if (c != '@') { die("invalid FASTQ input: Can't find '@' after sequence %" PRINT_ULL "\n", n_sequences); }
     }
 }
 
@@ -534,27 +534,27 @@ static void confirm_input_format(void)
     else if (c == '@' && is_eol_arr[last_c]) { in_format_from_input = in_format_fastq; }
     else
     {
-        if (c == '>' || c == '@') { die("Invalid input: First '%c' is not at the beginning of the line\n", (unsigned char)c); }
-        else { die("Input data is in unknown format: first non-space character is neither '>' nor '@'\n"); }
+        if (c == '>' || c == '@') { die("invalid input - first '%c' is not at the beginning of the line\n", (unsigned char)c); }
+        else { die("input data is in unknown format - first non-space character is neither '>' nor '@'\n"); }
     }
 
     if (in_format_from_command_line != in_format_unknown &&
         in_format_from_command_line != in_format_from_input)
     {
-        die("Error: Input data format is different from format specified in the command line\n");
+        die("input format is different from format specified in the command line\n");
     }    
 
     if (in_format_from_extension != in_format_unknown &&
         in_format_from_extension != in_format_from_input)
     {
-        err("Warning: Input file extension does not match its actual format\n");
+        warn("input file extension does not match its actual format\n");
     }
 
     if (in_format_from_extension != in_format_unknown &&
         in_format_from_command_line != in_format_unknown &&
         in_format_from_extension != in_format_from_command_line)
     {
-        err("Warning: Input file extension does not match format specified in the command line\n");
+        warn("input file extension does not match format specified in the command line\n");
     }
 }
 

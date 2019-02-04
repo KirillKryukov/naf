@@ -40,7 +40,7 @@ Only one of these options should be specified:
 **--mask** - List of mask interval lengths.
 
 **--4bit** - All sequences, concatenated, in 4-bit encoding (binary data).
-(Only works for DNA or RNA sequences).
+(Only works for DNA and RNA sequences).
 
 **--part-list** - List of sections of NAF file.
 
@@ -57,7 +57,8 @@ Only one of these options should be specified:
 **--line-length N** - Divide sequences into lines of N bp, ignoring line length stored in the NAF file.
 Effective only for `--fasta` output. Line length of 0 means unlimited lines, i.e., each sequence printed in single line.
 
-**--no-mask** - Ignore mask, useful only for `--fasta` and `--dna` outputs.
+**--no-mask** - Ignore mask, useful only for `--fasta` and `--seq` outputs.
+Supported only for DNA and RNA sequences.
 
 **-h**, **--help** - Show usage help.
 

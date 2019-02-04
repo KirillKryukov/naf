@@ -167,7 +167,7 @@ static void copy_file_to_out(FILE* FROM, char *from_path, long start, unsigned l
 
     fflush_or_die(FROM);
 
-    if (fseek(FROM, start, SEEK_SET) != 0) { die("Can't seek to data start in \"%s\"\n", from_path); }
+    if (fseek(FROM, start, SEEK_SET) != 0) { die("can't seek to data start in \"%s\"\n", from_path); }
 
     unsigned long long remaining = data_size;
     while (remaining > 0)
@@ -177,4 +177,22 @@ static void copy_file_to_out(FILE* FROM, char *from_path, long start, unsigned l
         fwrite_or_die(file_copy_buffer, 1, to_read, OUT);
         remaining -= to_read;
     }
+}
+
+
+static void write_variable_length_encoded_number(FILE *F, unsigned long long a)
+{
+    assert(F != NULL);
+
+    unsigned char vle_buffer[10];
+    unsigned char *b = vle_buffer + 10;
+    *--b = (unsigned char)(a & 127ull);
+    a >>= 7;
+    while (a > 0)
+    {
+        *--b = (unsigned char)(128ull | (a & 127ull));
+        a >>= 7;
+    }
+    size_t len = (size_t)(vle_buffer + 10 - b);
+    fwrite_or_die(b, 1, len, F);
 }

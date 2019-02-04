@@ -5,7 +5,6 @@
  */
 
 
-__attribute__ ((cold))
 __attribute__ ((format (printf, 1, 2)))
 static void msg(const char *format, ...) 
 {
@@ -18,9 +17,21 @@ static void msg(const char *format, ...)
 
 __attribute__ ((cold))
 __attribute__ ((format (printf, 1, 2)))
+static void warn(const char *format, ...) 
+{
+    fputs("ennaf warning: ", stderr);
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+}
+
+
+__attribute__ ((cold))
+__attribute__ ((format (printf, 1, 2)))
 static void err(const char *format, ...) 
 {
-    fputs("ennaf: ", stderr);
+    fputs("ennaf error: ", stderr);
     va_list argptr;
     va_start(argptr, format);
     vfprintf(stderr, format, argptr);
@@ -33,7 +44,7 @@ __attribute__ ((format (printf, 1, 2)))
 __attribute__ ((noreturn))
 static void die(const char *format, ...) 
 {
-    fputs("ennaf: ", stderr);
+    fputs("ennaf error: ", stderr);
     va_list argptr;
     va_start(argptr, format);
     vfprintf(stderr, format, argptr);
@@ -46,7 +57,7 @@ __attribute__ ((cold))
 __attribute__ ((noreturn))
 static void out_of_memory(const size_t size)
 {
-    die("Can't allocate %" PRINT_SIZE_T " bytes\n", size);
+    die("can't allocate %" PRINT_SIZE_T " bytes\n", size);
 }
 
 
@@ -78,7 +89,7 @@ static void fread_or_die(void *ptr, size_t element_size, size_t n_elements, FILE
     assert(ptr != NULL);
     assert(F != NULL);
     size_t elements_read = fread(ptr, element_size, n_elements, F);
-    if (elements_read != n_elements) { die("Error reading from file\n"); }
+    if (elements_read != n_elements) { die("can't read from file\n"); }
 }
 
 
@@ -87,14 +98,14 @@ static void fwrite_or_die(const void *ptr, size_t element_size, size_t n_element
     assert(ptr != NULL);
     assert(F != NULL);
     size_t elements_written = fwrite(ptr, element_size, n_elements, F);
-    if (elements_written != n_elements) { die("Error writing to file\n"); }
+    if (elements_written != n_elements) { die("can't write to file - disk full?\n"); }
 }
 
 
 static void fputc_or_die(int c, FILE *F)
 {
     assert(F != NULL);
-    if (fputc(c, F) != c) { die("Error writing to file\n"); }
+    if (fputc(c, F) != c) { die("can't write to file - disk full?\n"); }
 }
 
 
@@ -102,7 +113,7 @@ static void fflush_or_die(FILE *F)
 {
     assert(F != NULL);
     int error = fflush(F);
-    if (error != 0) { die("Error: Can't write to file. Disk full?\n"); }
+    if (error != 0) { die("can't write to file - disk full?\n"); }
 }
 
 
@@ -111,7 +122,7 @@ static void fclose_or_die(FILE *F)
     assert(F != NULL);
 
     int error = fclose(F);
-    if (error != 0) { die("Error: Can't write to file. Disk full?\n"); }
+    if (error != 0) { die("can't close file - disk full?\n"); }
 }
 
 
@@ -121,7 +132,7 @@ static FILE* create_temp_file(char *path, const char *purpose)
     assert(purpose != NULL);
 
     FILE *F = fopen(path, "wb+");
-    if (!F) { die("Can't create temporary %s file \"%s\"\n", purpose, path); }
+    if (!F) { die("can't create temporary %s file \"%s\"\n", purpose, path); }
     return F;
 }
 
@@ -173,25 +184,7 @@ static size_t flush_cstream(ZSTD_CStream *s, FILE *F)
 
     ZSTD_outBuffer output = { out_buffer, out_buffer_size, 0 };
     size_t const remainingToFlush = ZSTD_endStream(s, &output);
-    if (remainingToFlush) { die("Can't end zstd stream"); }
+    if (remainingToFlush) { die("can't end zstd stream\n"); }
     fwrite_or_die(out_buffer, 1, output.pos, F);
     return output.pos;
-}
-
-
-static void write_variable_length_encoded_number(FILE *F, unsigned long long a)
-{
-    assert(F != NULL);
-
-    unsigned char vle_buffer[10];
-    unsigned char *b = vle_buffer + 10;
-    *--b = (unsigned char)(a & 127ull);
-    a >>= 7;
-    while (a > 0)
-    {
-        *--b = (unsigned char)(128ull | (a & 127ull));
-        a >>= 7;
-    }
-    size_t len = (size_t)(vle_buffer + 10 - b);
-    fwrite_or_die(b, 1, len, F);
 }

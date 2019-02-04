@@ -5,7 +5,7 @@
  */
 
 #define VERSION "1.1.0"
-#define DATE "2019-02-03"
+#define DATE "2019-02-04"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #include "platform.h"
@@ -173,7 +173,7 @@ static void done(void)
 
     if (!success && created_output_file)
     {
-        if (remove(out_file_path) != 0) { err("Can't remove incomplete output file \"%s\"\n", out_file_path); }
+        if (remove(out_file_path) != 0) { err("can't remove incomplete output file \"%s\"\n", out_file_path); }
     }
 
     FREE(out_file_path_auto);
@@ -191,8 +191,8 @@ static void set_input_file_path(char *new_path)
 {
     assert(new_path != NULL);
 
-    if (in_file_path != NULL) { die("Can compress only one file at a time\n"); }
-    if (*new_path == '\0') { die("Empty input file name\n"); }
+    if (in_file_path != NULL) { die("can compress only one file at a time\n"); }
+    if (*new_path == '\0') { die("empty input file name\n"); }
     in_file_path = new_path;
 }
 
@@ -201,8 +201,8 @@ static void set_output_file_path(char *new_path)
 {
     assert(new_path != NULL);
 
-    if (out_file_path != NULL) { die("Error: double --out parameter\n"); }
-    if (*new_path == '\0') { die("Error: empty --out parameter\n"); }
+    if (out_file_path != NULL) { die("double --out parameter\n"); }
+    if (*new_path == '\0') { die("empty --out parameter\n"); }
     out_file_path = new_path;
 }
 
@@ -211,8 +211,8 @@ static void set_temp_dir(char *new_temp_dir)
 {
     assert(new_temp_dir != NULL);
 
-    if (temp_dir != NULL) { die("Error: double --temp-dir parameter\n"); }
-    if (*new_temp_dir == '\0') { die("Error: empty --temp-dir parameter\n"); }
+    if (temp_dir != NULL) { die("double --temp-dir parameter\n"); }
+    if (*new_temp_dir == '\0') { die("empty --temp-dir parameter\n"); }
     temp_dir = new_temp_dir;
 }
 
@@ -221,9 +221,9 @@ static void set_dataset_name(char *new_name)
 {
     assert(new_name != NULL);
 
-    if (dataset_name != NULL) { die("Error: double --name parameter\n"); }
-    if (*new_name == '\0') { die("Error: empty --name parameter\n"); }
-    if (string_has_characters_unsafe_in_file_names(new_name)) { die("Error: --name \"%s\" - contains characters unsafe in file names\n", new_name); }
+    if (dataset_name != NULL) { die("double --name parameter\n"); }
+    if (*new_name == '\0') { die("empty --name parameter\n"); }
+    if (string_has_characters_unsafe_in_file_names(new_name)) { die("--name \"%s\" - contains characters unsafe in file names\n", new_name); }
     dataset_name = new_name;
 }
 
@@ -232,8 +232,8 @@ static void set_dataset_title(char *new_title)
 {
     assert(new_title != NULL);
 
-    if (dataset_title != NULL) { die("Error: double --title parameter\n"); }
-    if (*new_title == '\0') { die("Error: empty --title parameter\n"); }
+    if (dataset_title != NULL) { die("double --title parameter\n"); }
+    if (*new_title == '\0') { die("empty --title parameter\n"); }
     dataset_title = new_title;
     store_title = 1;
 }
@@ -247,7 +247,7 @@ static void set_compression_level(char *str)
     long a = strtol(str, &end, 10);
     long min_level = ZSTD_minCLevel();
     long max_level = ZSTD_maxCLevel();
-    if (a < min_level || a > max_level || *end != '\0') { die("Invalid value of --level, should be from %ld to %ld\n", min_level, max_level); }
+    if (a < min_level || a > max_level || *end != '\0') { die("invalid value of --level, should be from %ld to %ld\n", min_level, max_level); }
     compression_level = (int)a;
 }
 
@@ -258,12 +258,12 @@ static void set_line_length(char *str)
 
     char *end;
     long long a = strtoll(str, &end, 10);
-    if (*end != '\0') { die("Can't parse the value of --line-length parameter\n"); }
-    if (a < 0ll) { die("Error: Negative line length specified\n"); }
+    if (*end != '\0') { die("can't parse the value of --line-length parameter\n"); }
+    if (a < 0ll) { die("negative line length specified\n"); }
 
     char test_str[21];
     int nc = snprintf(test_str, 21, "%lld", a);
-    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { die("Can't parse the value of --line-length parameter\n"); }
+    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { die("can't parse the value of --line-length parameter\n"); }
 
     requested_line_length = (unsigned long long) a;
     line_length_is_specified = true;
@@ -284,9 +284,9 @@ static void set_input_format_from_command_line(const char *new_format)
 {
     assert(new_format != NULL);
 
-    if (in_format_from_command_line != in_format_unknown) { die("Error: Input format specified more than once\n"); }
+    if (in_format_from_command_line != in_format_unknown) { die("input format specified more than once\n"); }
     in_format_from_command_line = parse_input_format(new_format);
-    if (in_format_from_command_line == in_format_unknown) { die("Unknown input format specified: \"%s\"\n", new_format); }
+    if (in_format_from_command_line == in_format_unknown) { die("unknown input format specified: \"%s\"\n", new_format); }
 }
 
 
@@ -309,7 +309,7 @@ static void detect_temp_directory(void)
     if (temp_dir == NULL) { temp_dir = getenv("TMP"); }
     if (temp_dir == NULL)
     {
-        die("Temp directory is not specified\n"
+        die("temporary directory is not specified.\n"
             "Please either set TMPDIR or TMP environment variable, or add '--temp-dir DIR' to command line.\n");
     }
     if (verbose) { msg("Using temporary directory \"%s\"\n", temp_dir); }
@@ -403,7 +403,7 @@ static void parse_command_line(int argc, char **argv)
             if (!strcmp(argv[i], "-h")) { show_help(); exit(0); }
             if (!strcmp(argv[i], "-V")) { print_version = true; continue; }
 
-            die("Unknown or incomplete argument \"%s\"\n", argv[i]);
+            die("unknown or incomplete argument \"%s\"\n", argv[i]);
         }
         set_input_file_path(argv[i]);
     }
@@ -416,18 +416,18 @@ static void parse_command_line(int argc, char **argv)
 
     if (force_stdout && out_file_path != NULL)
     {
-        die("Error: '-c' and '-o' can't be used together\n");
+        die("'-c' and '-o' can't be used together\n");
     }
 
     if (assume_well_formed_input && abort_on_unexpected_code)
     {
-        die("Error: '--well-formed' and '--strict' can't be used together\n");
+        die("'--well-formed' and '--strict' can't be used together\n");
     }
 
     if (no_mask)
     {
         if (in_seq_type < seq_type_protein) { store_mask = false; }
-        else { die("Error: '--no-mask' is supported only for DNA or RNA sequences\n"); }
+        else { die("'--no-mask' is supported only for DNA or RNA sequences\n"); }
     }
 }
 
@@ -440,7 +440,7 @@ int main(int argc, char **argv)
     parse_command_line(argc, argv);
     if (in_file_path == NULL && isatty(fileno(stdin)))
     {
-        err("No input specified, use \"ennaf -h\" for help\n");
+        err("no input specified, use \"ennaf -h\" for help\n");
         exit(0);
     }
 
@@ -480,7 +480,7 @@ int main(int argc, char **argv)
 
     if (!force_stdout && out_file_path == NULL && isatty(fileno(stdout)))
     {
-        if (in_file_path == NULL) { die("Output file is not specified\n"); }
+        if (in_file_path == NULL) { die("output file is not specified\n"); }
         else
         {
             size_t len = strlen(in_file_path) + 5;
@@ -494,7 +494,7 @@ int main(int argc, char **argv)
     if (in_file_path != NULL && out_file_path != NULL)
     {
         if (fstat(fileno(IN), &input_stat) == 0) { have_input_stat = true; }
-        else { err("Can't obtain status of input file\n"); }
+        else { err("can't obtain status of input file\n"); }
     }
 
     make_temp_files();
