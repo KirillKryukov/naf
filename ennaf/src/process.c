@@ -444,8 +444,13 @@ static void process_well_formed_fastq(void)
         add_length(read_length);
         n_sequences++;
 
-        if (c == INEOF) { break; }
-        if (c != '@') { die("not well-formed FASTQ input\n"); }
+        c = in_get_char();
+        if (c == '@') {}
+        else
+        {
+            if (c == INEOF) { break; }
+            else { die("not well-formed FASTQ input\n"); }
+        }
     }
 }
 

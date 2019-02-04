@@ -17,8 +17,8 @@ NAF specification is in public domain: [NAFv2.pdf](NAFv2.pdf)
 ## Encoder and decoder
 
 NAF encoder and decoder are called "ennaf" and "unnaf".
-(After compressing your data with _ennaf_, you suddenly have _enough_ space.
-However, if you decompress it back with _unnaf_, your space is again _un-enough_.)
+After compressing your data with _ennaf_, you suddenly have _enough_ space.
+However, if you decompress it back with _unnaf_, your space is again _un-enough_.
 
 ## Installing
 
