@@ -428,9 +428,13 @@ static void process_well_formed_fastq(void)
         unsigned long long read_length = seq_size_original + seq.length - old_len;
         if (read_length > longest_line_length) { longest_line_length = read_length; }
 
-        if (c == INEOF) { die("truncated FASTQ input: last sequence has no quality\n"); }
         c = in_get_char();
-        if (c != '+') { die("not well-formed FASTQ input\n"); }
+        if (c != '+')
+        {
+            if (c == INEOF) { die("truncated FASTQ input: last sequence has no quality\n"); }
+            else { die("not well-formed FASTQ input\n"); }
+        }
+
         c = in_get_char();
         if (c != '\n') { die("not well-formed FASTQ input\n"); }
 
@@ -445,8 +449,7 @@ static void process_well_formed_fastq(void)
         n_sequences++;
 
         c = in_get_char();
-        if (c == '@') {}
-        else
+        if (c != '@')
         {
             if (c == INEOF) { break; }
             else { die("not well-formed FASTQ input\n"); }
