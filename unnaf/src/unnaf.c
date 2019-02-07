@@ -4,8 +4,8 @@
  * See README.md and LICENSE files of this repository
  */
 
-#define VERSION "1.1.0"
-#define DATE "2019-02-04"
+#define VERSION "1.1.0-beta"
+#define DATE "2019-02-07"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #include "platform.h"
