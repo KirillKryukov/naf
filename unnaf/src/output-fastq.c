@@ -4,6 +4,24 @@
  * See README.md and LICENSE files of this repository
  */
 
+static void print_dna_from_memory_4bit(unsigned int len)
+{
+    unsigned int remaining_bp = len;
+    while (remaining_bp > 0)
+    {
+        if (dna_buffer_remaining == 0) { refill_dna_buffer_from_memory_4bit(); }
+
+        unsigned int n_bp_to_print = remaining_bp;
+        if (n_bp_to_print > dna_buffer_remaining) { n_bp_to_print = dna_buffer_remaining; }
+
+        fwrite(dna_buffer + dna_buffer_printing_pos, 1, n_bp_to_print, OUT);
+        dna_buffer_printing_pos += n_bp_to_print;
+        dna_buffer_remaining -= n_bp_to_print;
+        remaining_bp -= n_bp_to_print;
+    }
+}
+
+
 static void print_dna_from_memory(unsigned int len)
 {
     unsigned int remaining_bp = len;
@@ -14,11 +32,24 @@ static void print_dna_from_memory(unsigned int len)
         unsigned int n_bp_to_print = remaining_bp;
         if (n_bp_to_print > dna_buffer_remaining) { n_bp_to_print = dna_buffer_remaining; }
 
-        fwrite(dna_buffer + dna_buffer_printing_pos, 1, n_bp_to_print, stdout);
+        fwrite(dna_buffer + dna_buffer_printing_pos, 1, n_bp_to_print, OUT);
         dna_buffer_printing_pos += n_bp_to_print;
         dna_buffer_remaining -= n_bp_to_print;
         remaining_bp -= n_bp_to_print;
     }
+}
+
+
+static void print_next_sequence_from_memory_4bit(void)
+{
+    while (lengths_buffer[cur_seq_len_index] == 4294967295u)
+    {
+        print_dna_from_memory_4bit(lengths_buffer[cur_seq_len_index]);
+        cur_seq_len_index++;
+    }
+    print_dna_from_memory_4bit(lengths_buffer[cur_seq_len_index]);
+    cur_seq_len_index++;
+    fputc('\n', OUT);
 }
 
 
@@ -31,7 +62,7 @@ static void print_next_sequence_from_memory(void)
     }
     print_dna_from_memory(lengths_buffer[cur_seq_len_index]);
     cur_seq_len_index++;
-    fputc('\n', stdout);
+    fputc('\n', OUT);
 }
 
 
@@ -45,7 +76,7 @@ static void print_quality_from_file(unsigned int len)
         unsigned int n_bp_to_print = remaining_bp;
         if (n_bp_to_print > quality_buffer_remaining) { n_bp_to_print = quality_buffer_remaining; }
 
-        fwrite(quality_buffer + quality_buffer_printing_pos, 1, n_bp_to_print, stdout);
+        fwrite(quality_buffer + quality_buffer_printing_pos, 1, n_bp_to_print, OUT);
         quality_buffer_printing_pos += n_bp_to_print;
         quality_buffer_remaining -= n_bp_to_print;
         remaining_bp -= n_bp_to_print;
@@ -62,19 +93,17 @@ static void print_next_quality_from_file(void)
     }
     print_quality_from_file(lengths_buffer[cur_qual_len_index]);
     cur_qual_len_index++;
-    fputc('\n', stdout);
+    fputc('\n', OUT);
 }
 
 
-__attribute__ ((noreturn))
-static void print_fastq_and_exit(int masking)
+static void print_fastq(int masking)
 {
     if (has_data)
     {
         quality_buffer_flush_size = ZSTD_DStreamOutSize();
         quality_buffer_size = quality_buffer_flush_size * 2 + 10;
-        quality_buffer = (char *)malloc(quality_buffer_size);
-        if (!quality_buffer) { fprintf(stderr, "Can't allocate %zu bytes for quality buffer\n", quality_buffer_size); exit(1); }
+        quality_buffer = (char *) malloc_or_die(quality_buffer_size);
 
         load_ids();
         load_names();
@@ -96,14 +125,25 @@ static void print_fastq_and_exit(int masking)
 
         initialize_quality_file_decompression();
 
-        for (unsigned long long ri = 0; ri < N; ri++)
+        if (in_seq_type < seq_type_protein)
         {
-            print_fastq_name(ri);
-            print_next_sequence_from_memory();
-            fputs("+\n", stdout);
-            print_next_quality_from_file();
+            for (unsigned long long ri = 0; ri < N; ri++)
+            {
+                print_fastq_name(ri);
+                print_next_sequence_from_memory_4bit();
+                fputs("+\n", OUT);
+                print_next_quality_from_file();
+            }
+        }
+        else
+        {
+            for (unsigned long long ri = 0; ri < N; ri++)
+            {
+                print_fastq_name(ri);
+                print_next_sequence_from_memory();
+                fputs("+\n", OUT);
+                print_next_quality_from_file();
+            }
         }
     }
-
-    exit(0);
 }

@@ -2,45 +2,30 @@
  * NAF compressor
  * Copyright (c) 2018-2019 Kirill Kryukov
  * See README.md and LICENSE files of this repository
- *
- * Limitations:
- *   - Does not allow specifying name separator, always uses space.
  */
 
-#define VERSION "1.0.1"
-#define DATE "2019-01-19"
+#define VERSION "1.1.0-beta"
+#define DATE "2019-02-07"
 #define COPYRIGHT_YEARS "2018-2019"
 
-#define NDEBUG
-
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-#include <sys/stat.h>
-
-#define ZSTD_STATIC_LINKING_ONLY
-#include <zstd.h>
-
 #include "platform.h"
-#include "utils.c"
+#include "tables.c"
 
-
-static unsigned char naf_header_start[7] = "\x01\xF9\xEC\x01\x00\x20";
+static const unsigned char naf_magic_number[3] = { 0x01u, 0xF9u, 0xECu };
 
 static bool verbose = false;
 static bool keep_temp_files = false;
 
 static char *in_file_path = NULL;
 static FILE *IN = NULL;
+static struct stat input_stat;
+static bool have_input_stat = false;
 
 static char *out_file_path = NULL;
 static char *out_file_path_auto = NULL;
 static FILE *OUT = NULL;
 static bool force_stdout = false;
+static bool created_output_file = false;
 
 static int compression_level = 1;
 
@@ -70,6 +55,13 @@ enum { in_format_unknown, in_format_fasta, in_format_fastq };
 static int in_format_from_command_line = in_format_unknown;
 static int in_format_from_input = in_format_unknown;
 static int in_format_from_extension = in_format_unknown;
+
+enum { seq_type_dna, seq_type_rna, seq_type_protein, seq_type_text };
+static int in_seq_type = seq_type_dna;
+static const char *in_seq_type_name = "DNA";
+static unsigned char unexpected_seq_char_replacement = 'N';
+static const unsigned char unexpected_name_char_replacement = '?';
+static const unsigned char unexpected_qual_char_replacement = '!';  // Unknown character can only mean poor quality.
 
 static bool extended_format = false;
 static bool store_title = false;
@@ -131,10 +123,17 @@ static size_t in_end = 0;
 
 static unsigned long long n_sequences = 0ull;
 
-static bool have_input_stat = false;
-static struct stat input_stat;
+static const bool *is_unexpected_arr = is_unexpected_dna_arr;
+static bool abort_on_unexpected_code = false;
+static bool assume_well_formed_input = false;
+
+static size_t out_buffer_size = 0;
+static void *out_buffer = NULL;
+
+static bool success = false;
 
 
+#include "utils.c"
 #include "files.c"
 #include "encoders.c"
 #include "process.c"
@@ -158,7 +157,6 @@ static void done(void)
     FREE(length_units);
     FREE(mask_units);
 
-    FREE(out_file_path_auto);
     close_output_file();
     close_input_file();
     close_temp_files();
@@ -173,6 +171,12 @@ static void done(void)
         if (store_qual && qual_path != NULL) { remove_temp_file(qual_path); }
     }
 
+    if (!success && created_output_file)
+    {
+        if (remove(out_file_path) != 0) { err("can't remove incomplete output file \"%s\"\n", out_file_path); }
+    }
+
+    FREE(out_file_path_auto);
     FREE(temp_prefix);
     FREE(ids_path);
     FREE(comm_path);
@@ -187,8 +191,8 @@ static void set_input_file_path(char *new_path)
 {
     assert(new_path != NULL);
 
-    if (in_file_path != NULL) { fputs("Can process only one file at a time\n", stderr); exit(1); }
-    if (*new_path == '\0') { fputs("Error: empty input file name\n", stderr); exit(1); }
+    if (in_file_path != NULL) { die("can compress only one file at a time\n"); }
+    if (*new_path == '\0') { die("empty input file name\n"); }
     in_file_path = new_path;
 }
 
@@ -197,8 +201,8 @@ static void set_output_file_path(char *new_path)
 {
     assert(new_path != NULL);
 
-    if (out_file_path != NULL) { fprintf(stderr, "Error: double --out parameter\n"); exit(1); }
-    if (*new_path == '\0') { fprintf(stderr, "Error: empty --out parameter\n"); exit(1); }
+    if (out_file_path != NULL) { die("double --out parameter\n"); }
+    if (*new_path == '\0') { die("empty --out parameter\n"); }
     out_file_path = new_path;
 }
 
@@ -207,8 +211,8 @@ static void set_temp_dir(char *new_temp_dir)
 {
     assert(new_temp_dir != NULL);
 
-    if (temp_dir != NULL) { fprintf(stderr, "Error: double --temp-dir parameter\n"); exit(1); }
-    if (*new_temp_dir == '\0') { fprintf(stderr, "Error: empty --temp-dir parameter\n"); exit(1); }
+    if (temp_dir != NULL) { die("double --temp-dir parameter\n"); }
+    if (*new_temp_dir == '\0') { die("empty --temp-dir parameter\n"); }
     temp_dir = new_temp_dir;
 }
 
@@ -217,9 +221,9 @@ static void set_dataset_name(char *new_name)
 {
     assert(new_name != NULL);
 
-    if (dataset_name != NULL) { fprintf(stderr, "Error: double --name parameter\n"); exit(1); }
-    if (*new_name == '\0') { fprintf(stderr, "Error: empty --name parameter\n"); exit(1); }
-    if (string_has_characters_unsafe_in_file_names(new_name)) { fprintf(stderr, "Error: --name \"%s\" - contains characters unsafe in file names\n", new_name); exit(1); }
+    if (dataset_name != NULL) { die("double --name parameter\n"); }
+    if (*new_name == '\0') { die("empty --name parameter\n"); }
+    if (string_has_characters_unsafe_in_file_names(new_name)) { die("--name \"%s\" - contains characters unsafe in file names\n", new_name); }
     dataset_name = new_name;
 }
 
@@ -228,8 +232,8 @@ static void set_dataset_title(char *new_title)
 {
     assert(new_title != NULL);
 
-    if (dataset_title != NULL) { fprintf(stderr, "Error: double --title parameter\n"); exit(1); }
-    if (*new_title == '\0') { fprintf(stderr, "Error: empty --title parameter\n"); exit(1); }
+    if (dataset_title != NULL) { die("double --title parameter\n"); }
+    if (*new_title == '\0') { die("empty --title parameter\n"); }
     dataset_title = new_title;
     store_title = 1;
 }
@@ -243,11 +247,7 @@ static void set_compression_level(char *str)
     long a = strtol(str, &end, 10);
     long min_level = ZSTD_minCLevel();
     long max_level = ZSTD_maxCLevel();
-    if (a < min_level || a > max_level || *end != '\0')
-    {
-        fprintf(stderr, "Invalid value of --level, should be from %ld to %ld\n", min_level, max_level);
-        exit(1);
-    }
+    if (a < min_level || a > max_level || *end != '\0') { die("invalid value of --level, should be from %ld to %ld\n", min_level, max_level); }
     compression_level = (int)a;
 }
 
@@ -258,12 +258,12 @@ static void set_line_length(char *str)
 
     char *end;
     long long a = strtoll(str, &end, 10);
-    if (*end != '\0') { fprintf(stderr, "Can't parse the value of --line-length parameter\n"); exit(1); }
-    if (a < 0ll) { fprintf(stderr, "Error: Negative line length specified\n"); exit(1); }
+    if (*end != '\0') { die("can't parse the value of --line-length parameter\n"); }
+    if (a < 0ll) { die("negative line length specified\n"); }
 
     char test_str[21];
     int nc = snprintf(test_str, 21, "%lld", a);
-    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { fprintf(stderr, "Can't parse the value of --line-length parameter\n"); exit(1); }
+    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { die("can't parse the value of --line-length parameter\n"); }
 
     requested_line_length = (unsigned long long) a;
     line_length_is_specified = true;
@@ -284,9 +284,9 @@ static void set_input_format_from_command_line(const char *new_format)
 {
     assert(new_format != NULL);
 
-    if (in_format_from_command_line != in_format_unknown) { fprintf(stderr, "Error: Input format specified more than once\n"); exit(1); }
+    if (in_format_from_command_line != in_format_unknown) { die("input format specified more than once\n"); }
     in_format_from_command_line = parse_input_format(new_format);
-    if (in_format_from_command_line == in_format_unknown) { fprintf(stderr, "Unknown input format specified: \"%s\"\n", new_format); exit(1); }
+    if (in_format_from_command_line == in_format_unknown) { die("unknown input format specified: \"%s\"\n", new_format); }
 }
 
 
@@ -309,21 +309,17 @@ static void detect_temp_directory(void)
     if (temp_dir == NULL) { temp_dir = getenv("TMP"); }
     if (temp_dir == NULL)
     {
-        fprintf(stderr, "Temp directory is not specified\n"
-                "Please either set TMPDIR or TMP environment variable, or add '--temp-dir DIR' to command line.\n");
-        exit(1);
+        die("temporary directory is not specified.\n"
+            "Please either set TMPDIR or TMP environment variable, or add '--temp-dir DIR' to command line.\n");
     }
-    if (verbose) { fprintf(stderr, "Using temporary directory \"%s\"\n", temp_dir); }
+    if (verbose) { msg("Using temporary directory \"%s\"\n", temp_dir); }
 }
 
 
 static void show_version(void)
 {
-    fprintf(stderr, "ennaf - NAF compressor, version " VERSION ", " DATE "\nCopyright (c) " COPYRIGHT_YEARS " Kirill Kryukov\n");
-    if (verbose)
-    {
-        fprintf(stderr, "Built with zstd " ZSTD_VERSION_STRING ", using runtime zstd %s\n", ZSTD_versionString());
-    }
+    msg("ennaf - NAF compressor, version " VERSION ", " DATE "\nCopyright (c) " COPYRIGHT_YEARS " Kirill Kryukov\n");
+    if (verbose) { msg("Built with zstd " ZSTD_VERSION_STRING ", using runtime zstd %s\n", ZSTD_versionString()); }
 }
 
 
@@ -332,8 +328,7 @@ static void show_help(void)
     int min_level = ZSTD_minCLevel();
     int max_level = ZSTD_maxCLevel();
 
-    fprintf(stderr,
-        "Usage: ennaf [OPTIONS] [infile]\n"
+    msg("Usage: ennaf [OPTIONS] [infile]\n"
         "Options:\n"
         "  -o FILE            - Write compressed output to FILE\n"
         "  -c                 - Write to standard output\n"
@@ -343,6 +338,12 @@ static void show_help(void)
         "  --title TITLE      - Store TITLE as dataset title\n"
         "  --fasta            - Input is in FASTA format\n"
         "  --fastq            - Input is in FASTQ format\n"
+        "  --dna              - Input sequence is DNA (default)\n"
+        "  --rna              - Input sequence is RNA\n"
+        "  --protein          - Input sequence is protein\n"
+        "  --text             - Input sequence is text\n"
+        "  --well-formed      - Assume well-formed input\n"
+        "  --strict           - Fail on unexpected input characters\n"
         "  --line-length N    - Override line length to N\n"
         "  --verbose          - Verbose mode\n"
         "  --keep-temp-files  - Keep temporary files\n"
@@ -356,6 +357,7 @@ static void show_help(void)
 static void parse_command_line(int argc, char **argv)
 {
     bool print_version = false;
+    bool no_mask = false;
 
     for (int i = 1; i < argc; i++)
     {
@@ -380,9 +382,15 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
                 if (!strcmp(argv[i], "--verbose")) { verbose = true; continue; }
                 if (!strcmp(argv[i], "--keep-temp-files")) { keep_temp_files = true; continue; }
-                if (!strcmp(argv[i], "--no-mask")) { store_mask = false; continue; }
+                if (!strcmp(argv[i], "--no-mask")) { no_mask = true; continue; }
                 if (!strcmp(argv[i], "--fasta")) { set_input_format_from_command_line("fasta"); continue; }
                 if (!strcmp(argv[i], "--fastq")) { set_input_format_from_command_line("fastq"); continue; }
+                if (!strcmp(argv[i], "--dna")) { in_seq_type = seq_type_dna; continue; }
+                if (!strcmp(argv[i], "--rna")) { in_seq_type = seq_type_rna; continue; }
+                if (!strcmp(argv[i], "--protein")) { in_seq_type = seq_type_protein; continue; }
+                if (!strcmp(argv[i], "--text")) { in_seq_type = seq_type_text; continue; }
+                if (!strcmp(argv[i], "--well-formed")) { assume_well_formed_input = true; continue; }
+                if (!strcmp(argv[i], "--strict")) { abort_on_unexpected_code = true; continue; }
             }
 
             if (i < argc - 1)
@@ -395,8 +403,7 @@ static void parse_command_line(int argc, char **argv)
             if (!strcmp(argv[i], "-h")) { show_help(); exit(0); }
             if (!strcmp(argv[i], "-V")) { print_version = true; continue; }
 
-            fprintf(stderr, "Unknown or incomplete argument \"%s\"\n", argv[i]);
-            exit(1);
+            die("unknown or incomplete argument \"%s\"\n", argv[i]);
         }
         set_input_file_path(argv[i]);
     }
@@ -409,8 +416,18 @@ static void parse_command_line(int argc, char **argv)
 
     if (force_stdout && out_file_path != NULL)
     {
-        fprintf(stderr, "Error: -c and -o arguments can't be used together\n");
-        exit(1);
+        die("'-c' and '-o' can't be used together\n");
+    }
+
+    if (assume_well_formed_input && abort_on_unexpected_code)
+    {
+        die("'--well-formed' and '--strict' can't be used together\n");
+    }
+
+    if (no_mask)
+    {
+        if (in_seq_type < seq_type_protein) { store_mask = false; }
+        else { die("'--no-mask' is supported only for DNA or RNA sequences\n"); }
     }
 }
 
@@ -418,14 +435,40 @@ static void parse_command_line(int argc, char **argv)
 int main(int argc, char **argv)
 {
     atexit(done);
-    init_utils();
     init_encoders();
 
     parse_command_line(argc, argv);
     if (in_file_path == NULL && isatty(fileno(stdin)))
     {
-        fprintf(stderr, "No input specified, use \"ennaf -h\" for help\n");
+        err("no input specified, use \"ennaf -h\" for help\n");
         exit(0);
+    }
+
+    if (in_seq_type == seq_type_dna)
+    {
+        is_unexpected_arr = is_unexpected_dna_arr;
+        in_seq_type_name = "DNA";
+        unexpected_seq_char_replacement = 'N';
+    }
+    if (in_seq_type == seq_type_rna)
+    {
+        is_unexpected_arr = is_unexpected_rna_arr;
+        in_seq_type_name = "RNA";
+        unexpected_seq_char_replacement = 'N';
+    }
+    else if (in_seq_type == seq_type_protein)
+    {
+        is_unexpected_arr = is_unexpected_protein_arr;
+        in_seq_type_name = "protein";
+        unexpected_seq_char_replacement = 'X';
+        store_mask = false;
+    }
+    else if (in_seq_type == seq_type_text)
+    {
+        is_unexpected_arr = is_unexpected_text_arr;
+        in_seq_type_name = "text";
+        unexpected_seq_char_replacement = '?';
+        store_mask = false;
     }
 
     detect_temp_directory();
@@ -437,15 +480,11 @@ int main(int argc, char **argv)
 
     if (!force_stdout && out_file_path == NULL && isatty(fileno(stdout)))
     {
-        if (in_file_path == NULL)
-        {
-            fprintf(stderr, "Error: Output file is not specified\n");
-            exit(1);
-        }
+        if (in_file_path == NULL) { die("output file is not specified\n"); }
         else
         {
             size_t len = strlen(in_file_path) + 5;
-            out_file_path_auto = (char*)malloc(len);
+            out_file_path_auto = (char *) malloc_or_die(len);
             snprintf(out_file_path_auto, len, "%s.naf", in_file_path);
             out_file_path = out_file_path_auto;
         }
@@ -455,7 +494,7 @@ int main(int argc, char **argv)
     if (in_file_path != NULL && out_file_path != NULL)
     {
         if (fstat(fileno(IN), &input_stat) == 0) { have_input_stat = true; }
-        else { fprintf(stderr, "Can't obtain status of input file\n"); }
+        else { err("can't obtain status of input file\n"); }
     }
 
     make_temp_files();
@@ -505,22 +544,26 @@ int main(int argc, char **argv)
     if (store_qual) { qual_size_compressed += flush_cstream(qual_cstream, QUAL); }
 
     close_input_file();
-    close_temp_files();
 
+    fwrite_or_die(naf_magic_number, 1, 3, OUT);
 
-    naf_header_start[4] = (unsigned char)( (extended_format << 7) |
-                                           (store_title     << 6) |
-                                           (store_ids       << 5) |
-                                           (store_comm      << 4) |
-                                           (store_len       << 3) |
-                                           (store_mask      << 2) |
-                                           (store_seq       << 1) |
-                                            store_qual              );
+    // In case of DNA input, write NAFv1 format.
+    // Otherwise write NAFv2 where we can store sequence type.
+    if (in_seq_type == seq_type_dna) { fputc_or_die(1, OUT); }
+    else { fputc_or_die(2, OUT); fputc_or_die(in_seq_type, OUT); }
 
-    fwrite_or_die(naf_header_start, 1, 6, OUT);
+    fputc_or_die( (extended_format << 7) |
+                  (store_title     << 6) |
+                  (store_ids       << 5) |
+                  (store_comm      << 4) |
+                  (store_len       << 3) |
+                  (store_mask      << 2) |
+                  (store_seq       << 1) |
+                   store_qual              , OUT);
+    fputc_or_die(' ', OUT);
 
     unsigned long long out_line_length = line_length_is_specified ? requested_line_length : longest_line_length;
-    if (verbose) { fprintf(stderr, "Output line length: %llu\n", out_line_length); }
+    if (verbose) { msg("Output line length: %" PRINT_ULL "\n", out_line_length); }
     write_variable_length_encoded_number(OUT, out_line_length);
     write_variable_length_encoded_number(OUT, n_sequences);
 
@@ -536,7 +579,7 @@ int main(int argc, char **argv)
         assert(ids_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, ids_size_original);
         write_variable_length_encoded_number(OUT, ids_size_compressed - 4);
-        copy_file_to_out(ids_path, 4, ids_size_compressed - 4);
+        copy_file_to_out(IDS, ids_path, 4, ids_size_compressed - 4);
     }
 
     if (store_comm)
@@ -544,7 +587,7 @@ int main(int argc, char **argv)
         assert(comm_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, comm_size_original);
         write_variable_length_encoded_number(OUT, comm_size_compressed - 4);
-        copy_file_to_out(comm_path, 4, comm_size_compressed - 4);
+        copy_file_to_out(COMM, comm_path, 4, comm_size_compressed - 4);
     }
 
     if (store_len)
@@ -552,7 +595,7 @@ int main(int argc, char **argv)
         assert(len_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, sizeof(unsigned int) * n_length_units_stored);
         write_variable_length_encoded_number(OUT, len_size_compressed - 4);
-        copy_file_to_out(len_path, 4, len_size_compressed - 4);
+        copy_file_to_out(LEN, len_path, 4, len_size_compressed - 4);
     }
 
     if (store_mask)
@@ -560,7 +603,7 @@ int main(int argc, char **argv)
         assert(mask_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, n_mask_units_stored);
         write_variable_length_encoded_number(OUT, mask_size_compressed - 4);
-        copy_file_to_out(mask_path, 4, mask_size_compressed - 4);
+        copy_file_to_out(MASK, mask_path, 4, mask_size_compressed - 4);
     }
 
     if (store_seq)
@@ -568,7 +611,7 @@ int main(int argc, char **argv)
         assert(seq_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, seq_size_original);
         write_variable_length_encoded_number(OUT, seq_size_compressed - 4);
-        copy_file_to_out(seq_path, 4, seq_size_compressed - 4);
+        copy_file_to_out(SEQ, seq_path, 4, seq_size_compressed - 4);
     }
 
     if (store_qual)
@@ -576,13 +619,17 @@ int main(int argc, char **argv)
         assert(qual_size_compressed >= 4);
         write_variable_length_encoded_number(OUT, qual_size_original);
         write_variable_length_encoded_number(OUT, qual_size_compressed - 4);
-        copy_file_to_out(qual_path, 4, qual_size_compressed - 4);
+        copy_file_to_out(QUAL, qual_path, 4, qual_size_compressed - 4);
     }
 
-    if (in_file_path != NULL && out_file_path != NULL && have_input_stat) { close_output_file_and_set_stat(); }
+    close_temp_files();
+    if (out_file_path != NULL && have_input_stat) { close_output_file_and_set_stat(); }
     else { close_output_file(); }
 
-    if (verbose) { fprintf(stderr, "Processed %llu sequences\n", n_sequences); }
+    if (!assume_well_formed_input) { report_unexpected_input_char_stats(); }
+
+    if (verbose) { msg("Processed %" PRINT_ULL " sequences\n", n_sequences); }
+    success = true;
 
     return 0;
 }

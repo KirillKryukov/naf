@@ -6,20 +6,23 @@
 
 static void init_encoders(void)
 {
-    assert(out_buffer_size != 0);
     assert(out_4bit_buffer == NULL);
+    assert(out_buffer == NULL);
     assert(file_copy_buffer == NULL);
     assert(length_units == NULL);
     assert(mask_units == NULL);
 
-    out_4bit_buffer = (unsigned char *) malloc(out_buffer_size);
+    out_buffer_size = ZSTD_CStreamOutSize();
+    out_buffer = malloc_or_die(out_buffer_size);
+
+    out_4bit_buffer = (unsigned char *) malloc_or_die(out_buffer_size);
     out_4bit_pos = out_4bit_buffer;
 
-    file_copy_buffer = (unsigned char *) malloc(file_copy_buffer_size);
+    file_copy_buffer = (unsigned char *) malloc_or_die(file_copy_buffer_size);
 
-    length_units = (unsigned int *) malloc(sizeof(unsigned int) * length_units_buffer_n_units);
+    length_units = (unsigned int *) malloc_or_die(sizeof(unsigned int) * length_units_buffer_n_units);
 
-    mask_units = (unsigned char *) malloc(mask_units_buffer_size);
+    mask_units = (unsigned char *) malloc_or_die(mask_units_buffer_size);
     mask_units_end = mask_units + mask_units_buffer_size;
     mask_units_pos = mask_units;
 }
@@ -152,19 +155,19 @@ static void extract_mask(const unsigned char *seq, size_t len)
 
 
 /*
- * Copies the content of a file into output stream.
+ * Copies the content of an already open file into output stream.
  * Starts from "start", copies exactly "expected_size" bytes.
  */
-static void copy_file_to_out(char* from_path, long start, unsigned long long data_size)
+static void copy_file_to_out(FILE* FROM, char *from_path, long start, unsigned long long data_size)
 {
+    assert(FROM != NULL);
     assert(from_path != NULL);
     assert(file_copy_buffer != NULL);
     assert(OUT != NULL);
 
-    FILE *FROM = fopen(from_path, "rb");
-    if (FROM == NULL) { fprintf(stderr, "Can't open \"%s\"\n", from_path); exit(1); }
+    fflush_or_die(FROM);
 
-    if (fseek(FROM, start, SEEK_SET) != 0) { fprintf(stderr, "Can't seek to data start in \"%s\"\n", from_path); exit(1); }
+    if (fseek(FROM, start, SEEK_SET) != 0) { die("can't seek to data start in \"%s\"\n", from_path); }
 
     unsigned long long remaining = data_size;
     while (remaining > 0)
@@ -174,6 +177,22 @@ static void copy_file_to_out(char* from_path, long start, unsigned long long dat
         fwrite_or_die(file_copy_buffer, 1, to_read, OUT);
         remaining -= to_read;
     }
+}
 
-    fclose(FROM);
+
+static void write_variable_length_encoded_number(FILE *F, unsigned long long a)
+{
+    assert(F != NULL);
+
+    unsigned char vle_buffer[10];
+    unsigned char *b = vle_buffer + 10;
+    *--b = (unsigned char)(a & 127ull);
+    a >>= 7;
+    while (a > 0)
+    {
+        *--b = (unsigned char)(128ull | (a & 127ull));
+        a >>= 7;
+    }
+    size_t len = (size_t)(vle_buffer + 10 - b);
+    fwrite_or_die(b, 1, len, F);
 }

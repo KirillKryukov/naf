@@ -12,13 +12,13 @@ and has no limit on sequence length or number of sequences. See [NAF homepage](h
 
 ## Format specification
 
-NAF specification is in public domain: [NAFv1.pdf](NAFv1.pdf)
+NAF specification is in public domain: [NAFv2.pdf](NAFv2.pdf)
 
 ## Encoder and decoder
 
 NAF encoder and decoder are called "ennaf" and "unnaf".
-(After compressing your data with _ennaf_, you suddenly have _enough_ space.
-However, if you decompress it back with _unnaf_, your space is again _un-enough_.)
+After compressing your data with _ennaf_, you suddenly have _enough_ space.
+However, if you decompress it back with _unnaf_, your space is again _un-enough_.
 
 ## Installing
 
@@ -26,15 +26,16 @@ However, if you decompress it back with _unnaf_, your space is again _un-enough_
 
 Check if the [latest release](https://github.com/KirillKryukov/naf/releases) has a build for your platform.
 
-### Building from latest source
+### Building from source
 
-Prerequisites: git (for downloading), zstd, gcc, make.
-E.g., to install on Ubuntu: `sudo apt install git gcc make libzstd-dev`.
+Prerequisites: git, gcc, make.
+E.g., to install on Ubuntu: `sudo apt install git gcc make`.
+On Mac OS you may have to install Xcode Command Line Tools.
 
 Building and installing:
 
 ```
-git clone https://github.com/KirillKryukov/naf.git
+git clone --recurse-submodules https://github.com/KirillKryukov/naf.git
 cd naf && make && sudo make install
 ```
 
@@ -44,11 +45,16 @@ For a staged install, add "DESTDIR=DIR". E.g., `make DESTDIR=/tmp/stage install`
 
 On Windows it can be installed using [Cygwin](https://www.cygwin.com/),
 and should be also possible with [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
-In Cygwin by default there's no static zstd library, so you have to add `LDFLAGS=-lzstd`. Also drop `sudo`.
-So the command series becomes: `cd naf && make LDFLAGS=-lzstd && make install`
+In Cygwin drop `sudo`: `cd naf && make && make install`
 
-On Mac OS the default install of zstd offers no static library,
-so you have to add `LDFLAGS=-lzstd` to the make command: `cd naf && make LDFLAGS=-lzstd && sudo make install`.
+### Building from latest unreleased source
+
+For testing purpose only:
+```
+git clone --recurse-submodules --branch develop https://github.com/KirillKryukov/naf.git
+cd naf && make && sudo make install
+
+```
 
 ## Compressing
 
@@ -58,7 +64,7 @@ See `ennaf -h` and [Compression Manual](Compress.md) for detailed usage.
 
 ## Decompressing
 
-`unnaf file.naf >file.fasta`
+`unnaf file.naf -o file.fa`
 
 See `unnaf -h` and [Decompression Manual](Decompress.md).
 

@@ -4,74 +4,68 @@
  * See README.md and LICENSE files of this repository
  */
 
-static bool is_eol_arr[256];
-static bool is_space_arr[256];
-static bool is_space_or_gt_arr[256];
-static bool is_space_or_plus_arr[256];
 
-static unsigned char nuc_code[256];
-
-static size_t out_buffer_size = 0;
-static void *out_buffer = NULL;
-
-
-static void init_utils(void)
+__attribute__ ((format (printf, 1, 2)))
+static void msg(const char *format, ...) 
 {
-    assert(out_buffer == NULL);
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+}
 
-    memset(is_eol_arr, 0, sizeof(is_eol_arr));
-    memset(is_space_arr, 0, sizeof(is_space_arr));
-    memset(is_space_or_gt_arr, 0, sizeof(is_space_or_gt_arr));
-    memset(is_space_or_plus_arr, 0, sizeof(is_space_or_plus_arr));
 
-    is_eol_arr['\n'] = true;
-    is_eol_arr['\f'] = true;
-    is_eol_arr['\r'] = true;
+__attribute__ ((cold))
+__attribute__ ((format (printf, 1, 2)))
+static void warn(const char *format, ...) 
+{
+    fputs("ennaf warning: ", stderr);
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+}
 
-    is_space_arr['\t'] = true;
-    is_space_arr['\n'] = true;
-    is_space_arr['\v'] = true;
-    is_space_arr['\f'] = true;
-    is_space_arr['\r'] = true;
-    is_space_arr[' '] = true;
 
-    is_space_or_gt_arr['\t'] = true;
-    is_space_or_gt_arr['\n'] = true;
-    is_space_or_gt_arr['\v'] = true;
-    is_space_or_gt_arr['\f'] = true;
-    is_space_or_gt_arr['\r'] = true;
-    is_space_or_gt_arr[' '] = true;
-    is_space_or_gt_arr['>'] = true;
+__attribute__ ((cold))
+__attribute__ ((format (printf, 1, 2)))
+static void err(const char *format, ...) 
+{
+    fputs("ennaf error: ", stderr);
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+}
 
-    is_space_or_plus_arr['\t'] = true;
-    is_space_or_plus_arr['\n'] = true;
-    is_space_or_plus_arr['\v'] = true;
-    is_space_or_plus_arr['\f'] = true;
-    is_space_or_plus_arr['\r'] = true;
-    is_space_or_plus_arr[' '] = true;
-    is_space_or_plus_arr['+'] = true;
 
-    memset(nuc_code, 15, 256);
+__attribute__ ((cold))
+__attribute__ ((format (printf, 1, 2)))
+__attribute__ ((noreturn))
+static void die(const char *format, ...) 
+{
+    fputs("ennaf error: ", stderr);
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+    exit(1);
+}
 
-    nuc_code['A'] = 8;  nuc_code['a'] = 8;
-    nuc_code['C'] = 4;  nuc_code['c'] = 4;
-    nuc_code['G'] = 2;  nuc_code['g'] = 2;
-    nuc_code['T'] = 1;  nuc_code['t'] = 1;
-    nuc_code['U'] = 1;  nuc_code['u'] = 1;
-    nuc_code['R'] = 10; nuc_code['r'] = 10;
-    nuc_code['Y'] = 5;  nuc_code['y'] = 5;
-    nuc_code['S'] = 6;  nuc_code['s'] = 6;
-    nuc_code['W'] = 9;  nuc_code['w'] = 9;
-    nuc_code['K'] = 3;  nuc_code['k'] = 3;
-    nuc_code['M'] = 12; nuc_code['m'] = 12;
-    nuc_code['B'] = 7;  nuc_code['b'] = 7;
-    nuc_code['D'] = 11; nuc_code['d'] = 11;
-    nuc_code['H'] = 13; nuc_code['h'] = 13;
-    nuc_code['V'] = 14; nuc_code['v'] = 14;
-    nuc_code['-'] = 0;
 
-    out_buffer_size = ZSTD_CStreamOutSize();
-    out_buffer = malloc(out_buffer_size);
+__attribute__ ((cold))
+__attribute__ ((noreturn))
+static void out_of_memory(const size_t size)
+{
+    die("can't allocate %" PRINT_SIZE_T " bytes\n", size);
+}
+
+
+static void* malloc_or_die(const size_t size)
+{
+    void *buf = malloc(size);
+    if (buf == NULL) { out_of_memory(size); }
+    return buf;
 }
 
 
@@ -94,9 +88,8 @@ static void fread_or_die(void *ptr, size_t element_size, size_t n_elements, FILE
 {
     assert(ptr != NULL);
     assert(F != NULL);
-
     size_t elements_read = fread(ptr, element_size, n_elements, F);
-    if (elements_read != n_elements) { fprintf(stderr, "Error reading from file\n"); exit(1); }
+    if (elements_read != n_elements) { die("can't read from file\n"); }
 }
 
 
@@ -104,11 +97,24 @@ static void fwrite_or_die(const void *ptr, size_t element_size, size_t n_element
 {
     assert(ptr != NULL);
     assert(F != NULL);
-
     size_t elements_written = fwrite(ptr, element_size, n_elements, F);
-    if (elements_written != n_elements) { fprintf(stderr, "Error writing to file\n"); exit(1); }
+    if (elements_written != n_elements) { die("can't write to file - disk full?\n"); }
 }
-#define fwrite dont_use_fwrite
+
+
+static void fputc_or_die(int c, FILE *F)
+{
+    assert(F != NULL);
+    if (fputc(c, F) != c) { die("can't write to file - disk full?\n"); }
+}
+
+
+static void fflush_or_die(FILE *F)
+{
+    assert(F != NULL);
+    int error = fflush(F);
+    if (error != 0) { die("can't write to file - disk full?\n"); }
+}
 
 
 static void fclose_or_die(FILE *F)
@@ -116,16 +122,7 @@ static void fclose_or_die(FILE *F)
     assert(F != NULL);
 
     int error = fclose(F);
-    if (error != 0) { fprintf(stderr, "Error: Can't write to file. Disk full?\n"); exit(1); }
-}
-
-
-static void fflush_or_die(FILE *F)
-{
-    assert(F != NULL);
-
-    int error = fflush(F);
-    if (error != 0) { fprintf(stderr, "Error: Can't write to file. Disk full?\n"); exit(1); }
+    if (error != 0) { die("can't close file - disk full?\n"); }
 }
 
 
@@ -134,8 +131,8 @@ static FILE* create_temp_file(char *path, const char *purpose)
     assert(path != NULL);
     assert(purpose != NULL);
 
-    FILE *F = fopen(path, "wb");
-    if (!F) { fprintf(stderr, "Can't create temporary %s file \"%s\"\n", purpose, path); exit(1); }
+    FILE *F = fopen(path, "wb+");
+    if (!F) { die("can't create temporary %s file \"%s\"\n", purpose, path); }
     return F;
 }
 
@@ -143,9 +140,9 @@ static FILE* create_temp_file(char *path, const char *purpose)
 static ZSTD_CStream* create_zstd_cstream(int level)
 {
     ZSTD_CStream *s = ZSTD_createCStream();
-    if (s == NULL) { fprintf(stderr, "ZSTD_createCStream() error\n"); exit(1); }
+    if (s == NULL) { die("ZSTD_createCStream() error\n"); }
     size_t const initResult = ZSTD_initCStream(s, level);
-    if (ZSTD_isError(initResult)) { fprintf(stderr, "ZSTD_initCStream() error: %s\n", ZSTD_getErrorName(initResult)); exit(1); }
+    if (ZSTD_isError(initResult)) { die("ZSTD_initCStream() error: %s\n", ZSTD_getErrorName(initResult)); }
     return s;
 }
 
@@ -167,7 +164,7 @@ static size_t write_to_cstream(ZSTD_CStream *s, FILE *F, void *data, size_t size
     {
         ZSTD_outBuffer output = { out_buffer, out_buffer_size, 0 };
         size_t toRead = ZSTD_compressStream(s, &output, &input);
-        if (ZSTD_isError(toRead)) { fprintf(stderr, "ZSTD_compressStream() error: %s\n", ZSTD_getErrorName(toRead)); exit(1); }
+        if (ZSTD_isError(toRead)) { die("ZSTD_compressStream() error: %s\n", ZSTD_getErrorName(toRead)); }
         fwrite_or_die(out_buffer, 1, output.pos, F);
         bytes_written += output.pos;
     }
@@ -187,25 +184,7 @@ static size_t flush_cstream(ZSTD_CStream *s, FILE *F)
 
     ZSTD_outBuffer output = { out_buffer, out_buffer_size, 0 };
     size_t const remainingToFlush = ZSTD_endStream(s, &output);
-    if (remainingToFlush) { fprintf(stderr, "Can't end zstd stream"); exit(1); }
+    if (remainingToFlush) { die("can't end zstd stream\n"); }
     fwrite_or_die(out_buffer, 1, output.pos, F);
     return output.pos;
-}
-
-
-static void write_variable_length_encoded_number(FILE *F, unsigned long long a)
-{
-    assert(F != NULL);
-
-    unsigned char vle_buffer[10];
-    unsigned char *b = vle_buffer + 10;
-    *--b = (unsigned char)(a & 127ull);
-    a >>= 7;
-    while (a > 0)
-    {
-        *--b = (unsigned char)(128ull | (a & 127ull));
-        a >>= 7;
-    }
-    size_t len = (size_t)(vle_buffer + 10 - b);
-    fwrite_or_die(b, 1, len, F);
 }
