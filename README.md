@@ -53,7 +53,6 @@ For testing purpose only:
 ```
 git clone --recurse-submodules --branch develop https://github.com/KirillKryukov/naf.git
 cd naf && make && sudo make install
-
 ```
 
 ## Compressing
