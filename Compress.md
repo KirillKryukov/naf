@@ -18,7 +18,7 @@
 
 **-o FILE** - Write compressed NAF format data to FILE.
 
-**-c** - Write compressed output to standard output.
+**-c** - Write compressed output to console (standard output stream).
 
 **-#** - Use compression level #. This corresponds to zstd compression level.
 The default is 1. Higher levels provide better compression, but are slower.
@@ -41,10 +41,10 @@ If both variables are not defined, the compressor exits without writing anything
 **--fastq** - Proceed only if input is in FASTQ format.
 
 **--dna** - Input contains DNA sequences (default).
-Valid sequences can include: ACGT, RYSWKMBDHV, N, '-'.
+Valid sequences can include: ACGT, RYSWKMBDHV, N (as well as all these letters in lower case), '-'.
 
 **--rna** - Input contains RNA sequences.
-Valid sequences can include: ACGU, RYSWKMBDHV, N, '-'.
+Valid sequences can include: ACGU, RYSWKMBDHV, N (as well as all these letters in lower case), '-'.
 
 **--protein** - Input has protein sequences.
 Recognized amino acid codes:
@@ -56,7 +56,7 @@ Recognized amino acid codes:
 'X' (any amino acid),
 '\*' (stop codon),
 and '-' (gap).
-I.e., entire Latin alphabet, asterisk and dash.
+I.e., entire Latin alphabet (in both upper and lower case), asterisk and dash.
 
 **--text** - Input has text sequences.
 Each sequence can include any printable single byte characters, which means characters in code ranges: 33..126 and 128..254.
@@ -76,6 +76,7 @@ If omitted, stores the maximum sequence line length from the input.
 **--keep-temp-files** - Don't delete temporary files (normally they are deleted after compression is done).
 
 **--no-mask** - Don't store sequence mask (lower/upper characters).
+Only supported for DNA and RNA input.
 
 **-h**, **--help** - Show usage help.
 
