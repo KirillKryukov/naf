@@ -393,6 +393,7 @@ static void process_non_well_formed_fasta(void)
                     else { unexpected_input_char(c); str_append_char(&seq, unexpected_seq_char_replacement); }
                 }
                 else if (is_space_arr[c]) {}
+                else if (c == '>' && in_seq_type == seq_type_text) { str_append_char(&seq, (unsigned char)c); }
                 else { unexpected_input_char(c); str_append_char(&seq, unexpected_seq_char_replacement); }
             }
 

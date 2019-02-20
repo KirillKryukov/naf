@@ -123,7 +123,7 @@ static size_t in_end = 0;
 
 static unsigned long long n_sequences = 0ull;
 
-static const bool *is_unexpected_arr = is_unexpected_dna_arr;
+static bool *is_unexpected_arr = is_unexpected_dna_arr;
 static bool abort_on_unexpected_code = false;
 static bool assume_well_formed_input = false;
 
@@ -477,6 +477,7 @@ int main(int argc, char **argv)
     open_input_file();
     confirm_input_format();
     store_qual = (in_format_from_input == in_format_fastq);
+    if (in_seq_type == seq_type_text && in_format_from_input == in_format_fasta) { is_unexpected_arr['>'] = true; }
 
     if (!force_stdout && out_file_path == NULL && isatty(fileno(stdout)))
     {
