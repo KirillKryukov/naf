@@ -88,8 +88,8 @@ Compression process stores temporary data on disk.
 Therefore please check the following before compressing large files:
 
 1. Temporary directory is specified in TMPDIR or TMP environment variable,
- or in `--temp-dir` command line option of your ennaf command.
- Note that ennaf doesn't have a default setting for temporary directory, such as "/tmp", it will only use directory specified in the environment or command line.
+ or in `--temp-dir` command line option of your `ennaf` command.
+ Note that `ennaf` doesn't have a default setting for temporary directory, such as "/tmp", it will only use directory specified in the environment or command line.
 1. Temporary directory is on your fastest SSD drive.
 1. Temporary directory has sufficient space to hold the compressed data.
  About 1/4 of the uncompressed data size should be normally fine, but safer to have 1/2 or more.
@@ -127,7 +127,7 @@ A mismatching file extension produces a warning, but does not stop the compressi
 
 ## What characters are supported in sequences?
 
-Input sequence type can be selected by "--dna", "--rna", "--protein" or "--text" argument.
+Input sequence type can be selected by `--dna`, `--rna`, `--protein` or `--text` argument.
 If not specified, by default input is assumed to be DNA.
 
 Recognized characters in each sequence type:
@@ -136,16 +136,18 @@ Recognized characters in each sequence type:
   * Protein: 'A' to 'Z' and 'a' to 'z', '\*' (stop codon), '-' (gap).
   * Text: Characters with codes 33..126 and 128..254 (printable non-space ASCII and extended ASCII).
 
-For DNA/RNA input, if '--no-mask' is specified, all lower case characters are stored in upper case.
-For protein or text sequences '--no-mask' is not supported.
+For DNA/RNA input, if `--no-mask` is specified, all lower case characters are stored in upper case.
+(For protein or text sequences `--no-mask` is not supported).
 
-Note that text sequences can include '>' character.
+Note that text sequences can include the '>' character.
 However, in FASTA-formatted input any such character occurring at the line start
 are interpreted as starting the header of the next sequence.
 So, if you use FASTA-formatted text sequences, you have to either not use '>' as part of the sequence,
 or make sure that such characters are not placed at the beginning of a line where they can be mistaken for start of the next sequence.
 
 In case of FASTQ input there is no such ambiguity, because `ennaf` only supports single line FASTQ sequences.
+A '+' character can occur anywhere, including the beginning of such sequence
+(relevant only for _text_ sequences in FASTQ format).
 
 ## What happens to unsupported characters?
 
@@ -153,17 +155,17 @@ Any spaces and tabs found in the input sequences are silently discarded.
 They never appear in decompressed sequences.
 
 As for any other unknown characters:
-If "--strict" is specified, any such character causes compression to fail with error message.
+If `--strict` option is used, any such character causes compression to fail with error message.
 (No output file is produced).
 
-Without "--strict" the unsupported characters are replaced by:
+Without `--strict` the unsupported characters are replaced by:
   * 'N' for DNA/RNA
   * 'X' for protein
   * '?' for text
 
 The compressor also reports the number of each unknown character.
 
-(Note that with '--well-formed' option,
+(Note that with `--well-formed` option,
 the input is not verified for spaces or other unknown characters.
 So use it entirely on your own risk).
 
@@ -172,12 +174,13 @@ So use it entirely on your own risk).
 Only single line sequence and quality are supported in FASTQ input.
 
 The compressor ignores the content of the '+' line, and does not verify it for identity with the '@' line.
-In the decompressed FASTQ output, the '+' line is always empty (has nothing except the '+'), regardless of what it contained before compression.
+In the decompressed FASTQ output, the '+' line is always empty (has nothing except the '+'),
+regardless of what it contained before compression.
 
 Quality can include characters with codes from 33 to 126 (printable non-space ASCII).
 
 By default DNA sequences are expected,
-however '--rna', '--protein' and '--text' options are available for FASTQ as well.
+however `--rna`, `--protein` and `--text` options are available for FASTQ as well.
 
 ## Preserving non-standard sequence characters
 
