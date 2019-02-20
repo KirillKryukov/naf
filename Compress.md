@@ -136,7 +136,16 @@ Recognized characters in each sequence type:
   * Protein: 'A' to 'Z' and 'a' to 'z', '\*' (stop codon), '-' (gap).
   * Text: Characters with codes 33..126 and 128..254 (printable non-space ASCII and extended ASCII).
 
-For DNA/RNA, if '--no-mask' is specified, all lower case characters are stored in upper case.
+For DNA/RNA input, if '--no-mask' is specified, all lower case characters are stored in upper case.
+For protein or text sequences '--no-mask' is not supported.
+
+Note that text sequences can include '>' character.
+However, in FASTA-formatted input any such character occurring at the line start
+are interpreted as starting the header of the next sequence.
+So, if you use FASTA-formatted text sequences, you have to either not use '>' as part of the sequence,
+or make sure that such characters are not placed at the beginning of a line where they can be mistaken for start of the next sequence.
+
+In case of FASTQ input there is no such ambiguity, because `ennaf` only supports single line FASTQ sequences.
 
 ## What happens to unsupported characters?
 
