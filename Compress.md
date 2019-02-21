@@ -188,3 +188,9 @@ you have to use protein mode.
 If your non-standard codes go beyond alphabet and include digits or punctuation
 (such as '.' for identical base with first sequence),
 you have to switch to text mode (`--text`).
+
+## Using text mode for DNA data
+
+Since both `--dna` and `--text` modes can be used for DNA data, which is better?
+Short answer: `--dna` is faster and has stronger compression.
+For details, see <a href="http://kirill-kryukov.com/study/naf/benchmark-text-vs-dna-Spur.html">this benchmark page</a>.
