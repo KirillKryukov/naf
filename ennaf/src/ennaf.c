@@ -342,7 +342,6 @@ static void show_help(void)
         "  --rna              - Input sequence is RNA\n"
         "  --protein          - Input sequence is protein\n"
         "  --text             - Input sequence is text\n"
-        "  --well-formed      - Assume well-formed input\n"
         "  --strict           - Fail on unexpected input characters\n"
         "  --line-length N    - Override line length to N\n"
         "  --verbose          - Verbose mode\n"

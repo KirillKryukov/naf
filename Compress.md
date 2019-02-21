@@ -66,8 +66,6 @@ The list of standard characters depends on sequence type, selected using `--dna`
 Without `--strict` , the compressor will simply replace any unknown characters with the default substitution character
 ('N' for DNA/RNA, 'X' for protein, '?' for text), and report the total number of occurrences for each unexpected character.
 
-**--well-formed** - Assume well-formed input.
-
 **--line-length N** - Store line length N in the output NAF file.
 If omitted, stores the maximum sequence line length from the input.
 
@@ -164,10 +162,6 @@ Without `--strict` the unsupported characters are replaced by:
   * '?' for text
 
 The compressor also reports the number of each unknown character.
-
-(Note that with `--well-formed` option,
-the input is not verified for spaces or other unknown characters.
-So use it entirely on your own risk).
 
 ## What FASTQ variants are supported?
 
