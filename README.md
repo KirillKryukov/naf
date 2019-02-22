@@ -73,4 +73,4 @@ If you use NAF, feel free to cite our preprint:
 
  * Kirill Kryukov, Mahoko Takahashi Ueda, So Nakagawa, Tadashi Imanishi (2018)
 **"Nucleotide Archival Format (NAF) enables efficient lossless reference-free compression of DNA sequences"**
-bioRxiv 501130; http://biorxiv.org/cgi/content/short/501130v1, doi: https://doi.org/10.1101/501130.
+bioRxiv 501130; http://biorxiv.org/cgi/content/short/501130v2, doi: https://doi.org/10.1101/501130.
