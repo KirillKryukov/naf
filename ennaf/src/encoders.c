@@ -7,15 +7,14 @@
 static void init_encoders(void)
 {
     assert(out_4bit_buffer == NULL);
-    assert(out_buffer == NULL);
     assert(file_copy_buffer == NULL);
     assert(length_units == NULL);
     assert(mask_units == NULL);
 
-    out_buffer_size = ZSTD_CStreamOutSize();
-    out_buffer = malloc_or_die(out_buffer_size);
+    zstd_stream_recommended_out_buffer_size = ZSTD_CStreamOutSize();
 
-    out_4bit_buffer = (unsigned char *) malloc_or_die(out_buffer_size);
+    out_4bit_buffer_size = ZSTD_CStreamOutSize();
+    out_4bit_buffer = (unsigned char *) malloc_or_die(out_4bit_buffer_size);
     out_4bit_pos = out_4bit_buffer;
 
     file_copy_buffer = (unsigned char *) malloc_or_die(file_copy_buffer_size);
@@ -33,8 +32,7 @@ static void encode_dna(const unsigned char *str, size_t size)
     assert(str != NULL);
     assert(out_4bit_buffer != NULL);
     assert(out_4bit_pos != NULL);
-    assert(seq_cstream != NULL);
-    assert(SEQ != NULL);
+    assert(SEQ.cstream != NULL);
 
     const unsigned char *end = str + size;
     const unsigned char *p = str;
@@ -42,9 +40,9 @@ static void encode_dna(const unsigned char *str, size_t size)
     if (p < end && parity)
     {
         *out_4bit_pos++ |= (unsigned char)(nuc_code[*p] * 16);
-        if (out_4bit_pos >= out_4bit_buffer + out_buffer_size)
+        if (out_4bit_pos >= out_4bit_buffer + out_4bit_buffer_size)
         {
-            seq_size_compressed += write_to_cstream(seq_cstream, SEQ, out_4bit_buffer, out_buffer_size);
+            compress(&SEQ, out_4bit_buffer, out_4bit_buffer_size);
             out_4bit_pos = out_4bit_buffer;
         }
         parity = false;
@@ -56,9 +54,9 @@ static void encode_dna(const unsigned char *str, size_t size)
     {
         *out_4bit_pos++ = nuc_code[*p] | 
                           (unsigned char)(nuc_code[*(p+1)] * 16);
-        if (out_4bit_pos >= out_4bit_buffer + out_buffer_size)
+        if (out_4bit_pos >= out_4bit_buffer + out_4bit_buffer_size)
         {
-            seq_size_compressed += write_to_cstream(seq_cstream, SEQ, out_4bit_buffer, out_buffer_size);
+            compress(&SEQ, out_4bit_buffer, out_4bit_buffer_size);
             out_4bit_pos = out_4bit_buffer;
         }
     }
@@ -75,8 +73,7 @@ static void add_length(size_t len)
 {
     assert(length_units != NULL);
     assert(length_unit_index < length_units_buffer_n_units);
-    assert(len_cstream != NULL);
-    assert(LEN != NULL);
+    assert(LEN.cstream != NULL);
 
     while (len >= 0xFFFFFFFFull)
     {
@@ -84,8 +81,7 @@ static void add_length(size_t len)
         len -= 0xFFFFFFFFull;
         if (length_unit_index >= length_units_buffer_n_units)
         {
-            len_size_compressed += write_to_cstream(len_cstream, LEN, length_units, sizeof(unsigned int) * length_units_buffer_n_units);
-            n_length_units_stored += length_units_buffer_n_units;
+            compress(&LEN, length_units, sizeof(unsigned int) * length_units_buffer_n_units);
             length_unit_index = 0;
         }
     }
@@ -93,8 +89,7 @@ static void add_length(size_t len)
     length_units[length_unit_index++] = (unsigned int)len;
     if (length_unit_index >= length_units_buffer_n_units)
     {
-        len_size_compressed += write_to_cstream(len_cstream, LEN, length_units, sizeof(unsigned int) * length_units_buffer_n_units);
-        n_length_units_stored += length_units_buffer_n_units;
+        compress(&LEN, length_units, sizeof(unsigned int) * length_units_buffer_n_units);
         length_unit_index = 0;
     }
 }
@@ -106,8 +101,7 @@ static void add_mask(unsigned long long len)
     assert(mask_units_end != NULL);
     assert(mask_units_pos != NULL);
     assert(mask_units_pos < mask_units_end);
-    assert(mask_cstream != NULL);
-    assert(MASK != NULL);
+    assert(MASK.cstream != NULL);
 
     while (len >= 255ull)
     {
@@ -115,8 +109,7 @@ static void add_mask(unsigned long long len)
         len -= 255ull;
         if (mask_units_pos >= mask_units_end)
         {
-            mask_size_compressed += write_to_cstream(mask_cstream, MASK, mask_units, mask_units_buffer_size);
-            n_mask_units_stored += mask_units_buffer_size;
+            compress(&MASK, mask_units, mask_units_buffer_size);
             mask_units_pos = mask_units;
         }
     }
@@ -124,8 +117,7 @@ static void add_mask(unsigned long long len)
     *mask_units_pos++ = (unsigned char)len;
     if (mask_units_pos >= mask_units_end)
     {
-        mask_size_compressed += write_to_cstream(mask_cstream, MASK, mask_units, mask_units_buffer_size);
-        n_mask_units_stored += mask_units_buffer_size;
+        compress(&MASK, mask_units, mask_units_buffer_size);
         mask_units_pos = mask_units;
     }
 }

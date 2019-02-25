@@ -4,6 +4,16 @@
  * See README.md and LICENSE files of this repository
  */
 
+
+/*
+ * Replacement for unknown input characters.
+ */
+static unsigned char unexpected_seq_char_replacement = 'N';
+static const unsigned char unexpected_name_char_replacement = '?';
+static const unsigned char unexpected_qual_char_replacement = '!';  // Unknown character can only mean poor quality.
+
+
+
 /*
  * Character class tables have 257 entries to make space for an EOF mark.
  */

@@ -7,6 +7,7 @@
 - Installation from source no longer requires pre-installing zstd.
 - _ennaf_ no longer loads each entire input sequence to memory.
 - Added `-o` and `-c` arguments to _unnaf_.
+- Temporary files are no longer used with small input.
 
 ## 1.0.0 - 2019-01-17
 - Initial release.

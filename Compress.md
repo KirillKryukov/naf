@@ -82,8 +82,8 @@ Only supported for DNA and RNA input.
 
 ## Temporary storage
 
-Compression process stores temporary data on disk.
-Therefore please check the following before compressing large files:
+Compression process may store temporary data on disk.
+Therefore please check the following before running `ennaf`:
 
 1. Temporary directory is specified in TMPDIR or TMP environment variable,
  or in `--temp-dir` command line option of your `ennaf` command.
