@@ -71,7 +71,7 @@ See `unnaf -h` and [Decompression Manual](Decompress.md).
 
 If you use NAF, please cite:
 
- * Kirill Kryukov, Mahoko Takahashi Ueda, So Nakagawa, Tadashi Imanishi (2018)
+ * Kirill Kryukov, Mahoko Takahashi Ueda, So Nakagawa, Tadashi Imanishi (2019)
 **"Nucleotide Archival Format (NAF) enables efficient lossless reference-free compression of DNA sequences"**
 [Bioinformatics (in press), btz144](https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btz144/5364265),
 doi: [10.1093/bioinformatics/btz144](https://doi.org/10.1093/bioinformatics/btz144).
