@@ -69,8 +69,11 @@ See `unnaf -h` and [Decompression Manual](Decompress.md).
 
 ## Reference
 
-If you use NAF, feel free to cite our preprint:
+If you use NAF, please cite:
 
  * Kirill Kryukov, Mahoko Takahashi Ueda, So Nakagawa, Tadashi Imanishi (2018)
 **"Nucleotide Archival Format (NAF) enables efficient lossless reference-free compression of DNA sequences"**
-bioRxiv 501130; http://biorxiv.org/cgi/content/short/501130v2, doi: https://doi.org/10.1101/501130.
+[Bioinformatics (in press), btz144](https://academic.oup.com/bioinformatics/advance-article/doi/10.1093/bioinformatics/btz144/5364265),
+doi: [10.1093/bioinformatics/btz144](https://doi.org/10.1093/bioinformatics/btz144).
+
+Previous preprint: bioRxiv 501130; http://biorxiv.org/cgi/content/short/501130v2, doi: [10.1101/501130](https://doi.org/10.1101/501130).
