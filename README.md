@@ -28,15 +28,15 @@ Check if the [latest release](https://github.com/KirillKryukov/naf/releases) has
 
 ### Building from source
 
-Prerequisites: git, gcc, make.
-E.g., to install on Ubuntu: `sudo apt install git gcc make`.
+Prerequisites: git, gcc, make, diff, perl (diff and perl are only used for test suite).
+E.g., to install on Ubuntu: `sudo apt install git gcc make diffutils perl`.
 On Mac OS you may have to install Xcode Command Line Tools.
 
 Building and installing:
 
 ```
 git clone --recurse-submodules https://github.com/KirillKryukov/naf.git
-cd naf && make && sudo make install
+cd naf && make && make test && sudo make install
 ```
 
 To install in alternative location, add "prefix=DIR" to the "make install" command. E.g., `sudo make prefix=/usr/local/bio install`
@@ -45,14 +45,14 @@ For a staged install, add "DESTDIR=DIR". E.g., `make DESTDIR=/tmp/stage install`
 
 On Windows it can be installed using [Cygwin](https://www.cygwin.com/),
 and should be also possible with [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
-In Cygwin drop `sudo`: `cd naf && make && make install`
+In Cygwin drop `sudo`: `cd naf && make && make test && make install`
 
 ### Building from latest unreleased source
 
 For testing purpose only:
 ```
 git clone --recurse-submodules --branch develop https://github.com/KirillKryukov/naf.git
-cd naf && make && sudo make install
+cd naf && make && make test && sudo make install
 ```
 
 ## Compressing
