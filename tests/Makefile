@@ -5,7 +5,7 @@ default: all
 
 all:
 	@diff -q Makefile Makefile
-	@./test-runner.pl interface small
+	@./test-runner.pl interface alphabet small
 	@echo "Success!"
 
 clean:

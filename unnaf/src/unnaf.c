@@ -5,7 +5,7 @@
  */
 
 #define VERSION "1.1.0-beta"
-#define DATE "2019-02-07"
+#define DATE "2019-02-27"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #include "platform.h"
@@ -345,7 +345,6 @@ static void parse_command_line(int argc, char **argv)
 int main(int argc, char **argv)
 {
     atexit(done);
-    init_tables();
 
     parse_command_line(argc, argv);
     if (in_file_path == NULL && isatty(fileno(stdin)))
@@ -356,6 +355,8 @@ int main(int argc, char **argv)
 
     open_input_file();
     read_header();
+    if (in_seq_type == seq_type_rna) { code_to_nuc[1] = 'U'; }
+    if (in_seq_type <= seq_type_rna) { init_tables(); }
 
     if (out_type == UNDECIDED)
     {
