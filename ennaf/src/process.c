@@ -39,7 +39,6 @@ static void seq_writer_nonmasked_4bit(unsigned char *str, size_t size)
 static void seq_writer_masked_text(unsigned char *str, size_t size)
 {
     seq_size_original += size;
-    extract_mask(str, size);
     compress(&SEQ, str, size);
 }
 
@@ -47,6 +46,7 @@ static void seq_writer_masked_text(unsigned char *str, size_t size)
 static void seq_writer_nonmasked_text(unsigned char *str, size_t size)
 {
     seq_size_original += size;
+    for (unsigned char *c = str; *c; c++) { *c = (unsigned char) toupper(*c); }
     compress(&SEQ, str, size);
 }
 
@@ -572,8 +572,8 @@ static void process(void)
     comment.data = (unsigned char *) malloc_or_die(UNCOMPRESSED_BUFFER_SIZE);
     seq.data     = (unsigned char *) malloc_or_die(UNCOMPRESSED_BUFFER_SIZE);
 
-    seq.writer = store_mask ? ((in_seq_type < seq_type_protein) ? &seq_writer_masked_4bit : &seq_writer_masked_text)
-                            : ((in_seq_type < seq_type_protein) ? &seq_writer_nonmasked_4bit : &seq_writer_nonmasked_text);
+    seq.writer = no_mask ? ((in_seq_type < seq_type_protein) ? &seq_writer_nonmasked_4bit : &seq_writer_nonmasked_text)
+                         : ((in_seq_type < seq_type_protein) ? &seq_writer_masked_4bit : &seq_writer_masked_text);
 
     if (in_format_from_input == in_format_fasta)
     {

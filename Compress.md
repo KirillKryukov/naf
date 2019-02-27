@@ -74,7 +74,7 @@ If omitted, stores the maximum sequence line length from the input.
 **--keep-temp-files** - Don't delete temporary files (normally they are deleted after compression is done).
 
 **--no-mask** - Don't store sequence mask (lower/upper characters).
-Only supported for DNA and RNA input.
+Converts the sequences to upper case before compression.
 
 **-h**, **--help** - Show usage help.
 
@@ -134,8 +134,7 @@ Recognized characters in each sequence type:
   * Protein: 'A' to 'Z' and 'a' to 'z', '\*' (stop codon), '-' (gap).
   * Text: Characters with codes 33..126 and 128..254 (printable non-space ASCII and extended ASCII).
 
-For DNA/RNA input, if `--no-mask` is specified, all lower case characters are stored in upper case.
-(For protein or text sequences `--no-mask` is not supported).
+If `--no-mask` is specified, all lower case characters are stored in upper case.
 
 Note that text sequences can include the '>' character.
 However, in FASTA-formatted input any such character occurring at the line start

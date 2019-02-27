@@ -5,7 +5,7 @@
  */
 
 #define VERSION "1.1.0-beta"
-#define DATE "2019-02-25"
+#define DATE "2019-02-27"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #include "platform.h"
@@ -19,6 +19,7 @@ static const unsigned char naf_magic_number[3] = { 0x01u, 0xF9u, 0xECu };
 
 static bool verbose = false;
 static bool keep_temp_files = false;
+static bool no_mask = false;
 
 static char *in_file_path = NULL;
 static FILE *IN = NULL;
@@ -327,7 +328,6 @@ static void show_help(void)
 static void parse_command_line(int argc, char **argv)
 {
     bool print_version = false;
-    bool no_mask = false;
 
     for (int i = 1; i < argc; i++)
     {
@@ -393,12 +393,6 @@ static void parse_command_line(int argc, char **argv)
     {
         die("'--well-formed' and '--strict' can't be used together\n");
     }
-
-    if (no_mask)
-    {
-        if (in_seq_type < seq_type_protein) { store_mask = false; }
-        else { die("'--no-mask' is supported only for DNA or RNA sequences\n"); }
-    }
 }
 
 
@@ -413,6 +407,8 @@ int main(int argc, char **argv)
         err("no input specified, use \"ennaf -h\" for help\n");
         exit(0);
     }
+
+    if (no_mask || in_seq_type >= seq_type_protein) { store_mask = false; }
 
     if (in_seq_type == seq_type_dna)
     {
@@ -431,14 +427,12 @@ int main(int argc, char **argv)
         is_unexpected_arr = is_unexpected_protein_arr;
         in_seq_type_name = "protein";
         unexpected_seq_char_replacement = 'X';
-        store_mask = false;
     }
     else if (in_seq_type == seq_type_text)
     {
         is_unexpected_arr = is_unexpected_text_arr;
         in_seq_type_name = "text";
         unexpected_seq_char_replacement = '?';
-        store_mask = false;
     }
 
     detect_temp_directory();
