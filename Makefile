@@ -13,7 +13,7 @@ default:
 all: default
 
 test:
-	$(MAKE) -k -C tests
+	$(MAKE) -C tests
 
 clean:
 	$(MAKE) -C ennaf clean

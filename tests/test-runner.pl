@@ -12,7 +12,7 @@ use File::Glob qw(:bsd_glob);
 my @tests = @ARGV;
 if (!scalar @tests) { die "Tests to run are not specified\n"; }
 
-my $null = ($^O =~ /MSWin/) ? 'nul' : "/dev/null";
+my $null = ($^O =~ /MSWin/) ? 'nul' : '/dev/null';
 my ($n_tests_total, $n_tests_passed) = (0, 0);
 
 foreach my $test (@tests)
