@@ -8,6 +8,7 @@
 - _ennaf_ no longer loads each entire input sequence to memory.
 - _ennaf_ no longer creates temporary files if the input is small.
 - Added `-o` and `-c` arguments to _unnaf_.
+- Added test suite.
 
 ## 1.0.0 - 2019-01-17
 - Initial release.
