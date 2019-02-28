@@ -1,0 +1,1 @@
+ennaf --dna {GROUP}.fa 2>{TEST}.e.err | unnaf --seq --no-mask >{TEST}.out 2>{TEST}.u.err

@@ -361,6 +361,12 @@ static inline void print_dna_split_into_lines(unsigned char *buffer, size_t size
 }
 
 
+static inline void uppercase_dna_buffer(void)
+{
+    for (size_t i = 0; i < dna_buffer_pos; i++) { dna_buffer[i] = (unsigned char) toupper(dna_buffer[i]); }
+}
+
+
 static inline void print_dna_buffer_as_fasta(int masking)
 {
     unsigned long long n_bp_to_print = dna_buffer_pos;
@@ -479,12 +485,17 @@ static void print_dna(int masking)
                     bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &in);
                     if (ZSTD_isError(bytes_to_read)) { die("can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); }
                     dna_buffer_pos = (unsigned)out.pos;
+                    if (!use_mask) { uppercase_dna_buffer(); }
                     print_dna_buffer(masking);
                 }
             }
         }
 
-        if (total_seq_n_bp_remaining > 0) { print_dna_buffer(masking); }
+        if (total_seq_n_bp_remaining > 0)
+        {
+            if (in_seq_type >= seq_type_protein && !use_mask) { uppercase_dna_buffer(); }
+            print_dna_buffer(masking);
+        }
     }
 }
 
@@ -536,11 +547,16 @@ static void print_fasta(int masking)
                     bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &in);
                     if (ZSTD_isError(bytes_to_read)) { die("can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); }
                     dna_buffer_pos = (unsigned)out.pos;
+                    if (!use_mask) { uppercase_dna_buffer(); }
                     print_dna_buffer_as_fasta(masking);
                 }
             }
         }
 
-        if (total_seq_n_bp_remaining > 0) { print_dna_buffer_as_fasta(masking); }
+        if (total_seq_n_bp_remaining > 0)
+        {
+            if (in_seq_type >= seq_type_protein && !use_mask) { uppercase_dna_buffer(); }
+            print_dna_buffer_as_fasta(masking);
+        }
     }
 }

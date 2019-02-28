@@ -15,7 +15,7 @@ static void msg(const char *format, ...)
 }
 
 
-__attribute__ ((cold))
+/*__attribute__ ((cold))
 __attribute__ ((format (printf, 1, 2)))
 static void warn(const char *format, ...) 
 {
@@ -24,7 +24,7 @@ static void warn(const char *format, ...)
     va_start(argptr, format);
     vfprintf(stderr, format, argptr);
     va_end(argptr);
-}
+}*/
 
 
 __attribute__ ((cold))
