@@ -361,10 +361,7 @@ int main(int argc, char **argv)
     {
         out_type = has_quality ? FASTQ : FASTA;
     }
-    if (!has_quality && out_type == FASTQ)
-    {
-        die("FASTQ output requested, but input has no qualities\n");
-    }
+
     if ((out_type == DNA || out_type == MASKED_DNA || out_type == UNMASKED_DNA) && (in_seq_type != seq_type_dna))
     {
         die("input has not DNA, but %s data\n", in_seq_type_name);
@@ -423,7 +420,14 @@ int main(int argc, char **argv)
                 else if (out_type == FASTA) { print_fasta(use_mask && has_mask); }
                 else if (out_type == MASKED_FASTA) { print_fasta(use_mask && has_mask); }
                 else if (out_type == UNMASKED_FASTA) { print_fasta(0); }
-                else if (out_type == FASTQ) { print_fastq(0); }
+                else if (out_type == FASTQ)
+                {
+                    if (N > 0)
+                    {
+                        if (!has_quality) { die("FASTQ output requested, but input has no qualities\n"); }
+                        print_fastq(0);
+                    }
+                }
                 else { die("unknown output requested\n"); }
             }
         }
