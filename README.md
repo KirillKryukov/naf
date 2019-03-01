@@ -1,9 +1,11 @@
 # Nucleotide Archival Format (NAF)
 
-NAF is a binary file format for DNA sequence data.
+NAF is a binary file format for biological sequence data.
 It's based on [zstd](http://www.zstd.net/), and features strong compression and fast decompression.
-It supports FASTA and FASTQ-formatted sequences, ambiguous IUPAC codes, masked sequence,
-and has no limit on sequence length or number of sequences. See [NAF homepage](http://kirill-kryukov.com/study/naf/) for details and benchmarks.
+It can store DNA, RNA, protein or text sequences, with or without qualities.
+It supports FASTA and FASTQ-formattted sequences, ambiguous IUPAC codes, masked sequence,
+and has no limit on sequence length or number of sequences.
+See [NAF homepage](http://kirill-kryukov.com/study/naf/) for details and benchmarks.
 
 | Example benchmark: SILVA Database (948 MB): |
 |---------------------------------------------|
