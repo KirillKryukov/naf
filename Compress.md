@@ -72,6 +72,8 @@ If omitted, stores the maximum sequence line length from the input.
 **--verbose** - Verbose mode.
 
 **--keep-temp-files** - Don't delete temporary files (normally they are deleted after compression is done).
+Specifying this option forces creation of temporary files even in cases
+where they would be otherwise not created due to data being small.
 
 **--no-mask** - Don't store sequence mask (lower/upper characters).
 Converts the sequences to upper case before compression.
@@ -97,6 +99,7 @@ Therefore please check the following before running `ennaf`:
 
 The default level 1 is suitable when time is limited, or when the machine doing the compression is not fast enough (or has too little RAM).
 For example, when transferring reads from a sequencer machine, `ennaf -1` can be used instead of gzip.
+(Equivalent to just `ennaf`, since `-1` is the default level).
 
 On the other hand, if you compress data for storing in a database,
 the maximum level 22 may be preferable, even though it's slower.
