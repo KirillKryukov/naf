@@ -5,7 +5,7 @@
  */
 
 #define VERSION "1.1.0-beta"
-#define DATE "2019-02-07"
+#define DATE "2019-02-28"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #include "platform.h"
@@ -29,7 +29,6 @@ static int in_seq_type = seq_type_dna;
 static const char *in_seq_type_name = "DNA";
 
 static bool verbose = false;
-static bool no_mask_option = false;
 static bool use_mask = true;
 
 static char *in_file_path = NULL;
@@ -302,7 +301,7 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--seq"              )) { set_out_type(SEQ                ); continue; }
                 if (!strcmp(argv[i], "--fasta"            )) { set_out_type(FASTA              ); continue; }
                 if (!strcmp(argv[i], "--fastq"            )) { set_out_type(FASTQ              ); continue; }
-                if (!strcmp(argv[i], "--no-mask")) { no_mask_option = true; continue; }
+                if (!strcmp(argv[i], "--no-mask")) { use_mask = false; continue; }
                 if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
                 if (!strcmp(argv[i], "--verbose")) { verbose = true; continue; }
                 if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
@@ -345,7 +344,6 @@ static void parse_command_line(int argc, char **argv)
 int main(int argc, char **argv)
 {
     atexit(done);
-    init_tables();
 
     parse_command_line(argc, argv);
     if (in_file_path == NULL && isatty(fileno(stdin)))
@@ -356,15 +354,14 @@ int main(int argc, char **argv)
 
     open_input_file();
     read_header();
+    if (in_seq_type == seq_type_rna) { code_to_nuc[1] = 'U'; }
+    if (in_seq_type <= seq_type_rna) { init_tables(); }
 
     if (out_type == UNDECIDED)
     {
         out_type = has_quality ? FASTQ : FASTA;
     }
-    if (!has_quality && out_type == FASTQ)
-    {
-        die("FASTQ output requested, but input has no qualities\n");
-    }
+
     if ((out_type == DNA || out_type == MASKED_DNA || out_type == UNMASKED_DNA) && (in_seq_type != seq_type_dna))
     {
         die("input has not DNA, but %s data\n", in_seq_type_name);
@@ -372,22 +369,6 @@ int main(int argc, char **argv)
     if (out_type == FOUR_BIT && in_seq_type >= seq_type_protein)
     {
         die("input has no 4-bit encoded data, but %s sequences\n", in_seq_type_name);
-    }
-    if (no_mask_option)
-    {
-        if (out_type == FASTA || out_type == SEQ || out_type == DNA)
-        {
-            use_mask = false;
-            if (in_seq_type >= seq_type_protein)
-            {
-                warn("'--no-mask' option has no effect on this input, since it works only on DNA/RNA data, but input has %s sequences\n", in_seq_type_name);
-            }
-            else if (!has_mask)
-            {
-                warn("'--no-mask' option is redundant since the input has no mask anyway\n");
-            }
-        }
-        else { die("'--no-mask' option is supported only for '--fasta' or '--seq' output\n"); }
     }
 
     open_output_file();
@@ -439,7 +420,14 @@ int main(int argc, char **argv)
                 else if (out_type == FASTA) { print_fasta(use_mask && has_mask); }
                 else if (out_type == MASKED_FASTA) { print_fasta(use_mask && has_mask); }
                 else if (out_type == UNMASKED_FASTA) { print_fasta(0); }
-                else if (out_type == FASTQ) { print_fastq(0); }
+                else if (out_type == FASTQ)
+                {
+                    if (N > 0)
+                    {
+                        if (!has_quality) { die("FASTQ output requested, but input has no qualities\n"); }
+                        print_fastq(0);
+                    }
+                }
                 else { die("unknown output requested\n"); }
             }
         }

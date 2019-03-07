@@ -3,7 +3,7 @@
 
 export prefix = /usr/local
 
-.PHONY: default all clean install uninstall
+.PHONY: default all test clean install uninstall
 
 default:
 	$(MAKE) -C zstd/lib ZSTD_LEGACY_SUPPORT=0 ZSTD_LIB_DEPRECATED=0 ZSTD_LIB_DICTBUILDER=0 libzstd.a
@@ -12,9 +12,13 @@ default:
 
 all: default
 
+test:
+	$(MAKE) -C tests
+
 clean:
 	$(MAKE) -C ennaf clean
 	$(MAKE) -C unnaf clean
+	$(MAKE) -C tests clean
 
 install:
 	$(MAKE) -C ennaf install

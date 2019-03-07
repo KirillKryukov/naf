@@ -42,33 +42,13 @@ static void open_output_file(void)
 }
 
 
-static void remove_temp_file(char * const path)
-{
-    assert(path != NULL);
-
-    if (access(path, F_OK) != 0) { return; }
-    if (remove(path) != 0) { err("can't remove temporary file \"%s\"\n", path); }
-}
-
-
 static void close_input_file(void)
 {
     if (IN != NULL && IN != stdin) { fclose(IN); IN = NULL; }
 }
 
 
-static void close_temp_files(void)
-{
-    if (IDS  != NULL) { fclose_or_die(IDS ); IDS  = NULL; }
-    if (COMM != NULL) { fclose_or_die(COMM); COMM = NULL; }
-    if (LEN  != NULL) { fclose_or_die(LEN ); LEN  = NULL; }
-    if (MASK != NULL) { fclose_or_die(MASK); MASK = NULL; }
-    if (SEQ  != NULL) { fclose_or_die(SEQ ); SEQ  = NULL; }
-    if (QUAL != NULL) { fclose_or_die(QUAL); QUAL = NULL; }
-}
-
-
-static void make_temp_files(void)
+static void make_temp_prefix(void)
 {
     assert(temp_dir != NULL);
     assert(temp_prefix == NULL);
@@ -102,37 +82,6 @@ static void make_temp_files(void)
     if (verbose) { msg("Temp file prefix: \"%s\"\n", temp_prefix); }
 
     temp_path_length = strlen(temp_dir) + temp_prefix_length + 11;
-
-    if (store_ids ) { ids_path  = (char *) malloc_or_die(temp_path_length); }
-    if (store_comm) { comm_path = (char *) malloc_or_die(temp_path_length); }
-    if (store_len ) { len_path  = (char *) malloc_or_die(temp_path_length); }
-    if (store_mask) { mask_path = (char *) malloc_or_die(temp_path_length); }
-    if (store_seq ) { seq_path  = (char *) malloc_or_die(temp_path_length); }
-    if (store_qual) { qual_path = (char *) malloc_or_die(temp_path_length); }
-
-    if (store_ids ) { snprintf(ids_path , temp_path_length, "%s/%s.ids",      temp_dir, temp_prefix); }
-    if (store_comm) { snprintf(comm_path, temp_path_length, "%s/%s.comments", temp_dir, temp_prefix); }
-    if (store_len ) { snprintf(len_path , temp_path_length, "%s/%s.lengths",  temp_dir, temp_prefix); }
-    if (store_mask) { snprintf(mask_path, temp_path_length, "%s/%s.mask",     temp_dir, temp_prefix); }
-    if (store_seq ) { snprintf(seq_path , temp_path_length, "%s/%s.sequence", temp_dir, temp_prefix); }
-    if (store_qual) { snprintf(qual_path, temp_path_length, "%s/%s.quality",  temp_dir, temp_prefix); }
-
-    if (verbose)
-    {
-        if (store_ids ) { msg("Temp ids file     : \"%s\"\n", ids_path ); }
-        if (store_comm) { msg("Temp names file   : \"%s\"\n", comm_path); }
-        if (store_len ) { msg("Temp lengths file : \"%s\"\n", len_path ); }
-        if (store_mask) { msg("Temp mask file    : \"%s\"\n", mask_path); }
-        if (store_seq ) { msg("Temp sequence file: \"%s\"\n", seq_path ); }
-        if (store_qual) { msg("Temp quality file : \"%s\"\n", qual_path); }
-    }
-
-    if (store_ids ) { IDS  = create_temp_file(ids_path , "ids"     ); }
-    if (store_comm) { COMM = create_temp_file(comm_path, "comments"); }
-    if (store_len ) { LEN  = create_temp_file(len_path , "lengths" ); }
-    if (store_mask) { MASK = create_temp_file(mask_path, "mask"    ); }
-    if (store_seq ) { SEQ  = create_temp_file(seq_path , "sequence"); }
-    if (store_qual) { QUAL = create_temp_file(qual_path, "quality" ); }
 }
 
 

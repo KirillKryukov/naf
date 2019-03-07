@@ -5,16 +5,21 @@
  */
 
 #define VERSION "1.1.0-beta"
-#define DATE "2019-02-07"
+#define DATE "2019-02-27"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #include "platform.h"
+#include "encoders.h"
 #include "tables.c"
+
+#define UNCOMPRESSED_BUFFER_SIZE (1ull * 1000 * 1000)
+#define COMPRESSED_BUFFER_SIZE (2ull * 1000 * 1000)
 
 static const unsigned char naf_magic_number[3] = { 0x01u, 0xF9u, 0xECu };
 
 static bool verbose = false;
 static bool keep_temp_files = false;
+static bool no_mask = false;
 
 static char *in_file_path = NULL;
 static FILE *IN = NULL;
@@ -37,20 +42,6 @@ static size_t temp_prefix_length = 0;
 static size_t temp_path_length = 0;
 static char *temp_prefix = NULL;
 
-static char *ids_path  = NULL;
-static char *comm_path = NULL;
-static char *len_path  = NULL;
-static char *mask_path = NULL;
-static char *seq_path  = NULL;
-static char *qual_path = NULL;
-
-static FILE* IDS  = NULL;
-static FILE* COMM = NULL;
-static FILE* LEN  = NULL;
-static FILE* MASK = NULL;
-static FILE* SEQ  = NULL;
-static FILE* QUAL = NULL;
-
 enum { in_format_unknown, in_format_fasta, in_format_fastq };
 static int in_format_from_command_line = in_format_unknown;
 static int in_format_from_input = in_format_unknown;
@@ -59,42 +50,16 @@ static int in_format_from_extension = in_format_unknown;
 enum { seq_type_dna, seq_type_rna, seq_type_protein, seq_type_text };
 static int in_seq_type = seq_type_dna;
 static const char *in_seq_type_name = "DNA";
-static unsigned char unexpected_seq_char_replacement = 'N';
-static const unsigned char unexpected_name_char_replacement = '?';
-static const unsigned char unexpected_qual_char_replacement = '!';  // Unknown character can only mean poor quality.
 
-static bool extended_format = false;
 static bool store_title = false;
-static bool store_ids   = true;
-static bool store_comm  = true;
-static bool store_len   = true;
 static bool store_mask  = true;
-static bool store_seq   = true;
 static bool store_qual  = false;
-
-static ZSTD_CStream *ids_cstream  = NULL;
-static ZSTD_CStream *comm_cstream = NULL;
-static ZSTD_CStream *len_cstream  = NULL;
-static ZSTD_CStream *mask_cstream = NULL;
-static ZSTD_CStream *seq_cstream  = NULL;
-static ZSTD_CStream *qual_cstream = NULL;
-
-static unsigned long long ids_size_compressed  = 0ull;
-static unsigned long long comm_size_compressed = 0ull;
-static unsigned long long len_size_compressed  = 0ull;
-static unsigned long long mask_size_compressed = 0ull;
-static unsigned long long seq_size_compressed  = 0ull;
-static unsigned long long qual_size_compressed = 0ull;
-
 
 static bool parity = false;
 static unsigned char* out_4bit_buffer = NULL;
 static unsigned char* out_4bit_pos = NULL;
 
-static unsigned long long ids_size_original  = 0ull;
-static unsigned long long comm_size_original = 0ull;
 static unsigned long long seq_size_original  = 0ull;
-static unsigned long long qual_size_original = 0ull;
 static unsigned long long longest_line_length = 0ull;
 
 static bool line_length_is_specified = false;
@@ -106,7 +71,6 @@ static unsigned char* file_copy_buffer = NULL;
 #define length_units_buffer_n_units 4096
 static unsigned int *length_units = NULL;
 static unsigned int length_unit_index = 0;
-static size_t n_length_units_stored = 0;
 
 #define mask_units_buffer_size 16384
 static unsigned char *mask_units = NULL;
@@ -114,7 +78,6 @@ static unsigned char *mask_units_end = NULL;
 static unsigned char *mask_units_pos = NULL;
 static unsigned long long mask_len = 0;
 static bool mask_on = false;
-static unsigned long long n_mask_units_stored = 0;
 
 #define in_buffer_size 16384
 static unsigned char *in_buffer = NULL;
@@ -123,18 +86,38 @@ static size_t in_end = 0;
 
 static unsigned long long n_sequences = 0ull;
 
-static const bool *is_unexpected_arr = is_unexpected_dna_arr;
+static bool *is_unexpected_arr = is_unexpected_dna_arr;
 static bool abort_on_unexpected_code = false;
 static bool assume_well_formed_input = false;
 
-static size_t out_buffer_size = 0;
-static void *out_buffer = NULL;
+static size_t out_4bit_buffer_size = 0;
+static size_t zstd_stream_recommended_out_buffer_size = 0;
+
+typedef struct {
+    size_t allocated;
+    size_t fill;
+    unsigned long long uncompressed_size;
+    unsigned long long compressed_size;
+    unsigned long long written;
+    ZSTD_CStream *cstream;
+    FILE *file;
+    char *path;
+    unsigned char *buf;
+} compressor_t;
+
+compressor_t IDS  = { 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL };
+compressor_t COMM = { 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL };
+compressor_t LEN  = { 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL };
+compressor_t MASK = { 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL };
+compressor_t SEQ  = { 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL };
+compressor_t QUAL = { 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL };
 
 static bool success = false;
 
 
 #include "utils.c"
 #include "files.c"
+#include "compressor.c"
 #include "encoders.c"
 #include "process.c"
 
@@ -145,13 +128,19 @@ do { if ((p) != NULL) { free(p); (p) = NULL; } } while (0)
 
 static void done(void)
 {
+    compressor_done(&IDS);
+    compressor_done(&COMM);
+    compressor_done(&LEN);
+    compressor_done(&MASK);
+    compressor_done(&SEQ);
+    compressor_done(&QUAL);
+
     FREE(name.data);
     FREE(comment.data);
     FREE(seq.data);
     FREE(qual.data);
 
     FREE(in_buffer);
-    FREE(out_buffer);
     FREE(out_4bit_buffer);
     FREE(file_copy_buffer);
     FREE(length_units);
@@ -159,17 +148,6 @@ static void done(void)
 
     close_output_file();
     close_input_file();
-    close_temp_files();
-
-    if (!keep_temp_files)
-    {
-        if (store_ids  && ids_path  != NULL) { remove_temp_file(ids_path ); }
-        if (store_comm && comm_path != NULL) { remove_temp_file(comm_path); }
-        if (store_len  && len_path  != NULL) { remove_temp_file(len_path ); }
-        if (store_mask && mask_path != NULL) { remove_temp_file(mask_path); }
-        if (store_seq  && seq_path  != NULL) { remove_temp_file(seq_path ); }
-        if (store_qual && qual_path != NULL) { remove_temp_file(qual_path); }
-    }
 
     if (!success && created_output_file)
     {
@@ -178,12 +156,6 @@ static void done(void)
 
     FREE(out_file_path_auto);
     FREE(temp_prefix);
-    FREE(ids_path);
-    FREE(comm_path);
-    FREE(len_path);
-    FREE(mask_path);
-    FREE(seq_path);
-    FREE(qual_path);
 }
 
 
@@ -342,7 +314,6 @@ static void show_help(void)
         "  --rna              - Input sequence is RNA\n"
         "  --protein          - Input sequence is protein\n"
         "  --text             - Input sequence is text\n"
-        "  --well-formed      - Assume well-formed input\n"
         "  --strict           - Fail on unexpected input characters\n"
         "  --line-length N    - Override line length to N\n"
         "  --verbose          - Verbose mode\n"
@@ -357,7 +328,6 @@ static void show_help(void)
 static void parse_command_line(int argc, char **argv)
 {
     bool print_version = false;
-    bool no_mask = false;
 
     for (int i = 1; i < argc; i++)
     {
@@ -423,12 +393,6 @@ static void parse_command_line(int argc, char **argv)
     {
         die("'--well-formed' and '--strict' can't be used together\n");
     }
-
-    if (no_mask)
-    {
-        if (in_seq_type < seq_type_protein) { store_mask = false; }
-        else { die("'--no-mask' is supported only for DNA or RNA sequences\n"); }
-    }
 }
 
 
@@ -443,6 +407,8 @@ int main(int argc, char **argv)
         err("no input specified, use \"ennaf -h\" for help\n");
         exit(0);
     }
+
+    if (no_mask || in_seq_type >= seq_type_protein) { store_mask = false; }
 
     if (in_seq_type == seq_type_dna)
     {
@@ -461,14 +427,12 @@ int main(int argc, char **argv)
         is_unexpected_arr = is_unexpected_protein_arr;
         in_seq_type_name = "protein";
         unexpected_seq_char_replacement = 'X';
-        store_mask = false;
     }
     else if (in_seq_type == seq_type_text)
     {
         is_unexpected_arr = is_unexpected_text_arr;
         in_seq_type_name = "text";
         unexpected_seq_char_replacement = '?';
-        store_mask = false;
     }
 
     detect_temp_directory();
@@ -477,6 +441,7 @@ int main(int argc, char **argv)
     open_input_file();
     confirm_input_format();
     store_qual = (in_format_from_input == in_format_fastq);
+    if (in_seq_type == seq_type_text && in_format_from_input == in_format_fasta) { is_unexpected_arr['>'] = true; }
 
     if (!force_stdout && out_file_path == NULL && isatty(fileno(stdout)))
     {
@@ -497,53 +462,43 @@ int main(int argc, char **argv)
         else { err("can't obtain status of input file\n"); }
     }
 
-    make_temp_files();
-
-    if (store_ids ) { ids_cstream  = create_zstd_cstream(compression_level); }
-    if (store_comm) { comm_cstream = create_zstd_cstream(compression_level); }
-    if (store_len ) { len_cstream  = create_zstd_cstream(compression_level); }
-    if (store_mask) { mask_cstream = create_zstd_cstream(compression_level); }
-    if (store_seq ) { seq_cstream  = create_zstd_cstream(compression_level); }
-    if (store_qual) { qual_cstream = create_zstd_cstream(compression_level); }
+    make_temp_prefix();
+    compressor_init(&IDS, "ids");
+    compressor_init(&COMM, "comments");
+    compressor_init(&LEN, "lengths");
+    if (store_mask) { compressor_init(&MASK, "mask"); }
+    compressor_init(&SEQ, "sequence");
+    if (store_qual) { compressor_init(&QUAL, "quality"); }
 
     process();
+    close_input_file();
 
-    if (mask_len > 0)
-    {
-        add_mask(mask_len);
-    }
+    if (mask_len > 0) { add_mask(mask_len); }
 
     if (length_unit_index > 0)
     {
-        len_size_compressed += write_to_cstream(len_cstream, LEN, length_units, sizeof(unsigned int) * length_unit_index);
-        n_length_units_stored += length_unit_index;
+        compress(&LEN, length_units, sizeof(unsigned int) * length_unit_index);
         length_unit_index = 0;
     }
 
     if (mask_units_pos > mask_units)
     {
-        mask_size_compressed += write_to_cstream(mask_cstream, MASK, mask_units, (size_t)(mask_units_pos - mask_units));
-        n_mask_units_stored += (unsigned long long)(mask_units_pos - mask_units);
+        compress(&MASK, mask_units, (size_t)(mask_units_pos - mask_units));
         mask_units_pos = mask_units;
     }
 
-    if (store_seq)
+    if (parity) { out_4bit_pos++; }
+    if (out_4bit_pos > out_4bit_buffer)
     {
-        if (parity) { out_4bit_pos++; }
-        if (out_4bit_pos > out_4bit_buffer)
-        {
-            seq_size_compressed += write_to_cstream(seq_cstream, SEQ, out_4bit_buffer, (size_t)(out_4bit_pos - out_4bit_buffer) );
-        }
+        compress(&SEQ, out_4bit_buffer, (size_t)(out_4bit_pos - out_4bit_buffer));
     }
 
-    if (store_ids ) { ids_size_compressed  += flush_cstream(ids_cstream , IDS ); }
-    if (store_comm) { comm_size_compressed += flush_cstream(comm_cstream, COMM); }
-    if (store_len ) { len_size_compressed  += flush_cstream(len_cstream , LEN ); }
-    if (store_mask) { mask_size_compressed += flush_cstream(mask_cstream, MASK); }
-    if (store_seq ) { seq_size_compressed  += flush_cstream(seq_cstream , SEQ ); }
-    if (store_qual) { qual_size_compressed += flush_cstream(qual_cstream, QUAL); }
-
-    close_input_file();
+    compressor_end_stream(&IDS);
+    compressor_end_stream(&COMM);
+    compressor_end_stream(&LEN);
+    compressor_end_stream(&MASK);
+    compressor_end_stream(&SEQ);
+    compressor_end_stream(&QUAL);
 
     fwrite_or_die(naf_magic_number, 1, 3, OUT);
 
@@ -552,14 +507,14 @@ int main(int argc, char **argv)
     if (in_seq_type == seq_type_dna) { fputc_or_die(1, OUT); }
     else { fputc_or_die(2, OUT); fputc_or_die(in_seq_type, OUT); }
 
-    fputc_or_die( (extended_format << 7) |
-                  (store_title     << 6) |
-                  (store_ids       << 5) |
-                  (store_comm      << 4) |
-                  (store_len       << 3) |
-                  (store_mask      << 2) |
-                  (store_seq       << 1) |
-                   store_qual              , OUT);
+    fputc_or_die( (0           << 7) |   // extended format
+                  (store_title << 6) |   // title
+                  (1           << 5) |   // ids
+                  (1           << 4) |   // comments
+                  (1           << 3) |   // lengths
+                  (store_mask  << 2) |   // mask
+                  (1           << 1) |   // sequence
+                   store_qual          , OUT);
     fputc_or_die(' ', OUT);
 
     unsigned long long out_line_length = line_length_is_specified ? requested_line_length : longest_line_length;
@@ -574,55 +529,30 @@ int main(int argc, char **argv)
         fwrite_or_die(dataset_title, 1, title_length, OUT);
     }
 
-    if (store_ids)
-    {
-        assert(ids_size_compressed >= 4);
-        write_variable_length_encoded_number(OUT, ids_size_original);
-        write_variable_length_encoded_number(OUT, ids_size_compressed - 4);
-        copy_file_to_out(IDS, ids_path, 4, ids_size_compressed - 4);
-    }
+    write_variable_length_encoded_number(OUT, IDS.uncompressed_size);
+    write_compressed_data(OUT, &IDS);
 
-    if (store_comm)
-    {
-        assert(comm_size_compressed >= 4);
-        write_variable_length_encoded_number(OUT, comm_size_original);
-        write_variable_length_encoded_number(OUT, comm_size_compressed - 4);
-        copy_file_to_out(COMM, comm_path, 4, comm_size_compressed - 4);
-    }
+    write_variable_length_encoded_number(OUT, COMM.uncompressed_size);
+    write_compressed_data(OUT, &COMM);
 
-    if (store_len)
-    {
-        assert(len_size_compressed >= 4);
-        write_variable_length_encoded_number(OUT, sizeof(unsigned int) * n_length_units_stored);
-        write_variable_length_encoded_number(OUT, len_size_compressed - 4);
-        copy_file_to_out(LEN, len_path, 4, len_size_compressed - 4);
-    }
+    write_variable_length_encoded_number(OUT, LEN.uncompressed_size);
+    write_compressed_data(OUT, &LEN);
 
     if (store_mask)
     {
-        assert(mask_size_compressed >= 4);
-        write_variable_length_encoded_number(OUT, n_mask_units_stored);
-        write_variable_length_encoded_number(OUT, mask_size_compressed - 4);
-        copy_file_to_out(MASK, mask_path, 4, mask_size_compressed - 4);
+        write_variable_length_encoded_number(OUT, MASK.uncompressed_size);
+        write_compressed_data(OUT, &MASK);
     }
 
-    if (store_seq)
-    {
-        assert(seq_size_compressed >= 4);
-        write_variable_length_encoded_number(OUT, seq_size_original);
-        write_variable_length_encoded_number(OUT, seq_size_compressed - 4);
-        copy_file_to_out(SEQ, seq_path, 4, seq_size_compressed - 4);
-    }
+    write_variable_length_encoded_number(OUT, seq_size_original);
+    write_compressed_data(OUT, &SEQ);
 
     if (store_qual)
     {
-        assert(qual_size_compressed >= 4);
-        write_variable_length_encoded_number(OUT, qual_size_original);
-        write_variable_length_encoded_number(OUT, qual_size_compressed - 4);
-        copy_file_to_out(QUAL, qual_path, 4, qual_size_compressed - 4);
+        write_variable_length_encoded_number(OUT, QUAL.uncompressed_size);
+        write_compressed_data(OUT, &QUAL);
     }
 
-    close_temp_files();
     if (out_file_path != NULL && have_input_stat) { close_output_file_and_set_stat(); }
     else { close_output_file(); }
 

@@ -1,12 +1,14 @@
 # NAF Changelog
 
 ## Unreleased
-- Added support for RNA, protein and text sequences, enabled with `--dna`, `--protein` and `--text` switches.
+- Added support for RNA, protein and text sequences, enabled with `--rna`, `--protein` and `--text` switches.
 - Added report for number of unknown characters at the end of compression.
 - Added strict compression mode (`--strict` switch). In this mode _ennaf_ fails on any unexpected input character.
 - Installation from source no longer requires pre-installing zstd.
 - _ennaf_ no longer loads each entire input sequence to memory.
+- _ennaf_ no longer creates temporary files if the input is small.
 - Added `-o` and `-c` arguments to _unnaf_.
+- Added test suite.
 
 ## 1.0.0 - 2019-01-17
 - Initial release.

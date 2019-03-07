@@ -1,0 +1,1 @@
+ennaf --rna {GROUP}.fa 2>{TEST}.e.err | unnaf >{TEST}.out 2>{TEST}.u.err

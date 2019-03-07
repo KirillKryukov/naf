@@ -8,27 +8,23 @@
 
 #define INEOF 256
 
-#define STR_ALLOCATED 131072
-
 
 static void name_writer(unsigned char *str, size_t size)
 {
-    ids_size_original += size;
-    ids_size_compressed += write_to_cstream(ids_cstream, IDS, str, size);
+    compress(&IDS, str, size);
 }
 
 
 static void comm_writer(unsigned char *str, size_t size)
 {
-    comm_size_original += size;
-    comm_size_compressed += write_to_cstream(comm_cstream, COMM, str, size);
+    compress(&COMM, str, size);
 }
 
 
 static void seq_writer_masked_4bit(unsigned char *str, size_t size)
 {
-    extract_mask(str, size);
     seq_size_original += size;
+    extract_mask(str, size);
     encode_dna(str, size);
 }
 
@@ -42,23 +38,22 @@ static void seq_writer_nonmasked_4bit(unsigned char *str, size_t size)
 
 static void seq_writer_masked_text(unsigned char *str, size_t size)
 {
-    extract_mask(str, size);
     seq_size_original += size;
-    seq_size_compressed += write_to_cstream(seq_cstream, SEQ, str, size);
+    compress(&SEQ, str, size);
 }
 
 
 static void seq_writer_nonmasked_text(unsigned char *str, size_t size)
 {
     seq_size_original += size;
-    seq_size_compressed += write_to_cstream(seq_cstream, SEQ, str, size);
+    for (size_t i = 0; i < size; i++) { str[i] = (unsigned char) toupper(str[i]); }
+    compress(&SEQ, str, size);
 }
 
 
 static void qual_writer(unsigned char *str, size_t size)
 {
-    qual_size_original += size;
-    qual_size_compressed += write_to_cstream(qual_cstream, QUAL, str, size);
+    compress(&QUAL, str, size);
 }
 
 
@@ -217,12 +212,12 @@ static inline unsigned in_get_until_specific_char(const unsigned char delim, str
 
         size_t s = i - in_begin;
 
-        if (str->length + s >= STR_ALLOCATED)
+        if (str->length + s >= UNCOMPRESSED_BUFFER_SIZE)
         {
-            size_t s1 = STR_ALLOCATED - str->length;
+            size_t s1 = UNCOMPRESSED_BUFFER_SIZE - str->length;
             size_t s2 = s - s1;
             memcpy(str->data + str->length, in_buffer + in_begin, s1);
-            str->writer(str->data, STR_ALLOCATED);
+            str->writer(str->data, UNCOMPRESSED_BUFFER_SIZE);
             memcpy(str->data, in_buffer + in_begin + s1, s2); 
             str->length = s2;
         }
@@ -267,12 +262,12 @@ static inline unsigned in_get_until(const bool *delim_arr, string_t *str)
 
         size_t s = i - in_begin;
 
-        if (str->length + s >= STR_ALLOCATED)
+        if (str->length + s >= UNCOMPRESSED_BUFFER_SIZE)
         {
-            size_t s1 = STR_ALLOCATED - str->length;
+            size_t s1 = UNCOMPRESSED_BUFFER_SIZE - str->length;
             size_t s2 = s - s1;
             memcpy(str->data + str->length, in_buffer + in_begin, s1);
-            str->writer(str->data, STR_ALLOCATED);
+            str->writer(str->data, UNCOMPRESSED_BUFFER_SIZE);
             memcpy(str->data, in_buffer + in_begin + s1, s2); 
             str->length = s2;
         }
@@ -296,9 +291,9 @@ static inline void str_append_char(string_t *str, unsigned char c)
 {
     str->data[str->length] = c;
     str->length++;
-    if (str->length >= STR_ALLOCATED)
+    if (str->length >= UNCOMPRESSED_BUFFER_SIZE)
     {
-        str->writer(str->data, STR_ALLOCATED);
+        str->writer(str->data, UNCOMPRESSED_BUFFER_SIZE);
         str->length = 0;
     }
 }
@@ -393,6 +388,7 @@ static void process_non_well_formed_fasta(void)
                     else { unexpected_input_char(c); str_append_char(&seq, unexpected_seq_char_replacement); }
                 }
                 else if (is_space_arr[c]) {}
+                else if (c == '>' && in_seq_type == seq_type_text) { str_append_char(&seq, (unsigned char)c); }
                 else { unexpected_input_char(c); str_append_char(&seq, unexpected_seq_char_replacement); }
             }
 
@@ -438,9 +434,9 @@ static void process_well_formed_fastq(void)
         c = in_get_char();
         if (c != '\n') { die("not well-formed FASTQ input\n"); }
 
-        old_len = qual_size_original + qual.length;
+        old_len = QUAL.uncompressed_size + qual.length;
         c = in_get_until_specific_char('\n', &qual);
-        if (qual_size_original + qual.length - old_len != read_length)
+        if (QUAL.uncompressed_size + qual.length - old_len != read_length)
         {
             die("quality length of sequence %" PRINT_ULL " doesn't match sequence length\n", n_sequences + 1);
         }
@@ -503,7 +499,7 @@ static void process_non_well_formed_fastq(void)
         do { c = in_get_char(); } while (is_eol_arr[c]);
         if (c == INEOF) { die("truncated FASTQ input: last sequence has no quality\n"); }
 
-        old_len = qual_size_original + qual.length;
+        old_len = QUAL.uncompressed_size + qual.length;
         str_append_char(&qual, (unsigned char)c);
         while ( (c = in_get_until(is_unexpected_qual_arr, &qual)) != INEOF)
         {
@@ -511,7 +507,7 @@ static void process_non_well_formed_fastq(void)
             else if (is_space_arr[c]) {}
             else { unexpected_quality_char(c); str_append_char(&qual, unexpected_qual_char_replacement); }
         }
-        unsigned long long qual_length = qual_size_original + qual.length - old_len;
+        unsigned long long qual_length = QUAL.uncompressed_size + qual.length - old_len;
         if (qual_length != read_length)
         {
             die("quality length of sequence %" PRINT_ULL " (%" PRINT_ULL ") doesn't match sequence length (%" PRINT_ULL ")\n",
@@ -572,12 +568,12 @@ static void process(void)
     // If input format is unknown at this point, it indicates empty input.
     if (in_format_from_input == in_format_unknown) { return; }
 
-    name.data    = (unsigned char *) malloc_or_die(STR_ALLOCATED);
-    comment.data = (unsigned char *) malloc_or_die(STR_ALLOCATED);
-    seq.data     = (unsigned char *) malloc_or_die(STR_ALLOCATED);
+    name.data    = (unsigned char *) malloc_or_die(UNCOMPRESSED_BUFFER_SIZE);
+    comment.data = (unsigned char *) malloc_or_die(UNCOMPRESSED_BUFFER_SIZE);
+    seq.data     = (unsigned char *) malloc_or_die(UNCOMPRESSED_BUFFER_SIZE);
 
-    seq.writer = store_mask ? ((in_seq_type < seq_type_protein) ? &seq_writer_masked_4bit : &seq_writer_masked_text)
-                            : ((in_seq_type < seq_type_protein) ? &seq_writer_nonmasked_4bit : &seq_writer_nonmasked_text);
+    seq.writer = no_mask ? ((in_seq_type < seq_type_protein) ? &seq_writer_nonmasked_4bit : &seq_writer_nonmasked_text)
+                         : ((in_seq_type < seq_type_protein) ? &seq_writer_masked_4bit : &seq_writer_masked_text);
 
     if (in_format_from_input == in_format_fasta)
     {
@@ -586,7 +582,7 @@ static void process(void)
     }
     else if (in_format_from_input == in_format_fastq)
     {
-        qual.data = (unsigned char *) malloc_or_die(STR_ALLOCATED);
+        qual.data = (unsigned char *) malloc_or_die(UNCOMPRESSED_BUFFER_SIZE);
         if (assume_well_formed_input) { process_well_formed_fastq(); }
         else { process_non_well_formed_fastq(); }
         if (qual.length != 0) { qual.writer(qual.data, qual.length); qual.length = 0; }

@@ -4,6 +4,16 @@
  * See README.md and LICENSE files of this repository
  */
 
+
+/*
+ * Replacement for unknown input characters.
+ */
+static unsigned char unexpected_seq_char_replacement = 'N';
+static const unsigned char unexpected_name_char_replacement = '?';
+static const unsigned char unexpected_qual_char_replacement = '!';  // Unknown character can only mean poor quality.
+
+
+
 /*
  * Character class tables have 257 entries to make space for an EOF mark.
  */
@@ -59,7 +69,7 @@ static const bool is_well_formed_space_arr[257] = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 
-static const bool is_unexpected_dna_arr[257] = {
+static bool is_unexpected_dna_arr[257] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,0,0,0,0,1,1,0,0,1,1,0,1,0,0,1,1,1,0,0,0,1,0,0,1,0,1,1,1,1,1,1,
@@ -69,7 +79,7 @@ static const bool is_unexpected_dna_arr[257] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 };
 
-static const bool is_unexpected_rna_arr[257] = {
+static bool is_unexpected_rna_arr[257] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,0,0,0,0,1,1,0,0,1,1,0,1,0,0,1,1,1,0,0,1,0,0,0,1,0,1,1,1,1,1,1,
@@ -91,7 +101,7 @@ static const bool is_unexpected_rna_arr[257] = {
  *   '*' - Stop codon
  *   '-' - Gap
  */
-static const bool is_unexpected_protein_arr[257] = {
+static bool is_unexpected_protein_arr[257] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,
@@ -102,7 +112,7 @@ static const bool is_unexpected_protein_arr[257] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 };
 
 // Text sequence consists of printable non-space characters.
-static const bool is_unexpected_text_arr[257] = {
+static bool is_unexpected_text_arr[257] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

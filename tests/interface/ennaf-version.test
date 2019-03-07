@@ -1,0 +1,1 @@
+ennaf --version >{TEST}.out 2>{TEST}.err
