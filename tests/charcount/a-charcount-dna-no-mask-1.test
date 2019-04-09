@@ -1,0 +1,1 @@
+ennaf --dna --no-mask {GROUP}.fa 2>{TEST}.e.err | unnaf --charcount >{TEST}.out 2>{TEST}.u.err

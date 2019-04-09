@@ -500,6 +500,99 @@ static void print_dna(int masking)
 }
 
 
+static void count_dna_buffer_sequence_characters(unsigned long long *counts, int masking)
+{
+    unsigned long long n_bp_to_print = dna_buffer_pos;
+    if (n_bp_to_print > total_seq_n_bp_remaining) { n_bp_to_print = total_seq_n_bp_remaining; }
+
+    if (masking) { mask_dna_buffer(dna_buffer, (unsigned)n_bp_to_print); }
+
+    unsigned char *end = dna_buffer + n_bp_to_print;
+    for (unsigned char *c = dna_buffer; c < end; c++)
+    {
+        counts[*c]++;
+    }
+
+    total_seq_n_bp_remaining -= n_bp_to_print;
+    dna_buffer_pos = 0;
+}
+
+
+static void count_4bit_sequence_characters(unsigned long long *counts, unsigned char *buffer, size_t size, int masking)
+{
+    for (unsigned int i = 0; i < size; i++)
+    {
+        *(unsigned short *)(&dna_buffer[dna_buffer_pos]) = codes_to_nucs[buffer[i]];
+        dna_buffer_pos += 2;
+    }
+    count_dna_buffer_sequence_characters(counts, masking);
+}
+
+
+static void print_charcount(int masking)
+{
+    if (!has_data) { return; }
+
+    skip_ids();
+    skip_names();
+    skip_lengths();
+
+    if (masking) { load_mask(); }
+    else { skip_mask(); }
+
+    unsigned long long counts[256];
+    memset(counts, 0, sizeof(unsigned long long) * 256);
+
+    total_seq_length = read_number(IN);
+    compressed_seq_size = read_number(IN);
+    total_seq_n_bp_remaining = total_seq_length;
+
+    size_t bytes_to_read = initialize_input_decompression();
+    size_t input_size;
+
+    if (in_seq_type < seq_type_protein)
+    {
+        while ( (input_size = read_next_chunk(in_buffer, bytes_to_read)) )
+        {
+            ZSTD_inBuffer in = { in_buffer, input_size, 0 };
+            while (in.pos < in.size)
+            {
+                ZSTD_outBuffer out = { out_buffer, out_buffer_size, 0 };
+                bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &in);
+                if (ZSTD_isError(bytes_to_read)) { die("can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); }
+                count_4bit_sequence_characters(counts, (unsigned char *)out_buffer, out.pos, masking);
+            }
+        }
+    }
+    else
+    {
+        while ( (input_size = read_next_chunk(in_buffer, bytes_to_read)) )
+        {
+            ZSTD_inBuffer in = { in_buffer, input_size, 0 };
+            while (in.pos < in.size)
+            {
+                ZSTD_outBuffer out = { dna_buffer, dna_buffer_size, 0 };
+                bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &in);
+                if (ZSTD_isError(bytes_to_read)) { die("can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); }
+                dna_buffer_pos = (unsigned)out.pos;
+                if (!use_mask) { uppercase_dna_buffer(); }
+                count_dna_buffer_sequence_characters(counts, masking);
+            }
+        }
+    }
+
+    if (total_seq_n_bp_remaining > 0)
+    {
+        if (in_seq_type >= seq_type_protein && !use_mask) { uppercase_dna_buffer(); }
+        count_dna_buffer_sequence_characters(counts, masking);
+    }
+
+    for (unsigned i = 0; i < 33; i++) { if (counts[i] != 0) { fprintf(OUT, "\\x%02X %" PRINT_ULL "\n", i, counts[i]); } }
+    for (unsigned i = 33; i < 127; i++) { if (counts[i] != 0) { fprintf(OUT, "%c %" PRINT_ULL "\n", (unsigned char)i, counts[i]); } }
+    for (unsigned i = 127; i < 256; i++) { if (counts[i] != 0) { fprintf(OUT, "\\x%02X %" PRINT_ULL "\n", i, counts[i]); } }
+}
+
+
 static void print_fasta(int masking)
 {
     if (has_data)
