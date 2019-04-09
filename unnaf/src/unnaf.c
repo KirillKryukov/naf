@@ -5,7 +5,7 @@
  */
 
 #define VERSION "1.1.0-beta"
-#define DATE "2019-02-28"
+#define DATE "2019-04-09"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #include "platform.h"

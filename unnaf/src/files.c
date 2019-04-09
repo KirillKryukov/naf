@@ -27,11 +27,13 @@ static void open_output_file(void)
     assert(OUT == NULL);
     assert(out_type != UNDECIDED);
 
+    bool extracting_to_original_format = has_quality ? (out_type == FASTA) : (out_type == FASTQ);
+
     bool is_large_output = (out_type == IDS || out_type == NAMES || out_type == LENGTHS || out_type == MASK || out_type == FOUR_BIT ||
                             out_type == DNA || out_type == MASKED_DNA || out_type == UNMASKED_DNA || out_type == SEQ ||
                             out_type == FASTA || out_type == MASKED_FASTA || out_type == UNMASKED_FASTA || out_type == FASTQ);
 
-    if (is_large_output && !force_stdout && in_file_path != NULL && out_file_path == NULL && isatty(fileno(stdout)))
+    if (extracting_to_original_format && !force_stdout && in_file_path != NULL && out_file_path == NULL && isatty(fileno(stdout)))
     {
         size_t len = strlen(in_file_path);
         if (len > 4 && strcmp(in_file_path + len - 4, ".naf") == 0 &&
