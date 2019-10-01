@@ -8,7 +8,7 @@ default: all
 all:
 	@diff -q Makefile Makefile
 	@mkdir -p temp
-	@./test-runner.pl interface alphabet small
+	@./test-runner.pl interface alphabet charcount small
 	@echo "Success!"
 
 clean:

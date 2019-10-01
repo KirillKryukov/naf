@@ -48,6 +48,8 @@ Only one of these options should be specified:
 
 **--format** - Sequence type and version of NAF format found in the input.
 
+**--charcount** - Number of occurrences of each sequence character.
+
 ## Other options
 
 **-o FILE** - Write output to FILE.

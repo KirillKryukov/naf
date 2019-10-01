@@ -11,7 +11,11 @@ static void open_input_file(void)
 
     if (in_file_path == NULL)
     {
+#ifdef __MINGW32__
+        if (_setmode(_fileno(stdin), O_BINARY) == -1) { die("can't read input in binary mode\n"); }
+#else
         if (!freopen(NULL, "rb", stdin)) { die("can't read input in binary mode\n"); }
+#endif
         IN = stdin;
     }
     else
@@ -27,11 +31,13 @@ static void open_output_file(void)
     assert(OUT == NULL);
     assert(out_type != UNDECIDED);
 
+    bool extracting_to_original_format = has_quality ? (out_type == FASTA) : (out_type == FASTQ);
+
     bool is_large_output = (out_type == IDS || out_type == NAMES || out_type == LENGTHS || out_type == MASK || out_type == FOUR_BIT ||
                             out_type == DNA || out_type == MASKED_DNA || out_type == UNMASKED_DNA || out_type == SEQ ||
                             out_type == FASTA || out_type == MASKED_FASTA || out_type == UNMASKED_FASTA || out_type == FASTQ);
 
-    if (is_large_output && !force_stdout && in_file_path != NULL && out_file_path == NULL && isatty(fileno(stdout)))
+    if (extracting_to_original_format && !force_stdout && in_file_path != NULL && out_file_path == NULL && isatty(fileno(stdout)))
     {
         size_t len = strlen(in_file_path);
         if (len > 4 && strcmp(in_file_path + len - 4, ".naf") == 0 &&
@@ -57,7 +63,11 @@ static void open_output_file(void)
 
     if (out_type == FOUR_BIT && force_stdout)
     {
+#ifdef __MINGW32__
+        if (_setmode(_fileno(stdout), O_BINARY) == -1) { die("can't set output stream to binary mode\n"); }
+#else
         if (!freopen(NULL, "wb", stdout)) { die("can't set output stream to binary mode\n"); }
+#endif
     }
 
     if (is_large_output && !force_stdout && isatty(fileno(OUT)))

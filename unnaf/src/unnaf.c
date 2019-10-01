@@ -4,8 +4,8 @@
  * See README.md and LICENSE files of this repository
  */
 
-#define VERSION "1.1.0-beta"
-#define DATE "2019-02-28"
+#define VERSION "1.1.0"
+#define DATE "2019-10-01"
 #define COPYRIGHT_YEARS "2018-2019"
 
 #include "platform.h"
@@ -17,7 +17,7 @@ typedef enum { UNDECIDED, FORMAT_NAME, PART_LIST, PART_SIZES, NUMBER_OF_SEQUENCE
                TITLE, IDS, NAMES, LENGTHS, TOTAL_LENGTH, MASK, TOTAL_MASK_LENGTH,
                FOUR_BIT,
                DNA, MASKED_DNA, UNMASKED_DNA,
-               SEQ,
+               SEQ, CHARCOUNT,
                FASTA, MASKED_FASTA, UNMASKED_FASTA,
                FASTQ
              } OUTPUT_TYPE;
@@ -299,6 +299,7 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--total-mask-length")) { set_out_type(TOTAL_MASK_LENGTH  ); continue; }
                 if (!strcmp(argv[i], "--4bit"             )) { set_out_type(FOUR_BIT           ); continue; }
                 if (!strcmp(argv[i], "--seq"              )) { set_out_type(SEQ                ); continue; }
+                if (!strcmp(argv[i], "--charcount"        )) { set_out_type(CHARCOUNT          ); continue; }
                 if (!strcmp(argv[i], "--fasta"            )) { set_out_type(FASTA              ); continue; }
                 if (!strcmp(argv[i], "--fastq"            )) { set_out_type(FASTQ              ); continue; }
                 if (!strcmp(argv[i], "--no-mask")) { use_mask = false; continue; }
@@ -417,6 +418,7 @@ int main(int argc, char **argv)
                 else if (out_type == SEQ) { print_dna(use_mask && has_mask); }
                 else if (out_type == MASKED_DNA) { print_dna(use_mask && has_mask); }
                 else if (out_type == UNMASKED_DNA) { print_dna(0); }
+                else if (out_type == CHARCOUNT) { print_charcount(use_mask && has_mask); }
                 else if (out_type == FASTA) { print_fasta(use_mask && has_mask); }
                 else if (out_type == MASKED_FASTA) { print_fasta(use_mask && has_mask); }
                 else if (out_type == UNMASKED_FASTA) { print_fasta(0); }

@@ -1,6 +1,6 @@
 # NAF Changelog
 
-## Unreleased
+## 1.1.0 - 2019-10-01
 - Added support for RNA, protein and text sequences, enabled with `--rna`, `--protein` and `--text` switches.
 - Added report for number of unknown characters at the end of compression.
 - Added strict compression mode (`--strict` switch). In this mode _ennaf_ fails on any unexpected input character.
@@ -8,7 +8,10 @@
 - _ennaf_ no longer loads each entire input sequence to memory.
 - _ennaf_ no longer creates temporary files if the input is small.
 - Added `-o` and `-c` arguments to _unnaf_.
+- Added `--charcount` output to _unnaf_.
 - Added test suite.
+- Updated zstd to v1.4.3.
+- Fixed streaming mode in MinGW builds.
 
 ## 1.0.0 - 2019-01-17
 - Initial release.

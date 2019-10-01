@@ -1,0 +1,1 @@
+ennaf --protein {GROUP}.fa 2>{TEST}.e.err | unnaf --charcount --no-mask >{TEST}.out 2>{TEST}.u.err
