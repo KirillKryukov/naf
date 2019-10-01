@@ -11,7 +11,11 @@ static void open_input_file(void)
 
     if (in_file_path == NULL)
     {
+#ifdef __MINGW32__
+        if (_setmode(_fileno(stdin), O_BINARY) == -1) { die("can't read input in binary mode\n"); }
+#else
         if (!freopen(NULL, "rb", stdin)) { die("can't read input in binary mode\n"); }
+#endif
         IN = stdin;
     }
     else
@@ -59,7 +63,11 @@ static void open_output_file(void)
 
     if (out_type == FOUR_BIT && force_stdout)
     {
+#ifdef __MINGW32__
+        if (_setmode(_fileno(stdout), O_BINARY) == -1) { die("can't set output stream to binary mode\n"); }
+#else
         if (!freopen(NULL, "wb", stdout)) { die("can't set output stream to binary mode\n"); }
+#endif
     }
 
     if (is_large_output && !force_stdout && isatty(fileno(OUT)))

@@ -10,7 +10,8 @@
 - Added `-o` and `-c` arguments to _unnaf_.
 - Added `--charcount` output to _unnaf_.
 - Added test suite.
-- Updated zstd to v1.4.0.
+- Updated zstd to v1.4.3.
+- Fixed streaming mode in MinGW builds.
 
 ## 1.0.0 - 2019-01-17
 - Initial release.

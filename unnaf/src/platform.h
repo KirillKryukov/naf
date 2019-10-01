@@ -16,6 +16,10 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#ifdef __MINGW32__
+#include <fcntl.h>
+#endif
+
 #define ZSTD_STATIC_LINKING_ONLY
 #include "zstd.h"
 
