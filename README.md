@@ -10,8 +10,7 @@ See [NAF homepage](http://kirill-kryukov.com/study/naf/) for details.
 | Example benchmark: SILVA 132 LSURef database (610 MB): |
 |---------------------------------------------|
 | <img src="http://kirill-kryukov.com/study/naf/images/SILVA-132-LSURef-ratio-vs-cd-speed-lin-log.svg" width="49%"> <img src="http://kirill-kryukov.com/study/naf/images/SILVA-132-LSURef-ratio-vs-d-speed-lin-log.svg" width="49%"> |
-Visit [Sequence Compression Benchmark](http://kirr.dyndns.org/sequence-compression-benchmark/) project for more benchmarks.
-
+| From [Sequence Compression Benchmark](http://kirr.dyndns.org/sequence-compression-benchmark/) project - visit for details and more benchmarks. |
 
 ## Format specification
 
