@@ -5,11 +5,12 @@ It's based on [zstd](http://www.zstd.net/), and features strong compression and 
 It can store DNA, RNA, protein or text sequences, with or without qualities.
 It supports FASTA and FASTQ-formatted sequences, ambiguous IUPAC codes, masked sequence,
 and has no limit on sequence length or number of sequences.
-See [NAF homepage](http://kirill-kryukov.com/study/naf/) for details and benchmarks.
+See [NAF homepage](http://kirill-kryukov.com/study/naf/) for details.
 
-| Example benchmark: SILVA Database (948 MB): |
+| Example benchmark: SILVA 132 LSURef database (610 MB): |
 |---------------------------------------------|
-| <img src="http://kirill-kryukov.com/study/naf/images/SILVA-ratio-vs-cd-speed-lin.svg" width="49%" height="49%"> <img src="http://kirill-kryukov.com/study/naf/images/SILVA-ratio-vs-d-speed-lin.svg" width="49%" height="49%"> |
+| <img src="http://kirill-kryukov.com/study/naf/images/SILVA-132-LSURef-ratio-vs-cd-speed-lin-log.svg" width="49%"> <img src="http://kirill-kryukov.com/study/naf/images/SILVA-132-LSURef-ratio-vs-d-speed-lin-log.svg" width="49%"> |
+Visit [Sequence Compression Benchmark](http://kirr.dyndns.org/sequence-compression-benchmark/) project for more benchmarks.
 
 
 ## Format specification
@@ -69,13 +70,13 @@ See `ennaf -h` and [Compression Manual](Compress.md) for detailed usage.
 
 See `unnaf -h` and [Decompression Manual](Decompress.md).
 
-## Reference
+## Citation
 
 If you use NAF, please cite:
 
  * Kirill Kryukov, Mahoko Takahashi Ueda, So Nakagawa, Tadashi Imanishi (2019)
 **"Nucleotide Archival Format (NAF) enables efficient lossless reference-free compression of DNA sequences"**
-[Bioinformatics 35(19), 3826-3828](https://academic.oup.com/bioinformatics/article/35/19/3826/5364265),
+[Bioinformatics, 35(19), 3826-3828](https://academic.oup.com/bioinformatics/article/35/19/3826/5364265),
 doi: [10.1093/bioinformatics/btz144](https://doi.org/10.1093/bioinformatics/btz144).
 
 Previous preprint: bioRxiv 501130; http://biorxiv.org/cgi/content/short/501130v2, doi: [10.1101/501130](https://doi.org/10.1101/501130).
