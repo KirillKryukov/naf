@@ -1,6 +1,6 @@
 /*
  * NAF compressor
- * Copyright (c) 2018-2019 Kirill Kryukov
+ * Copyright (c) 2018-2020 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  *
  * The FASTA/Q parser was originally based on Heng Li's kseq.h.

@@ -1,3 +1,8 @@
+/*
+ * NAF decompressor
+ * Copyright (c) 2018-2020 Kirill Kryukov
+ * See README.md and LICENSE files of this repository
+ */
 
 #ifndef ENNAF_PLATFORM_H
 #define ENNAF_PLATFORM_H
