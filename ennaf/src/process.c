@@ -1,6 +1,6 @@
 /*
  * NAF compressor
- * Copyright (c) 2018-2019 Kirill Kryukov
+ * Copyright (c) 2018-2020 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  *
  * The FASTA/Q parser was originally based on Heng Li's kseq.h.
@@ -78,11 +78,11 @@ static void report_unexpected_char_stats(unsigned long long *n, const char *seq_
     for (unsigned i = 0; i < 257; i++) { total += n[i]; }
     if (total > 0)
     {
-        msg("input has %" PRINT_ULL " unexpected %s characters:\n", total, seq_type_name);
-        for (unsigned i = 0; i < 32; i++) { if (n[i] != 0) { msg("    '\\x%02X': %" PRINT_ULL "\n", i, n[i]); } }
-        for (unsigned i = 32; i < 127; i++) { if (n[i] != 0) { msg("    '%c': %" PRINT_ULL "\n", (unsigned char)i, n[i]); } }
-        for (unsigned i = 127; i < 256; i++) { if (n[i] != 0) { msg("    '\\x%02X': %" PRINT_ULL "\n", i, n[i]); } }
-        if (n[256] != 0) { msg("    EOF: %" PRINT_ULL "\n", n[256]); }
+        msg("input has %llu unexpected %s characters:\n", total, seq_type_name);
+        for (unsigned i = 0; i < 32; i++) { if (n[i] != 0) { msg("    '\\x%02X': %llu\n", i, n[i]); } }
+        for (unsigned i = 32; i < 127; i++) { if (n[i] != 0) { msg("    '%c': %llu\n", (unsigned char)i, n[i]); } }
+        for (unsigned i = 127; i < 256; i++) { if (n[i] != 0) { msg("    '\\x%02X': %llu\n", i, n[i]); } }
+        if (n[256] != 0) { msg("    EOF: %llu\n", n[256]); }
     }
 }
 
@@ -101,7 +101,7 @@ static void unexpected_id_char(unsigned c)
 {
     if (abort_on_unexpected_code)
     {
-        die("unexpected character '%c' in ID of sequence %" PRINT_ULL "\n", (unsigned char)c, n_sequences + 1);
+        die("unexpected character '%c' in ID of sequence %llu\n", (unsigned char)c, n_sequences + 1);
     }
     else { n_unexpected_id_characters[c]++; }
 }
@@ -112,7 +112,7 @@ static void unexpected_comment_char(unsigned c)
 {
     if (abort_on_unexpected_code)
     {
-        die("unexpected character '%c' in comment of sequence %" PRINT_ULL "\n", (unsigned char)c, n_sequences + 1);
+        die("unexpected character '%c' in comment of sequence %llu\n", (unsigned char)c, n_sequences + 1);
     }
     else { n_unexpected_comment_characters[c]++; }
 }
@@ -123,7 +123,7 @@ static void unexpected_input_char(unsigned c)
 {
     if (abort_on_unexpected_code)
     {
-        die("unexpected %s code '%c' in sequence %" PRINT_ULL "\n", in_seq_type_name, (unsigned char)c, n_sequences + 1);
+        die("unexpected %s code '%c' in sequence %llu\n", in_seq_type_name, (unsigned char)c, n_sequences + 1);
     }
     else { n_unexpected_seq_characters[c]++; }
 }
@@ -134,7 +134,7 @@ static void unexpected_quality_char(unsigned c)
 {
     if (abort_on_unexpected_code)
     {
-        die("unexpected quality code '%c' in sequence %" PRINT_ULL "\n", (unsigned char)c, n_sequences + 1);
+        die("unexpected quality code '%c' in sequence %llu\n", (unsigned char)c, n_sequences + 1);
     }
     else { n_unexpected_qual_characters[c]++; }
 }
@@ -438,7 +438,7 @@ static void process_well_formed_fastq(void)
         c = in_get_until_specific_char('\n', &qual);
         if (QUAL.uncompressed_size + qual.length - old_len != read_length)
         {
-            die("quality length of sequence %" PRINT_ULL " doesn't match sequence length\n", n_sequences + 1);
+            die("quality length of sequence %llu doesn't match sequence length\n", n_sequences + 1);
         }
 
         add_length(read_length);
@@ -491,7 +491,7 @@ static void process_non_well_formed_fastq(void)
 
         do { c = in_get_char(); } while (is_eol_arr[c]);
         if (c == INEOF) { die("truncated FASTQ input: last sequence has no quality\n"); }
-        if (c != '+') { die("invalid FASTQ input: can't find '+' line of sequence %" PRINT_ULL "\n", n_sequences + 1); }
+        if (c != '+') { die("invalid FASTQ input: can't find '+' line of sequence %llu\n", n_sequences + 1); }
 
         c = in_skip_until(is_eol_arr);
         if (c == INEOF) { die("truncated FASTQ input: last sequence has no quality\n"); }
@@ -510,7 +510,7 @@ static void process_non_well_formed_fastq(void)
         unsigned long long qual_length = QUAL.uncompressed_size + qual.length - old_len;
         if (qual_length != read_length)
         {
-            die("quality length of sequence %" PRINT_ULL " (%" PRINT_ULL ") doesn't match sequence length (%" PRINT_ULL ")\n",
+            die("quality length of sequence %llu (%llu) doesn't match sequence length (%llu)\n",
                 n_sequences + 1, qual_length, read_length);
         }
 
@@ -519,7 +519,7 @@ static void process_non_well_formed_fastq(void)
 
         do { c = in_get_char(); } while (is_eol_arr[c]);
         if (c == INEOF) { break; }
-        if (c != '@') { die("invalid FASTQ input: Can't find '@' after sequence %" PRINT_ULL "\n", n_sequences); }
+        if (c != '@') { die("invalid FASTQ input: Can't find '@' after sequence %llu\n", n_sequences); }
     }
 }
 

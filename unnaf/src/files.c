@@ -1,6 +1,6 @@
 /*
  * NAF decompressor
- * Copyright (c) 2018-2019 Kirill Kryukov
+ * Copyright (c) 2018-2020 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  */
 
@@ -23,6 +23,16 @@ static void open_input_file(void)
         IN = fopen(in_file_path, "rb");
         if (IN == NULL) { die("can't open input file\n"); }
     }
+}
+
+
+static void change_stderr_to_binary(void)
+{
+#ifdef __MINGW32__
+    if (_setmode(_fileno(stderr), O_BINARY) == -1) { die("can't set error stream to binary mode\n"); }
+#else
+    if (!freopen(NULL, "wb", stderr)) { die("can't set error stream to binary mode\n"); }
+#endif
 }
 
 
@@ -61,7 +71,7 @@ static void open_output_file(void)
         OUT = stdout;
     }
 
-    if (out_type == FOUR_BIT && force_stdout)
+    if ( binary_stdout || (out_type == FOUR_BIT && force_stdout) )
     {
 #ifdef __MINGW32__
         if (_setmode(_fileno(stdout), O_BINARY) == -1) { die("can't set output stream to binary mode\n"); }

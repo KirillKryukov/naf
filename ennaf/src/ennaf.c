@@ -1,12 +1,12 @@
 /*
  * NAF compressor
- * Copyright (c) 2018-2019 Kirill Kryukov
+ * Copyright (c) 2018-2020 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  */
 
-#define VERSION "1.1.0"
-#define DATE "2019-10-01"
-#define COPYRIGHT_YEARS "2018-2019"
+#define VERSION "1.2.0"
+#define DATE "2020-09-01"
+#define COPYRIGHT_YEARS "2018-2020"
 
 #include "platform.h"
 #include "encoders.h"
@@ -18,6 +18,7 @@
 static const unsigned char naf_magic_number[3] = { 0x01u, 0xF9u, 0xECu };
 
 static bool verbose = false;
+static bool binary_stderr = false;
 static bool keep_temp_files = false;
 static bool no_mask = false;
 
@@ -351,6 +352,7 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
                 if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
                 if (!strcmp(argv[i], "--verbose")) { verbose = true; continue; }
+                if (!strcmp(argv[i], "--binary-stderr")) { if (!binary_stderr) { binary_stderr = true; change_stderr_to_binary(); } continue; }
                 if (!strcmp(argv[i], "--keep-temp-files")) { keep_temp_files = true; continue; }
                 if (!strcmp(argv[i], "--no-mask")) { no_mask = true; continue; }
                 if (!strcmp(argv[i], "--fasta")) { set_input_format_from_command_line("fasta"); continue; }
@@ -518,7 +520,7 @@ int main(int argc, char **argv)
     fputc_or_die(' ', OUT);
 
     unsigned long long out_line_length = line_length_is_specified ? requested_line_length : longest_line_length;
-    if (verbose) { msg("Output line length: %" PRINT_ULL "\n", out_line_length); }
+    if (verbose) { msg("Output line length: %llu\n", out_line_length); }
     write_variable_length_encoded_number(OUT, out_line_length);
     write_variable_length_encoded_number(OUT, n_sequences);
 
@@ -558,7 +560,7 @@ int main(int argc, char **argv)
 
     if (!assume_well_formed_input) { report_unexpected_input_char_stats(); }
 
-    if (verbose) { msg("Processed %" PRINT_ULL " sequences\n", n_sequences); }
+    if (verbose) { msg("Processed %llu sequences\n", n_sequences); }
     success = true;
 
     return 0;
