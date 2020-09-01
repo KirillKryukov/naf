@@ -15,20 +15,8 @@ static void msg(const char *format, ...)
 }
 
 
-/*__attribute__ ((cold))
-__attribute__ ((format (printf, 1, 2)))
-static void warn(const char *format, ...) 
-{
-    fputs("unnaf warning: ", stderr);
-    va_list argptr;
-    va_start(argptr, format);
-    vfprintf(stderr, format, argptr);
-    va_end(argptr);
-}*/
-
-
 __attribute__ ((cold))
-__attribute__ ((format (printf, 1, 2)))
+//__attribute__ ((format (printf, 1, 2)))
 static void err(const char *format, ...) 
 {
     fputs("unnaf error: ", stderr);
@@ -40,7 +28,7 @@ static void err(const char *format, ...)
 
 
 __attribute__ ((cold))
-__attribute__ ((format (printf, 1, 2)))
+//__attribute__ ((format (printf, 1, 2)))
 __attribute__ ((noreturn))
 static void die(const char *format, ...) 
 {
@@ -65,7 +53,7 @@ __attribute__ ((cold))
 __attribute__ ((noreturn))
 static void out_of_memory(const size_t size)
 {
-    die("can't allocate %" PRINT_SIZE_T " bytes\n", size);
+    die("can't allocate %zu bytes\n", size);
 }
 
 

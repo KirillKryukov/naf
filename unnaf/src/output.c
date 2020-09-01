@@ -587,9 +587,9 @@ static void print_charcount(int masking)
         count_dna_buffer_sequence_characters(counts, masking);
     }
 
-    for (unsigned i = 0; i < 33; i++) { if (counts[i] != 0) { fprintf(OUT, "\\x%02X\t%" PRINT_ULL "\n", i, counts[i]); } }
-    for (unsigned i = 33; i < 127; i++) { if (counts[i] != 0) { fprintf(OUT, "%c\t%" PRINT_ULL "\n", (unsigned char)i, counts[i]); } }
-    for (unsigned i = 127; i < 256; i++) { if (counts[i] != 0) { fprintf(OUT, "\\x%02X\t%" PRINT_ULL "\n", i, counts[i]); } }
+    for (unsigned i = 0; i < 33; i++) { if (counts[i] != 0) { fprintf(OUT, "\\x%02X\t%llu\n", i, counts[i]); } }
+    for (unsigned i = 33; i < 127; i++) { if (counts[i] != 0) { fprintf(OUT, "%c\t%llu\n", (unsigned char)i, counts[i]); } }
+    for (unsigned i = 127; i < 256; i++) { if (counts[i] != 0) { fprintf(OUT, "\\x%02X\t%llu\n", i, counts[i]); } }
 }
 
 
