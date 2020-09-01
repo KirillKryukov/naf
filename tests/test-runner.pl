@@ -53,8 +53,8 @@ sub run_test
     {
         s/[\x0D\x0A]+$//;
         my $cmd = $_;
-        $cmd =~ s/ennaf/..\/ennaf\/ennaf/g;
-        $cmd =~ s/unnaf/..\/unnaf\/unnaf/g;
+        $cmd =~ s/ennaf/..\/ennaf\/ennaf --binary-stderr/g;
+        $cmd =~ s/unnaf/..\/unnaf\/unnaf --binary-stderr --binary-stdout/g;
         $cmd =~ s/\{TEST\}/$test_prefix/g;
         $cmd =~ s/\{GROUP\}/$group_prefix/g;
         push @cmds, $cmd;

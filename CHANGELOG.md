@@ -1,5 +1,12 @@
 # NAF Changelog
 
+## 1.2.0 - 2020-09-01
+- Added `--sequences` option to _unnaf_.
+- Added `--binary-stdout` option to _unnaf_.
+- Added `--binary-stderr` option to both _ennaf_ and _unnaf_.
+- Updated zstd to v1.4.5.
+- Improved compatibility with MinGW.
+
 ## 1.1.0 - 2019-10-01
 - Added support for RNA, protein and text sequences, enabled with `--rna`, `--protein` and `--text` switches.
 - Added report for number of unknown characters at the end of compression.

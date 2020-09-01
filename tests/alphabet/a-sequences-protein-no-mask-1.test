@@ -1,0 +1,1 @@
+ennaf --protein --no-mask {GROUP}.fa 2>{TEST}.e.err | unnaf --sequences >{TEST}.out 2>{TEST}.u.err

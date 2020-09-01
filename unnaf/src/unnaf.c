@@ -17,7 +17,7 @@ typedef enum { UNDECIDED, FORMAT_NAME, PART_LIST, PART_SIZES, NUMBER_OF_SEQUENCE
                TITLE, IDS, NAMES, LENGTHS, TOTAL_LENGTH, MASK, TOTAL_MASK_LENGTH,
                FOUR_BIT,
                DNA, MASKED_DNA, UNMASKED_DNA,
-               SEQ, CHARCOUNT,
+               SEQ, SEQUENCES, CHARCOUNT,
                FASTA, MASKED_FASTA, UNMASKED_FASTA,
                FASTQ
              } OUTPUT_TYPE;
@@ -29,6 +29,7 @@ static int in_seq_type = seq_type_dna;
 static const char *in_seq_type_name = "DNA";
 
 static bool verbose = false;
+static bool binary_stderr = false;
 static bool use_mask = true;
 
 static char *in_file_path = NULL;
@@ -40,6 +41,7 @@ static char *out_file_path = NULL;
 static char *out_file_path_auto = NULL;
 static FILE *OUT = NULL;
 static bool force_stdout = false;
+static bool binary_stdout = false;
 static bool created_output_file = false;
 
 static unsigned char format_version = 1;
@@ -142,6 +144,7 @@ static bool success = false;
 #include "files.c"
 #include "input.c"
 #include "output.c"
+#include "output-sequences.c"
 #include "output-fastq.c"
 
 
@@ -259,6 +262,7 @@ static void show_help(void)
         "  --mask          - Masked region lengths\n"
         "  --4bit          - 4bit-encoded nucleotide sequence (binary data)\n"
         "  --seq           - Continuous concatenated sequence\n"
+        "  --sequences     - One sequence per line, no names\n"
         "  --fasta         - FASTA-formatted sequences\n"
         "  --fastq         - FASTQ-formatted sequences\n"
         "Other options:\n"
@@ -266,6 +270,7 @@ static void show_help(void)
         "  -c              - Write to standard output\n"
         "  --line-length N - Use lines of width N for FASTA output\n"
         "  --no-mask       - Ignore mask\n"
+        "  --binary        - Binary output (no 0D 0A on Windows)\n"
         "  -h, --help      - Show help\n"
         "  -V, --version   - Show version\n"
     );
@@ -299,10 +304,13 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--total-mask-length")) { set_out_type(TOTAL_MASK_LENGTH  ); continue; }
                 if (!strcmp(argv[i], "--4bit"             )) { set_out_type(FOUR_BIT           ); continue; }
                 if (!strcmp(argv[i], "--seq"              )) { set_out_type(SEQ                ); continue; }
+                if (!strcmp(argv[i], "--sequences"        )) { set_out_type(SEQUENCES          ); continue; }
                 if (!strcmp(argv[i], "--charcount"        )) { set_out_type(CHARCOUNT          ); continue; }
                 if (!strcmp(argv[i], "--fasta"            )) { set_out_type(FASTA              ); continue; }
                 if (!strcmp(argv[i], "--fastq"            )) { set_out_type(FASTQ              ); continue; }
                 if (!strcmp(argv[i], "--no-mask")) { use_mask = false; continue; }
+                if (!strcmp(argv[i], "--binary-stdout")) { binary_stdout = true; continue; }
+                if (!strcmp(argv[i], "--binary-stderr")) { if (!binary_stderr) { binary_stderr = true; change_stderr_to_binary(); } continue; }
                 if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
                 if (!strcmp(argv[i], "--verbose")) { verbose = true; continue; }
                 if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
@@ -419,6 +427,7 @@ int main(int argc, char **argv)
                 else if (out_type == MASKED_DNA) { print_dna(use_mask && has_mask); }
                 else if (out_type == UNMASKED_DNA) { print_dna(0); }
                 else if (out_type == CHARCOUNT) { print_charcount(use_mask && has_mask); }
+                else if (out_type == SEQUENCES) { print_sequences(use_mask && has_mask); }
                 else if (out_type == FASTA) { print_fasta(use_mask && has_mask); }
                 else if (out_type == MASKED_FASTA) { print_fasta(use_mask && has_mask); }
                 else if (out_type == UNMASKED_FASTA) { print_fasta(0); }

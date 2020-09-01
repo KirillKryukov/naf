@@ -23,7 +23,9 @@ Only one of these options should be specified:
 
 **--fastq** - FASTQ format. Will fail if input has no qualities.
 
-**--seq** - All sequences concatenated into one, without names or line breaks.
+**--sequences** - One sequence per line, without names or qualities.
+
+**--seq** - All sequences concatenated into one, without names, qualities, or line breaks.
 
 **--number** - Number of sequences.
 
@@ -59,8 +61,12 @@ Only one of these options should be specified:
 **--line-length N** - Divide sequences into lines of N bp, ignoring line length stored in the NAF file.
 Effective only for `--fasta` output. Line length of 0 means unlimited lines, i.e., each sequence printed in single line.
 
-**--no-mask** - Ignore mask, useful only for `--fasta` and `--seq` outputs.
+**--no-mask** - Ignore mask, useful only for `--fasta`, `--sequences` and `--seq` outputs.
 Supported only for DNA and RNA sequences.
+
+**--binary-stderr** - Set stderr stream to binary mode. Mainly useful for running test suite on Windows.
+
+**--binary-stdout** - Set stdout stream to binary mode. Useful for piping decompressed sequences to md5sum on Windows.
 
 **-h**, **--help** - Show usage help.
 

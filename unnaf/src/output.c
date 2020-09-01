@@ -595,61 +595,60 @@ static void print_charcount(int masking)
 
 static void print_fasta(int masking)
 {
-    if (has_data)
+    if (!has_data) { return; }
+
+    load_ids();
+    load_names();
+    load_lengths();
+
+    if (masking) { load_mask(); }
+    else { skip_mask(); }
+
+    total_seq_length = read_number(IN);
+    compressed_seq_size = read_number(IN);
+    total_seq_n_bp_remaining = total_seq_length;
+    cur_seq_len_n_bp_remaining = lengths_buffer[0];
+
+    print_fasta_name(0);
+    cur_line_n_bp_remaining = max_line_length;
+
+    size_t bytes_to_read = initialize_input_decompression();
+    size_t input_size;
+
+    if (in_seq_type < seq_type_protein)
     {
-        load_ids();
-        load_names();
-        load_lengths();
-
-        if (masking) { load_mask(); }
-        else { skip_mask(); }
-
-        total_seq_length = read_number(IN);
-        compressed_seq_size = read_number(IN);
-        total_seq_n_bp_remaining = total_seq_length;
-        cur_seq_len_n_bp_remaining = lengths_buffer[0];
-
-        print_fasta_name(0);
-        cur_line_n_bp_remaining = max_line_length;
-
-        size_t bytes_to_read = initialize_input_decompression();
-        size_t input_size;
-
-        if (in_seq_type < seq_type_protein)
+        while ( total_seq_n_bp_remaining > 0 && (input_size = read_next_chunk(in_buffer, bytes_to_read)) )
         {
-            while ( total_seq_n_bp_remaining > 0 && (input_size = read_next_chunk(in_buffer, bytes_to_read)) )
+            ZSTD_inBuffer in = { in_buffer, input_size, 0 };
+            while (in.pos < in.size)
             {
-                ZSTD_inBuffer in = { in_buffer, input_size, 0 };
-                while (in.pos < in.size)
-                {
-                    ZSTD_outBuffer out = { out_buffer, out_buffer_size, 0 };
-                    bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &in);
-                    if (ZSTD_isError(bytes_to_read)) { die("can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); }
-                    write_4bit_as_fasta((unsigned char *)out_buffer, out.pos, masking);
-                }
+                ZSTD_outBuffer out = { out_buffer, out_buffer_size, 0 };
+                bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &in);
+                if (ZSTD_isError(bytes_to_read)) { die("can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); }
+                write_4bit_as_fasta((unsigned char *)out_buffer, out.pos, masking);
             }
         }
-        else
+    }
+    else
+    {
+        while ( total_seq_n_bp_remaining > 0 && (input_size = read_next_chunk(in_buffer, bytes_to_read)) )
         {
-            while ( total_seq_n_bp_remaining > 0 && (input_size = read_next_chunk(in_buffer, bytes_to_read)) )
+            ZSTD_inBuffer in = { in_buffer, input_size, 0 };
+            while (in.pos < in.size)
             {
-                ZSTD_inBuffer in = { in_buffer, input_size, 0 };
-                while (in.pos < in.size)
-                {
-                    ZSTD_outBuffer out = { dna_buffer, dna_buffer_size, 0 };
-                    bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &in);
-                    if (ZSTD_isError(bytes_to_read)) { die("can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); }
-                    dna_buffer_pos = (unsigned)out.pos;
-                    if (!use_mask) { uppercase_dna_buffer(); }
-                    print_dna_buffer_as_fasta(masking);
-                }
+                ZSTD_outBuffer out = { dna_buffer, dna_buffer_size, 0 };
+                bytes_to_read = ZSTD_decompressStream(input_decompression_stream, &out, &in);
+                if (ZSTD_isError(bytes_to_read)) { die("can't decompress sequence: %s\n", ZSTD_getErrorName(bytes_to_read)); }
+                dna_buffer_pos = (unsigned)out.pos;
+                if (!use_mask) { uppercase_dna_buffer(); }
+                print_dna_buffer_as_fasta(masking);
             }
         }
+    }
 
-        if (total_seq_n_bp_remaining > 0)
-        {
-            if (in_seq_type >= seq_type_protein && !use_mask) { uppercase_dna_buffer(); }
-            print_dna_buffer_as_fasta(masking);
-        }
+    if (total_seq_n_bp_remaining > 0)
+    {
+        if (in_seq_type >= seq_type_protein && !use_mask) { uppercase_dna_buffer(); }
+        print_dna_buffer_as_fasta(masking);
     }
 }

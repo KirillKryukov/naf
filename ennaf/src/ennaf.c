@@ -18,6 +18,7 @@
 static const unsigned char naf_magic_number[3] = { 0x01u, 0xF9u, 0xECu };
 
 static bool verbose = false;
+static bool binary_stderr = false;
 static bool keep_temp_files = false;
 static bool no_mask = false;
 
@@ -351,6 +352,7 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
                 if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
                 if (!strcmp(argv[i], "--verbose")) { verbose = true; continue; }
+                if (!strcmp(argv[i], "--binary-stderr")) { if (!binary_stderr) { binary_stderr = true; change_stderr_to_binary(); } continue; }
                 if (!strcmp(argv[i], "--keep-temp-files")) { keep_temp_files = true; continue; }
                 if (!strcmp(argv[i], "--no-mask")) { no_mask = true; continue; }
                 if (!strcmp(argv[i], "--fasta")) { set_input_format_from_command_line("fasta"); continue; }

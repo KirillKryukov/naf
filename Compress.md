@@ -78,6 +78,8 @@ where they would be otherwise not created due to data being small.
 **--no-mask** - Don't store sequence mask (lower/upper characters).
 Converts the sequences to upper case before compression.
 
+**--binary-stderr** - Set stderr stream to binary mode. Mainly useful for running test suite on Windows.
+
 **-h**, **--help** - Show usage help.
 
 **-V**, **--version** - Show version.
@@ -195,4 +197,4 @@ you have to switch to text mode (`--text`).
 
 Since both `--dna` and `--text` modes can be used for DNA data, which is better?
 Short answer: `--dna` is faster and has stronger compression.
-For details, see <a href="http://kirill-kryukov.com/study/naf/benchmark-text-vs-dna-Spur.html">this benchmark page</a>.
+For details, see [this benchmark page](http://kirill-kryukov.com/study/naf/benchmark-text-vs-dna-Spur.html).
