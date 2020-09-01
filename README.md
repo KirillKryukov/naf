@@ -84,4 +84,9 @@ If you use NAF, please cite:
 [Bioinformatics, 35(19), 3826-3828](https://academic.oup.com/bioinformatics/article/35/19/3826/5364265),
 doi: [10.1093/bioinformatics/btz144](https://doi.org/10.1093/bioinformatics/btz144).
 
-Previous preprint: bioRxiv 501130; http://biorxiv.org/cgi/content/short/501130v2, doi: [10.1101/501130](https://doi.org/10.1101/501130).
+For compressor benchmark, please cite:
+
+ * Kirill Kryukov, Mahoko Takahashi Ueda, So Nakagawa, Tadashi Imanishi (2020)
+**"Sequence Compression Benchmark (SCB) database — A comprehensive evaluation of reference-free compressors for FASTA-formatted sequences"**
+[GigaScience, 9(7), giaa072](https://academic.oup.com/gigascience/article/9/7/giaa072/5867695),
+doi: [10.1093/gigascience/giaa072](https://doi.org/10.1093/gigascience/giaa072).
