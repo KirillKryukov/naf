@@ -518,7 +518,7 @@ int main(int argc, char **argv)
     fputc_or_die(' ', OUT);
 
     unsigned long long out_line_length = line_length_is_specified ? requested_line_length : longest_line_length;
-    if (verbose) { msg("Output line length: %" PRINT_ULL "\n", out_line_length); }
+    if (verbose) { msg("Output line length: %llu\n", out_line_length); }
     write_variable_length_encoded_number(OUT, out_line_length);
     write_variable_length_encoded_number(OUT, n_sequences);
 
@@ -558,7 +558,7 @@ int main(int argc, char **argv)
 
     if (!assume_well_formed_input) { report_unexpected_input_char_stats(); }
 
-    if (verbose) { msg("Processed %" PRINT_ULL " sequences\n", n_sequences); }
+    if (verbose) { msg("Processed %llu sequences\n", n_sequences); }
     success = true;
 
     return 0;

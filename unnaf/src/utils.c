@@ -5,7 +5,7 @@
  */
 
 
-__attribute__ ((format (printf, 1, 2)))
+//__attribute__ ((format (printf, 1, 2)))
 static void msg(const char *format, ...) 
 {
     va_list argptr;
