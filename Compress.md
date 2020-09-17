@@ -198,3 +198,18 @@ you have to switch to text mode (`--text`).
 Since both `--dna` and `--text` modes can be used for DNA data, which is better?
 Short answer: `--dna` is faster and has stronger compression.
 For details, see [this benchmark page](http://kirill-kryukov.com/study/naf/benchmark-text-vs-dna-Spur.html).
+
+## Can it compress multiple files into single archive?
+
+Yes, with the help of a [Multi-Multi-FASTA file format](https://github.com/KirillKryukov/mumu).
+It works similarly to gzipping a tar file:
+First you combine individual FASTA files into a single Multi-Multi-FASTA stream, then compress it using _ennaf_.
+Example commands:
+
+Compressing:<br>
+`mumu.pl --dir 'Helicobacter' 'Helicobacter pylori*' | ennaf -22 --text -o Hp.nafnaf`
+
+Decompressing and unpacking:<br>
+`unnaf Hp.nafnaf | mumu.pl --unpack --dir 'Helicobacter'`
+
+"**nafnaf**" is the recommended filename extension for such archives containing multiple FASTA files.
