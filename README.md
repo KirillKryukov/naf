@@ -75,6 +75,20 @@ See `ennaf -h` and [Compression Manual](Compress.md) for detailed usage.
 
 See `unnaf -h` and [Decompression Manual](Decompress.md).
 
+## Compressing multiple files
+
+Working with multiple files is possible using [Multi-Multi-FASTA](https://github.com/KirillKryukov/mumu) as intermediate format.
+Example commands:
+
+Compressing:<br>
+`mumu.pl --dir 'Helicobacter' 'Helicobacter pylori*' | ennaf -22 --text -o Hp.nafnaf`
+
+Decompressing and unpacking:<br>
+`unnaf Hp.nafnaf | mumu.pl --unpack --dir 'Helicobacter'`
+
+Filename of NAF-compressed single file normally ends with a ".naf".
+To avoid ambiguity, **".nafnaf"** is the recommended suffix for multi-file NAF archives.
+
 ## Citation
 
 If you use NAF, please cite:
