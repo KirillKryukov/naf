@@ -388,10 +388,24 @@ static inline void print_dna_buffer_as_fasta(int masking)
             total_seq_n_bp_remaining -= cur_seq_len_n_bp_remaining;
         }
 
-        if (lengths_buffer[cur_seq_len_index] != 4294967295u)
+        if (lengths_buffer[cur_seq_len_index] == 4294967295u)
+        {
+            cur_seq_len_index++;
+        }
+        else
         {
             fputc('\n', OUT);
+            cur_seq_len_index++;
             cur_seq_index++;
+
+            // Print empty sequences without empty lines.
+            while (cur_seq_len_index < n_lengths && cur_seq_index < N && lengths_buffer[cur_seq_len_index] == 0)
+            {
+                print_fasta_name(cur_seq_index);
+                cur_seq_len_index++;
+                cur_seq_index++;
+            }
+
             if (cur_seq_index < N)
             {
                 print_fasta_name(cur_seq_index);
@@ -399,7 +413,6 @@ static inline void print_dna_buffer_as_fasta(int masking)
             }
         }
 
-        cur_seq_len_index++;
         if (cur_seq_len_index >= n_lengths) { break; }
 
         cur_seq_len_n_bp_remaining = lengths_buffer[cur_seq_len_index];
@@ -607,10 +620,18 @@ static void print_fasta(int masking)
     total_seq_length = read_number(IN);
     compressed_seq_size = read_number(IN);
     total_seq_n_bp_remaining = total_seq_length;
-    cur_seq_len_n_bp_remaining = lengths_buffer[0];
 
-    print_fasta_name(0);
+    while (cur_seq_len_index < n_lengths && cur_seq_index < N && lengths_buffer[cur_seq_len_index] == 0)
+    {
+        print_fasta_name(cur_seq_index);
+        cur_seq_len_index++;
+        cur_seq_index++;
+    }
+    if (cur_seq_index >= N) { return; }
+
+    print_fasta_name(cur_seq_index);
     cur_line_n_bp_remaining = max_line_length;
+    cur_seq_len_n_bp_remaining = lengths_buffer[cur_seq_len_index];
 
     size_t bytes_to_read = initialize_input_decompression();
     size_t input_size;

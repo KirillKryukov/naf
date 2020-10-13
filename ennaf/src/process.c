@@ -151,6 +151,18 @@ static inline void refill_in_buffer(void)
 
 
 __attribute__((always_inline))
+static inline unsigned in_peek_char(void)
+{
+    if (in_begin >= in_end)
+    {
+        refill_in_buffer();
+        if (in_end == 0) { return INEOF; }
+    }
+    return in_buffer[in_begin];
+}
+
+
+__attribute__((always_inline))
 static inline unsigned in_get_char(void)
 {
     if (in_begin >= in_end)
@@ -312,23 +324,27 @@ static void process_well_formed_fasta(void)
         unsigned long long old_total_seq_size = seq_size_original + seq.length;
         if (c != INEOF)
         {
-            unsigned long long old_len = old_total_seq_size;
-            while ( (c = in_get_until_specific_char('\n', &seq)) != INEOF)
+            if (in_peek_char() == '>') { in_begin++; } // Empty sequence.
+            else
             {
-                unsigned long long new_len = seq_size_original + seq.length;
-                if (new_len - old_len > longest_line_length) { longest_line_length = new_len - old_len; }
-                old_len = new_len;
+                unsigned long long old_len = old_total_seq_size;
+                while ( (c = in_get_until_specific_char('\n', &seq)) != INEOF)
+                {
+                    unsigned long long new_len = seq_size_original + seq.length;
+                    if (new_len - old_len > longest_line_length) { longest_line_length = new_len - old_len; }
+                    old_len = new_len;
 
-                c = in_get_char();
-                if (c == '>' || c == INEOF) { break; }
-                else { in_begin--; }
-            }
+                    c = in_get_char();
+                    if (c == '>' || c == INEOF) { break; }
+                    else { in_begin--; }
+                }
 
-            // If the last line is the longest, and has no end-of-line character, handle it correctly.
-            if (c == INEOF)
-            {
-                unsigned long long new_len = seq_size_original + seq.length;
-                if (new_len - old_len > longest_line_length) { longest_line_length = new_len - old_len; }
+                // If the last line is the longest, and has no end-of-line character, handle it correctly.
+                if (c == INEOF)
+                {
+                    unsigned long long new_len = seq_size_original + seq.length;
+                    if (new_len - old_len > longest_line_length) { longest_line_length = new_len - old_len; }
+                }
             }
         }
 
@@ -364,39 +380,43 @@ static void process_non_well_formed_fasta(void)
         unsigned long long old_total_seq_size = seq_size_original + seq.length;
         if (c != INEOF)
         {
-            unsigned long long old_len = old_total_seq_size;
-            while ( (c = in_get_until(is_unexpected_arr, &seq)) != INEOF)
+            if (in_peek_char() == '>') { in_begin++; } // Empty sequence.
+            else
             {
-                if (is_eol_arr[c])
+                unsigned long long old_len = old_total_seq_size;
+                while ( (c = in_get_until(is_unexpected_arr, &seq)) != INEOF)
                 {
-                    unsigned long long new_len = seq_size_original + seq.length;
-                    if (new_len - old_len > longest_line_length) { longest_line_length = new_len - old_len; }
-                    old_len = new_len;
-
-                    c = in_get_char();
-                    if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
-                    else if (c == '>' || c == INEOF) { break; }
-                    else if (is_eol_arr[c])
+                    if (is_eol_arr[c])
                     {
-                        while (c != INEOF && is_eol_arr[c]) { c = in_get_char(); }
-                        if (c == '>' || c == INEOF) { break; }
-                        else if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
+                        unsigned long long new_len = seq_size_original + seq.length;
+                        if (new_len - old_len > longest_line_length) { longest_line_length = new_len - old_len; }
+                        old_len = new_len;
+
+                        c = in_get_char();
+                        if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
+                        else if (c == '>' || c == INEOF) { break; }
+                        else if (is_eol_arr[c])
+                        {
+                            while (c != INEOF && is_eol_arr[c]) { c = in_get_char(); }
+                            if (c == '>' || c == INEOF) { break; }
+                            else if (!is_unexpected_arr[c]) { str_append_char(&seq, (unsigned char)c); continue; }
+                            else if (is_space_arr[c]) {}
+                            else { unexpected_input_char(c); str_append_char(&seq, unexpected_seq_char_replacement); }
+                        }
                         else if (is_space_arr[c]) {}
                         else { unexpected_input_char(c); str_append_char(&seq, unexpected_seq_char_replacement); }
                     }
                     else if (is_space_arr[c]) {}
+                    else if (c == '>' && in_seq_type == seq_type_text) { str_append_char(&seq, (unsigned char)c); }
                     else { unexpected_input_char(c); str_append_char(&seq, unexpected_seq_char_replacement); }
                 }
-                else if (is_space_arr[c]) {}
-                else if (c == '>' && in_seq_type == seq_type_text) { str_append_char(&seq, (unsigned char)c); }
-                else { unexpected_input_char(c); str_append_char(&seq, unexpected_seq_char_replacement); }
-            }
 
-            // If the last line is the longest, and has no end-of-line character, handle it correctly.
-            if (c == INEOF)
-            {
-                unsigned long long new_len = seq_size_original + seq.length;
-                if (new_len - old_len > longest_line_length) { longest_line_length = new_len - old_len; }
+                // If the last line is the longest, and has no end-of-line character, handle it correctly.
+                if (c == INEOF)
+                {
+                    unsigned long long new_len = seq_size_original + seq.length;
+                    if (new_len - old_len > longest_line_length) { longest_line_length = new_len - old_len; }
+                }
             }
         }
 
