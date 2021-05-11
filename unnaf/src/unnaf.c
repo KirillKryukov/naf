@@ -270,7 +270,9 @@ static void show_help(void)
         "  -c              - Write to standard output\n"
         "  --line-length N - Use lines of width N for FASTA output\n"
         "  --no-mask       - Ignore mask\n"
-        "  --binary        - Binary output (no 0D 0A on Windows)\n"
+        "  --binary-stdout - Set stdout stream to binary mode.\n"
+        "  --binary-stderr - Set stderr stream to binary mode.\n"
+        "  --binary        - Shortcut for \"--binary-stdout --binary-stderr\"\n"
         "  -h, --help      - Show help\n"
         "  -V, --version   - Show version\n"
     );
@@ -311,6 +313,7 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--no-mask")) { use_mask = false; continue; }
                 if (!strcmp(argv[i], "--binary-stdout")) { binary_stdout = true; continue; }
                 if (!strcmp(argv[i], "--binary-stderr")) { if (!binary_stderr) { binary_stderr = true; change_stderr_to_binary(); } continue; }
+                if (!strcmp(argv[i], "--binary")) { binary_stdout = true; if (!binary_stderr) { binary_stderr = true; change_stderr_to_binary(); } continue; }
                 if (!strcmp(argv[i], "--help")) { show_help(); exit(0); }
                 if (!strcmp(argv[i], "--verbose")) { verbose = true; continue; }
                 if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
