@@ -2,6 +2,8 @@
 
 ## Current
 - Updated zstd to v1.4.9.
+- Added support for empty sequences.
+- Added `--binary` shortcut option to _unnaf_. 
 
 ## 1.2.0 - 2020-09-01
 - Added `--sequences` option to _unnaf_.
