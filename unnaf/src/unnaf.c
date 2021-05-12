@@ -5,7 +5,7 @@
  */
 
 #define VERSION "1.2.1"
-#define DATE "2021-05-11"
+#define DATE "2021-05-12"
 #define COPYRIGHT_YEARS "2018-2021"
 
 #include "platform.h"

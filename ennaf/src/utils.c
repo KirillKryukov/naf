@@ -53,6 +53,13 @@ static void die(const char *format, ...)
 }
 
 
+#define ZSTD_TRY(f)  \
+do {                 \
+    size_t e = f;    \
+    if (ZSTD_isError(e)) { die("zstd error: %s", ZSTD_getErrorName(e)); }  \
+} while (0)
+
+
 __attribute__ ((cold))
 __attribute__ ((noreturn))
 static void out_of_memory(const size_t size)

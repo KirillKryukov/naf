@@ -27,6 +27,13 @@ Maximum level is 22, however take care as levels above 19 are slow and use signi
 **--level #** - Use compression level #.
 Same with `-#`, but also supports even faster negative levels, down to -131072.
 
+**--long N** - Use window of size 2^N for sequence stream.
+The range is currently from 10 to 31.
+If not specified, the default window size depends on compression level.
+`--long 31` can improve compression of large repetitive data.
+Using large window increases memory consumption of both compression and decompression,
+so please be careful with this option if you plan to share compressed files with others.
+
 **--temp-dir DIR** - Use DIR for temporary files.
 If omitted, uses directory specified in enviroment variable `TMPDIR`.
 If there's no such variable, tries enviroment variable `TMP`.
@@ -196,8 +203,12 @@ you have to switch to text mode (`--text`).
 ## Using text mode for DNA data
 
 Since both `--dna` and `--text` modes can be used for DNA data, which is better?
-Short answer: `--dna` is faster and has stronger compression.
-For details, see [this benchmark page](http://kirill-kryukov.com/study/naf/benchmark-text-vs-dna-Spur.html).
+Normally `--dna` should be preferred, as it's about twice faster than `--text`,
+ and compression strength difference is usually small between the two modes.
+For strongest compression, the choice depends on data.
+With less repetitive data such as assembled genomes, `--dna` seems to give stronger compression
+([example benchmark](http://kirill-kryukov.com/study/naf/benchmark-text-vs-dna-Spur.html)).
+With repetitive data, `--text` is often better.
 
 ## Can it compress multiple files into single archive?
 

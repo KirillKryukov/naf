@@ -4,18 +4,24 @@
  * See README.md and LICENSE files of this repository
  */
 
-
-static ZSTD_CStream* create_zstd_cstream(int level)
+static ZSTD_CStream* create_zstd_cstream(int level, int window_size_log)
 {
     ZSTD_CStream *s = ZSTD_createCStream();
     if (s == NULL) { die("ZSTD_createCStream() error\n"); }
+
+    if (window_size_log != 0)
+    {
+        ZSTD_TRY(ZSTD_CCtx_setParameter(s, ZSTD_c_enableLongDistanceMatching, 1));
+        ZSTD_TRY(ZSTD_CCtx_setParameter(s, ZSTD_c_windowLog, window_size_log));
+    }
+
     size_t const initResult = ZSTD_initCStream(s, level);
     if (ZSTD_isError(initResult)) { die("ZSTD_initCStream() error: %s\n", ZSTD_getErrorName(initResult)); }
     return s;
 }
 
 
-static void compressor_init(compressor_t *w, const char *name)
+static void compressor_init(compressor_t *w, const char *name, int window_size_log)
 {
     assert(w != NULL);
     assert(w->allocated == 0);
@@ -35,7 +41,7 @@ static void compressor_init(compressor_t *w, const char *name)
 
     w->allocated = COMPRESSED_BUFFER_SIZE;
     w->buf = (unsigned char *) malloc_or_die(w->allocated);
-    w->cstream = create_zstd_cstream(compression_level);
+    w->cstream = create_zstd_cstream(compression_level, window_size_log);
     w->path = (char *) malloc_or_die(temp_path_length + 1);
     snprintf(w->path, temp_path_length, "%s/%s.%s", temp_dir, temp_prefix, name);
     if (verbose) { msg("Temp %s file: \"%s\"\n", name, w->path); }

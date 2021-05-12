@@ -4,7 +4,6 @@
  * See README.md and LICENSE files of this repository
  */
 
-
 static void open_input_file(void)
 {
     assert(IN == NULL);

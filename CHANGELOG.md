@@ -1,9 +1,10 @@
 # NAF Changelog
 
 ## Current
-- Updated zstd to v1.4.9.
-- Added support for empty sequences.
+- Added `--long` option to _ennaf_ for setting sequence window size.
 - Added `--binary` shortcut option to _unnaf_. 
+- Added support for empty sequences.
+- Updated zstd to v1.4.9.
 
 ## 1.2.0 - 2020-09-01
 - Added `--sequences` option to _unnaf_.
