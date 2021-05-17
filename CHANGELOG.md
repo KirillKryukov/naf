@@ -1,6 +1,8 @@
 # NAF Changelog
 
 ## Current
+
+## 1.3.0 - 2021-05-17
 - Added `--long` option to _ennaf_ for setting sequence window size.
 - Added `--binary` shortcut option to _unnaf_. 
 - Added support for empty sequences.

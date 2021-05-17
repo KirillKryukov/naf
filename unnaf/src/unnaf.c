@@ -4,8 +4,8 @@
  * See README.md and LICENSE files of this repository
  */
 
-#define VERSION "1.2.1"
-#define DATE "2021-05-12"
+#define VERSION "1.3.0"
+#define DATE "2021-05-17"
 #define COPYRIGHT_YEARS "2018-2021"
 
 #include "platform.h"

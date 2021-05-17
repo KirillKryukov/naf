@@ -1,5 +1,5 @@
 
-.PHONY: default all clean
+.PHONY: default all large clean
 
 export TMPDIR=temp
 
@@ -9,6 +9,12 @@ all:
 	@diff -q Makefile Makefile
 	@mkdir -p temp
 	@./test-runner.pl interface alphabet charcount small
+	@echo "Success!"
+
+large:
+	@diff -q Makefile Makefile
+	@mkdir -p temp
+	@./test-runner.pl large
 	@echo "Success!"
 
 clean:
