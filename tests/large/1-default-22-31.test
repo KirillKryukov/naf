@@ -1,0 +1,1 @@
+ennaf -22 --long 31 {GROUP}.fa 2>{TEST}.e.err | unnaf >{TEST}.out 2>{TEST}.u.err

@@ -1,9 +1,8 @@
 /*
  * NAF decompressor
- * Copyright (c) 2018-2020 Kirill Kryukov
+ * Copyright (c) 2018-2021 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  */
-
 
 static void open_input_file(void)
 {

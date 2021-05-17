@@ -68,6 +68,8 @@ Supported only for DNA and RNA sequences.
 
 **--binary-stdout** - Set stdout stream to binary mode. Useful for piping decompressed sequences to md5sum on Windows.
 
+**--binary** - Shortcut for `--binary-stdout --binary-stderr`.
+
 **-h**, **--help** - Show usage help.
 
 **-V**, **--version** - Show version.

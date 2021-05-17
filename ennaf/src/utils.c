@@ -1,6 +1,6 @@
 /*
  * NAF compressor
- * Copyright (c) 2018-2020 Kirill Kryukov
+ * Copyright (c) 2018-2021 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  */
 
@@ -51,6 +51,13 @@ static void die(const char *format, ...)
     va_end(argptr);
     exit(1);
 }
+
+
+#define ZSTD_TRY(f)  \
+do {                 \
+    size_t e = f;    \
+    if (ZSTD_isError(e)) { die("zstd error: %s", ZSTD_getErrorName(e)); }  \
+} while (0)
 
 
 __attribute__ ((cold))

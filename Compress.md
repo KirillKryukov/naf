@@ -10,7 +10,7 @@
 
 `ennaf file.fq -o file.naf` - Compress a FASTQ file (format is detected automatically).
 
-`ennaf -22 file.fa -o file.naf` - Use maximum compression level.
+`ennaf -22 --long 31 file.fa -o file.naf` - Use maximum compression level.
 
 `gzip -dc file.gz | ennaf -o file.naf` - Recompress from gzip to NAF on the fly.
 
@@ -26,6 +26,13 @@ Maximum level is 22, however take care as levels above 19 are slow and use signi
 
 **--level #** - Use compression level #.
 Same with `-#`, but also supports even faster negative levels, down to -131072.
+
+**--long N** - Use window of size 2^N for sequence stream.
+The range is currently from 10 to 31.
+If not specified, the default window size depends on compression level.
+`--long 31` can improve compression of large repetitive data.
+Using large window increases memory consumption of both compression and decompression,
+so please be careful with this option if you plan to share compressed files with others.
 
 **--temp-dir DIR** - Use DIR for temporary files.
 If omitted, uses directory specified in enviroment variable `TMPDIR`.
@@ -109,6 +116,10 @@ In database usage, data has to be compressed only once,
 while network transfer and decompression may be performed thousands of times by database users.
 Optimizing user experience is more important in such cases.
 So, `ennaf -22` is the best option for sequence databases.
+
+On some data `ennaf -22 --text` can be better than the default dna mode.
+For maximum compression of large datasets you can add `--long 31`,
+but use it carefully as it increases memory consumption of both compression and decompression.
 
 ## Specifying input format
 
@@ -196,8 +207,11 @@ you have to switch to text mode (`--text`).
 ## Using text mode for DNA data
 
 Since both `--dna` and `--text` modes can be used for DNA data, which is better?
-Short answer: `--dna` is faster and has stronger compression.
-For details, see [this benchmark page](http://kirill-kryukov.com/study/naf/benchmark-text-vs-dna-Spur.html).
+Normally `--dna` should be preferred, as it's much faster than `--text`, and compression strength is similar.
+For strongest possible compression, the choice depends on data.
+With less repetitive data such as assembled genomes, `--dna` seems to give stronger compression
+([example benchmark](http://kirill-kryukov.com/study/naf/benchmark-text-vs-dna-Spur.html)).
+With repetitive data, `--text` is often better.
 
 ## Can it compress multiple files into single archive?
 
@@ -207,7 +221,7 @@ First you combine individual FASTA files into a single Multi-Multi-FASTA stream,
 Example commands:
 
 Compressing:<br>
-`mumu.pl --dir 'Helicobacter' 'Helicobacter pylori*' | ennaf -22 --text -o Hp.nafnaf`
+`mumu.pl --dir 'Helicobacter' 'Helicobacter pylori*' | ennaf -22 --long 31 --text -o Hp.nafnaf`
 
 Decompressing and unpacking:<br>
 `unnaf Hp.nafnaf | mumu.pl --unpack --dir 'Helicobacter'`

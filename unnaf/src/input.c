@@ -1,6 +1,6 @@
 /*
  * NAF decompressor
- * Copyright (c) 2018-2020 Kirill Kryukov
+ * Copyright (c) 2018-2021 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  */
 
@@ -268,6 +268,8 @@ static size_t initialize_input_decompression(void)
     input_decompression_stream = ZSTD_createDStream();
     if (!input_decompression_stream) { die("can't create input decompression stream\n"); }
 
+    ZSTD_TRY(ZSTD_DCtx_setParameter(input_decompression_stream, ZSTD_d_windowLogMax, ZSTD_WINDOWLOG_MAX));
+
     size_t bytes_to_read = ZSTD_initDStream(input_decompression_stream);
     if (ZSTD_isError(bytes_to_read)) { die("can't initialize input decompression stream: %s\n", ZSTD_getErrorName(bytes_to_read)); }
 
@@ -297,6 +299,8 @@ static void initialize_memory_decompression(void)
 
     memory_decompression_stream = ZSTD_createDStream();
     if (!memory_decompression_stream) { die("can't create memory decompression stream\n"); }
+
+    ZSTD_TRY(ZSTD_DCtx_setParameter(memory_decompression_stream, ZSTD_d_windowLogMax, ZSTD_WINDOWLOG_MAX));
 
     memory_bytes_to_read = ZSTD_initDStream(memory_decompression_stream);
     if (ZSTD_isError(memory_bytes_to_read)) { die("can't initialize memory decompression stream: %s\n", ZSTD_getErrorName(memory_bytes_to_read)); }

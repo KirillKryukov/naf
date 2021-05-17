@@ -1,12 +1,12 @@
 /*
  * NAF compressor
- * Copyright (c) 2018-2020 Kirill Kryukov
+ * Copyright (c) 2018-2021 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  */
 
-#define VERSION "1.2.0"
-#define DATE "2020-09-01"
-#define COPYRIGHT_YEARS "2018-2020"
+#define VERSION "1.3.0"
+#define DATE "2021-05-17"
+#define COPYRIGHT_YEARS "2018-2021"
 
 #include "platform.h"
 #include "encoders.h"
@@ -34,6 +34,7 @@ static bool force_stdout = false;
 static bool created_output_file = false;
 
 static int compression_level = 1;
+static int sequence_window_size_log = 0;
 
 static char *temp_dir = NULL;
 static char *dataset_name = NULL;
@@ -243,6 +244,35 @@ static void set_line_length(char *str)
 }
 
 
+static void set_sequence_window_size_log(char *str)
+{
+    assert(str != NULL);
+
+    char *end;
+    long long a = strtoll(str, &end, 10);
+    if (*end != '\0') { die("can't parse the value of --long argument\n"); }
+
+    char test_str[21];
+    int nc = snprintf(test_str, 21, "%lld", a);
+    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { die("can't parse the value of --long argument\n"); }
+
+    if (a < ZSTD_WINDOWLOG_MIN)
+    {
+        warn("--long value of is %lld is smaller than the lowest supported value %d, using %d instead\n", a, ZSTD_WINDOWLOG_MIN, ZSTD_WINDOWLOG_MIN);
+        sequence_window_size_log = ZSTD_WINDOWLOG_MIN;
+    }
+    else if (a > ZSTD_WINDOWLOG_MAX)
+    {
+        warn("--long value of is %lld is larger than the largest supported value %d, using %d instead\n", a, ZSTD_WINDOWLOG_MAX, ZSTD_WINDOWLOG_MAX);
+        sequence_window_size_log = ZSTD_WINDOWLOG_MAX;
+    }
+    else
+    {
+        sequence_window_size_log = (int) a;
+    }
+}
+
+
 static int parse_input_format(const char *str)
 {
     assert(str != NULL);
@@ -306,6 +336,7 @@ static void show_help(void)
         "  -o FILE            - Write compressed output to FILE\n"
         "  -c                 - Write to standard output\n"
         "  -#, --level #      - Use compression level # (from %d to %d, default: 1)\n"
+        "  --long N           - Use window of size 2^N for sequence stream (from %d to %d)\n"
         "  --temp-dir DIR     - Use DIR as temporary directory\n"
         "  --name NAME        - Use NAME as prefix for temporary files\n"
         "  --title TITLE      - Store TITLE as dataset title\n"
@@ -322,7 +353,7 @@ static void show_help(void)
         "  --no-mask          - Don't store mask\n"
         "  -h, --help         - Show help\n"
         "  -V, --version      - Show version\n",
-        min_level, max_level);
+        min_level, max_level, ZSTD_WINDOWLOG_MIN, ZSTD_WINDOWLOG_MAX);
 }
 
 
@@ -343,6 +374,7 @@ static void parse_command_line(int argc, char **argv)
                     if (!strcmp(argv[i], "--title")) { i++; set_dataset_title(argv[i]); continue; }
                     if (!strcmp(argv[i], "--level")) { i++; set_compression_level(argv[i]); continue; }
                     if (!strcmp(argv[i], "--line-length")) { i++; set_line_length(argv[i]); continue; }
+                    if (!strcmp(argv[i], "--long")) { i++; set_sequence_window_size_log(argv[i]); continue; }
 
                     // Deprecated, undocumented.
                     if (!strcmp(argv[i], "--out")) { i++; set_output_file_path(argv[i]); continue; }
@@ -465,12 +497,13 @@ int main(int argc, char **argv)
     }
 
     make_temp_prefix();
-    compressor_init(&IDS, "ids");
-    compressor_init(&COMM, "comments");
-    compressor_init(&LEN, "lengths");
-    if (store_mask) { compressor_init(&MASK, "mask"); }
-    compressor_init(&SEQ, "sequence");
-    if (store_qual) { compressor_init(&QUAL, "quality"); }
+
+    compressor_init(&IDS, "ids", 0);
+    compressor_init(&COMM, "comments", 0);
+    compressor_init(&LEN, "lengths", 0);
+    if (store_mask) { compressor_init(&MASK, "mask", 0); }
+    compressor_init(&SEQ, "sequence", sequence_window_size_log);
+    if (store_qual) { compressor_init(&QUAL, "quality", 0); }
 
     process();
     close_input_file();
