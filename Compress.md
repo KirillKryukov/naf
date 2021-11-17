@@ -27,7 +27,8 @@ Maximum level is 22, however take care as levels above 19 are slow and use signi
 **--level #** - Use compression level #.
 Same with `-#`, but also supports even faster negative levels, down to -131072.
 
-**--long N** - Use window of size 2^N for sequence stream.
+**--long N** - Enables zstd long distance matching for the sequence stream
+(not for ids, names, lengths, mask or quality), using window of size 2^N.
 The range is currently from 10 to 31.
 If not specified, the default window size depends on compression level.
 `--long 31` can improve compression of large repetitive data.
