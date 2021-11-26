@@ -179,6 +179,23 @@ Without `--strict` the unsupported characters are replaced by:
 
 The compressor also reports the number of each unknown character.
 
+## Is NAF lossless?
+
+Yes, for well-formed FASTA and FASTQ files. Well-formed means:
+  * Sequences only include supported characters (see above for the list).
+  * No empty lines.
+  * No spaces or tabs, except in sequence names.
+  * All sequence lines wrap at the same length.
+  * Using only Unix end of line character (LF, '\n' = 10 = 0x0A).
+
+When the input is not well-formed, the compression will be lossy,
+and decompressed output will differ from the original file:
+  * Unsupported characters in sequences will change into replacement character ('N', 'X' or '?').
+  * Empty lines will disappear.
+  * Spaces and tabs in sequences will disappear.
+  * Sequence lines will all wrap at the same length (the length of the longest sequence line in the input).
+  * Windows (CR+LF) and Mac (CR) end of line characters will be converted to Unix ones (LF), regardless of platform used during decompression.
+
 ## What FASTQ variants are supported?
 
 Only single line sequence and quality are supported in FASTQ input.
