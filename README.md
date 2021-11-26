@@ -30,9 +30,16 @@ However, if you decompress it back with _unnaf_, your space is again _un-enough_
 
 ## Installing
 
-### Binaries
+### Installing with bioconda
 
-Check if the [latest release](https://github.com/KirillKryukov/naf/releases) has a build for your platform.
+To install NAF with bioconda:
+
+```
+conda install naf
+```
+
+See package page for details: [naf at bioconda](https://bioconda.github.io/recipes/naf/README.html).
+
 
 ### Building from source
 

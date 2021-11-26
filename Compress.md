@@ -27,7 +27,8 @@ Maximum level is 22, however take care as levels above 19 are slow and use signi
 **--level #** - Use compression level #.
 Same with `-#`, but also supports even faster negative levels, down to -131072.
 
-**--long N** - Use window of size 2^N for sequence stream.
+**--long N** - Enables zstd long distance matching for the sequence stream
+(not for ids, names, lengths, mask or quality), using window of size 2^N.
 The range is currently from 10 to 31.
 If not specified, the default window size depends on compression level.
 `--long 31` can improve compression of large repetitive data.
@@ -177,6 +178,23 @@ Without `--strict` the unsupported characters are replaced by:
   * '?' for text
 
 The compressor also reports the number of each unknown character.
+
+## Is NAF lossless?
+
+Yes, for well-formed FASTA and FASTQ files. Well-formed means:
+  * Sequences only include supported characters (see above for the list).
+  * No empty lines.
+  * No spaces or tabs, except in sequence names.
+  * All sequence lines wrap at the same length.
+  * Using only Unix end of line character (LF, '\n' = 10 = 0x0A).
+
+When the input is not well-formed, the compression will be lossy,
+and decompressed output will differ from the original file:
+  * Unsupported characters in sequences will change into replacement character ('N', 'X' or '?').
+  * Empty lines will disappear.
+  * Spaces and tabs in sequences will disappear.
+  * Sequence lines will all wrap at the same length (the length of the longest sequence line in the input).
+  * Windows (CR+LF) and Mac (CR) end of line characters will be converted to Unix ones (LF), regardless of platform used during decompression.
 
 ## What FASTQ variants are supported?
 
