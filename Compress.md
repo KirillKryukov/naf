@@ -109,7 +109,7 @@ If your environment has no TMP nor TMPDIR variables set, and you are not sure wh
 you can use the current directory: `--temp-dir .`.
 
 On a Linux machine with lot of RAM (relative to the size of data being compressed),
-you can try using RAM as temporary storage for extra speed: `--temp-dir /dev/shm/`.
+you can try using RAM as temporary storage for extra speed: `--temp-dir /dev/shm`.
 
 ## Which compression level to choose?
 
