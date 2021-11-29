@@ -105,6 +105,12 @@ Therefore please check the following before running `ennaf`:
  About 1/4 of the uncompressed data size should be normally fine, but safer to have 1/2 or more.
  Note that storage devices and filesystems can slow down when nearly full, so having extra free temporary space is generally a good idea.
 
+If your environment has no TMP nor TMPDIR variables set, and you are not sure what to do,
+you can use the current directory: `--temp-dir .`.
+
+On a Linux machine with lot of RAM (relative to the size of data being compressed),
+you can try using RAM as temporary storage for extra speed: `--temp-dir /dev/shm/`.
+
 ## Which compression level to choose?
 
 The default level 1 is suitable when time is limited, or when the machine doing the compression is not fast enough (or has too little RAM).
