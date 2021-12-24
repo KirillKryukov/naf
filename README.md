@@ -59,7 +59,7 @@ To install in alternative location, add "prefix=DIR" to the "make install" comma
 For a staged install, add "DESTDIR=DIR". E.g., `make DESTDIR=/tmp/stage install`
 
 On Windows it can be installed using [Cygwin](https://www.cygwin.com/),
-and should be also possible with [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
+and should be also possible with [WSL](https://docs.microsoft.com/en-us/windows/wsl/).
 In Cygwin drop `sudo`: `cd naf && make && make test && make install`
 
 ### Building from latest unreleased source
