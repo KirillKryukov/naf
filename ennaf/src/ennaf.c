@@ -8,9 +8,11 @@
 #define DATE "2021-05-17"
 #define COPYRIGHT_YEARS "2018-2021"
 
+#include <sys/stat.h>
 #include "platform.h"
 #include "encoders.h"
 #include "tables.c"
+
 
 #define UNCOMPRESSED_BUFFER_SIZE (1ull * 1000 * 1000)
 #define COMPRESSED_BUFFER_SIZE (2ull * 1000 * 1000)
@@ -37,6 +39,7 @@ static int compression_level = 1;
 static int sequence_window_size_log = 0;
 
 static char *temp_dir = NULL;
+static char temp_dir_ram[12] = "/dev/shm\0";
 static char *dataset_name = NULL;
 static char *dataset_title = NULL;
 
@@ -306,8 +309,30 @@ static void detect_input_format_from_input_file_extension(void)
 }
 
 
-static void detect_temp_directory(void)
+/**
+ * detect_temp_directory() - Finds the directory to store temporary compression streams to
+ * @min_alloc: The size in bytes of the input, as rough estimate to determine whether to use RAM or /tmp files.
+ *             If the amount of RAM can be allocated, set directory to "/dev/shm"; if alloc size is
+ *             set to 0, force to take it from environment variables or arguments.
+ *
+ * Order of importance:
+ * 1) --temp-dir argument
+ * 2) as much RAM space available as input file szie (-> /dev/shm) ~ for streams, skip this
+ * 3) getenv: $TMPDIR
+ * 4) getenv: $TMP
+ */
+static void detect_temp_directory(size_t alloc_size)
 {
+    if((temp_dir == NULL) && (alloc_size > 0))
+    {
+        void *buf = malloc(alloc_size);
+        if (buf != NULL)
+        {
+            free(buf);
+            temp_dir = (char *) &temp_dir_ram;
+        }
+    }
+    
     if (temp_dir == NULL) { temp_dir = getenv("TMPDIR"); }
     if (temp_dir == NULL) { temp_dir = getenv("TMP"); }
     if (temp_dir == NULL)
@@ -315,6 +340,12 @@ static void detect_temp_directory(void)
         die("temporary directory is not specified.\n"
             "Please either set TMPDIR or TMP environment variable, or add '--temp-dir DIR' to command line.\n");
     }
+
+    if(verbose)
+    {
+        printf("requested alloc size was: %lu - detected temp dir: %s\n", (size_t) alloc_size, temp_dir);
+    }
+    
     if (verbose) { msg("Using temporary directory \"%s\"\n", temp_dir); }
 }
 
@@ -469,7 +500,16 @@ int main(int argc, char **argv)
         unexpected_seq_char_replacement = '?';
     }
 
-    detect_temp_directory();
+    if(in_file_path == NULL)
+    {
+        detect_temp_directory(0); // stdin / stream
+    }
+    else
+    {
+        struct stat st;
+        stat(in_file_path, &st);
+        detect_temp_directory(st.st_size);
+    }
     detect_input_format_from_input_file_extension();
 
     open_input_file();

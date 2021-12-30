@@ -5,6 +5,7 @@
  */
 
 
+
 //__attribute__ ((format (printf, 1, 2)))
 static void msg(const char *format, ...) 
 {
