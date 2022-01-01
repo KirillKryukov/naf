@@ -83,6 +83,7 @@ static void compressor_end_stream(compressor_t *w)
         if (remainingToFlush != 0) { die("can't end zstd stream\n"); }
         w->fill += output.pos;
         w->compressed_size += output.pos;
+        ZSTD_freeCStream(w->cstream);
         w->cstream = NULL;
 
         if (keep_temp_files)
