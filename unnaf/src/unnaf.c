@@ -319,11 +319,41 @@ static void parse_command_line(int argc, char **argv)
                 if (!strcmp(argv[i], "--version")) { print_version = true; continue; }
 
                 // Deprecated undocumented options.
-                if (!strcmp(argv[i], "--dna"              )) { set_out_type(DNA); continue; }            // Instead use "--seq"
-                if (!strcmp(argv[i], "--masked-dna"       )) { set_out_type(MASKED_DNA); continue; }     // Instead use "--seq"
-                if (!strcmp(argv[i], "--unmasked-dna"     )) { set_out_type(UNMASKED_DNA); continue; }   // Instead use "--seq --no-mask"
-                if (!strcmp(argv[i], "--masked-fasta"     )) { set_out_type(MASKED_FASTA); continue; }   // Instead use "--fasta"
-                if (!strcmp(argv[i], "--unmasked-fasta"   )) { set_out_type(UNMASKED_FASTA); continue; } // Instead use "--fasta --no-mask"
+                if (!strcmp(argv[i], "--dna"))
+                {
+                    // Deprecated in 1.1.0, warning added in 1.4.0.
+                    warn("'--dna' option is deprecated and will be removed in the future. Please use '--seq' instead.\n");
+                    set_out_type(DNA);
+                    continue;
+                }
+                if (!strcmp(argv[i], "--masked-dna"))
+                {
+                    // Deprecated in 1.0.0, warning added in 1.4.0.
+                    warn("'--masked-dna' option is deprecated and will be removed in the future. Please use '--seq' instead.\n");
+                    set_out_type(MASKED_DNA);
+                    continue;
+                }
+                if (!strcmp(argv[i], "--unmasked-dna"))
+                {
+                    // Deprecated in 1.0.0, warning added in 1.4.0.
+                    warn("'--unmasked-dna' option is deprecated and will be removed in the future. Please use '--seq --no-mask' instead.\n");
+                    set_out_type(UNMASKED_DNA);
+                    continue;
+                }
+                if (!strcmp(argv[i], "--masked-fasta"))
+                {
+                    // Deprecated in 1.0.0, warning added in 1.4.0.
+                    warn("'--masked-fasta' option is deprecated and will be removed in the future. Please use '--fasta' instead.\n");
+                    set_out_type(MASKED_FASTA);
+                    continue;
+                }
+                if (!strcmp(argv[i], "--unmasked-fasta"))
+                {
+                    // Deprecated in 1.0.0, warning added in 1.4.0.
+                    warn("'--unmasked-fasta' option is deprecated and will be removed in the future. Please use '--fasta --no-mask' instead.\n");
+                    set_out_type(UNMASKED_FASTA);
+                    continue;
+                }
             }
 
             if (i < argc - 1)

@@ -16,6 +16,18 @@ static void msg(const char *format, ...)
 
 __attribute__ ((cold))
 //__attribute__ ((format (printf, 1, 2)))
+static void warn(const char *format, ...) 
+{
+    fputs("unnaf warning: ", stderr);
+    va_list argptr;
+    va_start(argptr, format);
+    vfprintf(stderr, format, argptr);
+    va_end(argptr);
+}
+
+
+__attribute__ ((cold))
+//__attribute__ ((format (printf, 1, 2)))
 static void err(const char *format, ...) 
 {
     fputs("unnaf error: ", stderr);
