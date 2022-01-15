@@ -57,6 +57,12 @@ static bool store_title = false;
 static bool store_mask  = true;
 static bool store_qual  = false;
 
+static bool quantize_qualities = false;
+static unsigned quality_quantize_a = 0;
+static unsigned quality_quantize_b = 0;
+static unsigned quality_quantize_c = 0;
+static unsigned char quality_quantizing_table[256];
+
 static bool parity = false;
 static unsigned char* out_4bit_buffer = NULL;
 static unsigned char* out_4bit_pos = NULL;
@@ -273,6 +279,53 @@ static void set_sequence_window_size_log(char *str)
 }
 
 
+static void set_quantizer_params(char *str)
+{
+    assert(str != NULL);
+
+    char *sep1 = str;
+    while (*sep1 != '\0' && *sep1 != ',') { sep1++; }
+    if (*sep1 != ',') { die("can't parse --quantize parameters\n"); }
+    *sep1 = '\0';
+
+    char *sep2 = sep1 + 1;
+    while (*sep2 != '\0' && *sep2 != ',') { sep2++; }
+    if (*sep2 != ',') { die("can't parse --quantize parameters\n"); }
+    *sep2 = '\0';
+
+    char *end;
+    long long a = strtoll(str, &end, 10);
+    if (*end != '\0') { die("can't parse --quantize parameters\n"); }
+    long long b = strtoll(sep1 + 1, &end, 10);
+    if (*end != '\0') { die("can't parse --quantize parameters\n"); }
+    long long c = strtoll(sep2 + 1, &end, 10);
+    if (*end != '\0') { die("can't parse --quantize parameters\n"); }
+
+    char test_str[21];
+    int nc = snprintf(test_str, 21, "%lld", a);
+    if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { die("can't parse --quantize parameters\n"); }
+    nc = snprintf(test_str, 21, "%lld", b);
+    if (nc < 1 || nc > 20 || strcmp(test_str, sep1 + 1) != 0) { die("can't parse --quantize parameters\n"); }
+    nc = snprintf(test_str, 21, "%lld", c);
+    if (nc < 1 || nc > 20 || strcmp(test_str, sep2 + 1) != 0) { die("can't parse --quantize parameters\n"); }
+
+    if (a < 0 || a > 255 || b < 1 || b > 255 || c < 0 || c > 255) { die("can't parse --quantize parameters\n"); }
+
+    quantize_qualities = true;
+    quality_quantize_a = (unsigned) a;
+    quality_quantize_b = (unsigned) b;
+    quality_quantize_c = (unsigned) c;
+
+    for (int i = 0; i < 256; i++)
+    {
+        int q = i - ((i - quality_quantize_a) % quality_quantize_b) + quality_quantize_c;
+        if (q < 0) { q = 0; }
+        if (q > 255) { q = 255; }
+        quality_quantizing_table[i] = (unsigned char) q;
+    }
+}
+
+
 static int parse_input_format(const char *str)
 {
     assert(str != NULL);
@@ -351,6 +404,7 @@ static void show_help(void)
         "  --verbose          - Verbose mode\n"
         "  --keep-temp-files  - Keep temporary files\n"
         "  --no-mask          - Don't store mask\n"
+        "  --quantize 'A,B,C' - Quantize qualities as: Q - ((Q - A) mod B) + C\n"
         "  -h, --help         - Show help\n"
         "  -V, --version      - Show version\n",
         min_level, max_level, ZSTD_WINDOWLOG_MIN, ZSTD_WINDOWLOG_MAX);
@@ -375,6 +429,7 @@ static void parse_command_line(int argc, char **argv)
                     if (!strcmp(argv[i], "--level")) { i++; set_compression_level(argv[i]); continue; }
                     if (!strcmp(argv[i], "--line-length")) { i++; set_line_length(argv[i]); continue; }
                     if (!strcmp(argv[i], "--long")) { i++; set_sequence_window_size_log(argv[i]); continue; }
+                    if (!strcmp(argv[i], "--quantize")) { i++; set_quantizer_params(argv[i]); continue; }
 
                     // Deprecated, undocumented.
                     if (!strcmp(argv[i], "--out")) { i++; set_output_file_path(argv[i]); continue; }

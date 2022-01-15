@@ -35,6 +35,15 @@ If not specified, the default window size depends on compression level.
 Using large window increases memory consumption of both compression and decompression,
 so please be careful with this option if you plan to share compressed files with others.
 
+**--quantize 'A,B,C'** - Enables quantization of FASTQ qualities during compression.
+This is a lossy tranformation, the original qualities can't be restored if this option is used.
+It can dramatically improve compression strengh, while sacrificing relatively unimportant information.
+Quantization uses this formula: Qnew = Qold - ((Qold - A) mod B) + C.
+A is the lowest allowed quality, typically 33 for modern FASTQ variants.
+B is the quantization factor.
+E.g., if B is 4, every 4 consecutive values in the quality range will be converted into a single value.
+C is for shifting the quantized range up, if necessary.
+
 **--temp-dir DIR** - Use DIR for temporary files.
 If omitted, uses directory specified in enviroment variable `TMPDIR`.
 If there's no such variable, tries enviroment variable `TMP`.
@@ -187,7 +196,9 @@ The compressor also reports the number of each unknown character.
 
 ## Is NAF lossless?
 
-Yes, for well-formed FASTA and FASTQ files. Well-formed means:
+Yes, for well-formed FASTA and FASTQ files, if `--quantize` option is not used.
+
+Well-formed means:
   * Sequences only include supported characters (see above for the list).
   * No empty lines.
   * No spaces or tabs, except in sequence names.

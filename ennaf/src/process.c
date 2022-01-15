@@ -53,6 +53,13 @@ static void seq_writer_nonmasked_text(unsigned char *str, size_t size)
 
 static void qual_writer(unsigned char *str, size_t size)
 {
+    if (quantize_qualities)
+    {
+        for (size_t i = 0; i < size; i++)
+        {
+            str[i] = quality_quantizing_table[str[i]];
+        }
+    }
     compress(&QUAL, str, size);
 }
 

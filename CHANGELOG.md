@@ -1,6 +1,7 @@
 # NAF Changelog
 
 ## Unreleased
+- Added `--quantize` option to _ennaf_, to enable lossy quantization of FASTQ qualities.
 - Improved Makefile portability.
 - Updated zstd to v1.5.1.
 
