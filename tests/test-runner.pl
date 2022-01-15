@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #
 # Test runner script
-# Copyright (c) 2018-2021 Kirill Kryukov
+# Copyright (c) 2018-2022 Kirill Kryukov
 # See README.md and LICENSE files of this repository
 #
 

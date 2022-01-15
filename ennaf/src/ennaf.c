@@ -1,12 +1,12 @@
 /*
  * NAF compressor
- * Copyright (c) 2018-2021 Kirill Kryukov
+ * Copyright (c) 2018-2022 Kirill Kryukov
  * See README.md and LICENSE files of this repository
  */
 
-#define VERSION "1.3.0"
-#define DATE "2021-05-17"
-#define COPYRIGHT_YEARS "2018-2021"
+#define VERSION "1.4.0"
+#define DATE "2022-01-15"
+#define COPYRIGHT_YEARS "2018-2022"
 
 #include "platform.h"
 #include "encoders.h"
