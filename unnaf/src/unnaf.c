@@ -230,8 +230,8 @@ static void set_line_length(char *str)
     if (*end != '\0') { die("can't parse the value of --line-length parameter\n"); }
     if (a < 0ll) { die("negative line length specified\n"); }
 
-    char test_str[21];
-    int nc = snprintf(test_str, 21, "%lld", a);
+    char test_str[22];
+    int nc = snprintf(test_str, 22, "%lld", a);
     if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { die("can't parse the value of --line-length parameter\n"); }
 
     requested_line_length = (unsigned long long) a;

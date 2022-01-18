@@ -241,8 +241,8 @@ static void set_line_length(char *str)
     if (*end != '\0') { die("can't parse the value of --line-length parameter\n"); }
     if (a < 0ll) { die("negative line length specified\n"); }
 
-    char test_str[21];
-    int nc = snprintf(test_str, 21, "%lld", a);
+    char test_str[22];
+    int nc = snprintf(test_str, 22, "%lld", a);
     if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { die("can't parse the value of --line-length parameter\n"); }
 
     requested_line_length = (unsigned long long) a;
@@ -258,8 +258,8 @@ static void set_sequence_window_size_log(char *str)
     long long a = strtoll(str, &end, 10);
     if (*end != '\0') { die("can't parse the value of --long argument\n"); }
 
-    char test_str[21];
-    int nc = snprintf(test_str, 21, "%lld", a);
+    char test_str[22];
+    int nc = snprintf(test_str, 22, "%lld", a);
     if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { die("can't parse the value of --long argument\n"); }
 
     if (a < ZSTD_WINDOWLOG_MIN)
@@ -301,12 +301,12 @@ static void set_quantizer_params(char *str)
     long long c = strtoll(sep2 + 1, &end, 10);
     if (*end != '\0') { die("can't parse --quantize parameters\n"); }
 
-    char test_str[21];
-    int nc = snprintf(test_str, 21, "%lld", a);
+    char test_str[22];
+    int nc = snprintf(test_str, 22, "%lld", a);
     if (nc < 1 || nc > 20 || strcmp(test_str, str) != 0) { die("can't parse --quantize parameters\n"); }
-    nc = snprintf(test_str, 21, "%lld", b);
+    nc = snprintf(test_str, 22, "%lld", b);
     if (nc < 1 || nc > 20 || strcmp(test_str, sep1 + 1) != 0) { die("can't parse --quantize parameters\n"); }
-    nc = snprintf(test_str, 21, "%lld", c);
+    nc = snprintf(test_str, 22, "%lld", c);
     if (nc < 1 || nc > 20 || strcmp(test_str, sep2 + 1) != 0) { die("can't parse --quantize parameters\n"); }
 
     if (a < 0 || a > 255 || b < 1 || b > 255 || c < 0 || c > 255) { die("can't parse --quantize parameters\n"); }
