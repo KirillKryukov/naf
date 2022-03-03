@@ -3,6 +3,7 @@
 ## Unreleased
 - Added `--quantize` option to _ennaf_, to enable lossy quantization of FASTQ qualities.
 - Improved Makefile portability.
+- Improved compatibility with clang.
 - Updated zstd to v1.5.1.
 
 ## 1.3.0 - 2021-05-17
